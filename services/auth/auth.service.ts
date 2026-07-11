@@ -1,50 +1,89 @@
 import { apiRequest } from "@/services/api/client";
-import type { ApiResponse } from "@/types/api";
 import type {
   AuthSession,
-  AuthTokens,
   LoginCredentials,
+  PasswordResetConfirmPayload,
+  PasswordResetRequestPayload,
   RegisterPayload,
+  ResendOtpPayload,
+  SignupResult,
+  VerifyEmailPayload,
 } from "@/types/auth";
-import type { User } from "@/types/user";
 
+// All calls hit the same-origin Next BFF (`/api` baseURL on apiClient), which
+// proxies to Django and manages the httpOnly auth cookies.
 const AUTH_BASE = "/auth";
 
 export const authService = {
+  // Registers the account and triggers an OTP email. No session yet.
+  signup(payload: RegisterPayload) {
+    return apiRequest<SignupResult>({
+      method: "POST",
+      url: `${AUTH_BASE}/signup`,
+      data: payload,
+    });
+  },
+
+  // Verifies the signup OTP; the BFF sets the auth cookies and returns the user.
+  verifyEmail(payload: VerifyEmailPayload) {
+    return apiRequest<AuthSession>({
+      method: "POST",
+      url: `${AUTH_BASE}/verify-email`,
+      data: payload,
+    });
+  },
+
+  resendOtp(payload: ResendOtpPayload) {
+    return apiRequest<{ detail: string }>({
+      method: "POST",
+      url: `${AUTH_BASE}/resend-otp`,
+      data: payload,
+    });
+  },
+
   login(credentials: LoginCredentials) {
-    return apiRequest<ApiResponse<AuthSession>>({
+    return apiRequest<AuthSession>({
       method: "POST",
       url: `${AUTH_BASE}/login`,
       data: credentials,
     });
   },
 
-  register(payload: RegisterPayload) {
-    return apiRequest<ApiResponse<AuthSession>>({
-      method: "POST",
-      url: `${AUTH_BASE}/register`,
-      data: payload,
-    });
-  },
-
   logout() {
-    return apiRequest<ApiResponse<null>>({
+    return apiRequest<{ ok: true }>({
       method: "POST",
       url: `${AUTH_BASE}/logout`,
     });
   },
 
+  // Rotates the httpOnly cookies server-side; success is signalled by 2xx.
   refreshToken() {
-    return apiRequest<AuthTokens>({
+    return apiRequest<{ ok: true }>({
       method: "POST",
       url: `${AUTH_BASE}/refresh`,
     });
   },
 
   getProfile() {
-    return apiRequest<ApiResponse<User>>({
+    return apiRequest<AuthSession>({
       method: "GET",
       url: `${AUTH_BASE}/me`,
+    });
+  },
+
+  requestPasswordReset(payload: PasswordResetRequestPayload) {
+    return apiRequest<{ detail: string }>({
+      method: "POST",
+      url: `${AUTH_BASE}/password-reset`,
+      data: payload,
+    });
+  },
+
+  confirmPasswordReset(payload: PasswordResetConfirmPayload) {
+    return apiRequest<{ detail: string }>({
+      method: "POST",
+      url: `${AUTH_BASE}/password-reset/confirm`,
+      data: payload,
     });
   },
 };

@@ -1,0 +1,135 @@
+[
+  {
+    "code": "scrapbook",
+    "name": "Digital Scrapbook",
+    "description": "A real, page-turning memory book, reimagined for the screen. Fill it with polaroids, handwritten captions, washi-taped keepsakes, and audio notes — then watch them turn the pages, one moment at a time.",
+    "status": "live",
+    "display_order": 1
+  },
+  {
+    "code": "memory-pages",
+    "name": "Memory Pages",
+    "description": "A handcrafted photo album you turn page by page. Lay your photos out as polaroids on a warm desk, give each a title and a few lines, then watch them turn — one page, one memory at a time.",
+    "status": "live",
+    "display_order": 2
+  },
+  {
+    "code": "constellation",
+    "name": "Constellation",
+    "description": "A quiet night sky that belongs to just the two of you. Each bright star is a memory; the lines between them trace a shape only you'd recognise. Touch a star and the moment opens.",
+    "status": "live",
+    "display_order": 3
+  },
+  {
+    "code": "memory-city",
+    "name": "Memory City",
+    "description": "Every memory becomes a place in a city that arranges and grows itself as you add to it. Walk its streets at dusk, find the glowing buildings that hold your moments, and open them one by one.",
+    "status": "live",
+    "display_order": 4
+  },
+  {
+    "code": "memory-jar",
+    "name": "Memory Jar",
+    "description": "A handcrafted glass jar brimming with folded notes. Reach in, unfold any one, and read a little something written just for them — a warm, intimate ritual they'll return to.",
+    "status": "live",
+    "display_order": 5
+  },
+  {
+    "code": "our-places",
+    "name": "Our Places",
+    "description": "A love letter drawn across a map. Drop a glowing pin on every place that's part of you two — where you met, where you said it first — and let each one open into the memory it holds.",
+    "status": "live",
+    "display_order": 6
+  },
+  {
+    "code": "ludo",
+    "name": "Ludo for Two",
+    "description": "The Ludo you grew up with, reimagined for two. Realistic dice, satisfying captures, and a tunable couple-activity mode that turns a board game into a date night.",
+    "status": "live",
+    "display_order": 7
+  },
+  {
+    "code": "time-capsule",
+    "name": "Time Capsule",
+    "description": "Seal a message today and let it unlock exactly when it should — a birthday, an anniversary, a year from now.",
+    "status": "soon",
+    "display_order": 8
+  },
+  {
+    "code": "countdown",
+    "name": "Countdown",
+    "description": "A shared countdown to the moment you're both waiting for. Watch the clock tick down together — and when it finally hits zero, a surprise you wrote opens, confetti and all.",
+    "status": "live",
+    "display_order": 9
+  },
+  {
+    "code": "spotify-plaque",
+    "name": "Spotify Plaque",
+    "description": "A keepsake plaque, framed like a print on a shelf. Your photos cross-fade inside the frame while your song plays underneath, styled with a Spotify-code scan strip. Beside it sits a wrapped gift box — tap it and the lid lifts to a private message written just for them.",
+    "status": "live",
+    "display_order": 10
+  },
+  {
+    "code": "string-frame",
+    "name": "String Frame",
+    "description": "A hand-drawn chalkboard, the kind you'd tape above a bed. Their name sprawls across it in bright, mismatched letters, your favourite photos hang pinned along a string, and little chalk doodles fill the gaps. Next to it waits a wrapped gift box — tap it and the lid lifts to a private message, your song playing all the while.",
+    "status": "live",
+    "display_order": 11
+  },
+  {
+    "code": "proposal",
+    "name": "The Big Question",
+    "description": "Not a card to read at leisure — a moment to live. Break the seal, walk a slow approach of your own words and memories, and arrive at the question. When they say yes, the screen blooms and the answer travels right back to you.",
+    "status": "live",
+    "display_order": 12
+  },
+  {
+    "code": "date-ask",
+    "name": "Will You Go Out With Me?",
+    "description": "The butterflies of asking someone out, made into a little moment. A short, warm build-up, the question, and — when they say yes — the plan, sealed with their answer on its way to you.",
+    "status": "live",
+    "display_order": 13
+  },
+  {
+    "code": "desire-deck",
+    "name": "Desire Deck",
+    "description": "The pricey romantic card deck, reimagined for the two of you. Write your own prompts, dares, and questions, set a heat for each, then draw them one at a time on a private night in — endlessly customizable, and shared by a link only you two see.",
+    "status": "live",
+    "display_order": 14
+  },
+  {
+    "code": "desire-matcher",
+    "name": "Desire Matcher",
+    "description": "The honest conversation, without the nerve it takes to start it. Curate a list of things you might be into, answer each privately, and share it. Your partner answers too — and you only ever see what you both said yes (or maybe) to. Everything else stays secret.",
+    "status": "live",
+    "display_order": 15
+  },
+  {
+    "code": "dice-of-desire",
+    "name": "Dice of Desire",
+    "description": "The printed \"roll a position\" chart, reimagined for the two of you. Reword every square of a 6×6 board, set a heat for each, then roll two dice on a private night in — whatever they land on is the next thing you try. Endlessly customizable, and shared by a link only you two see.",
+    "status": "live",
+    "display_order": 16
+  },
+  {
+    "code": "snakes-and-lovers",
+    "name": "Snakes & Lovers",
+    "description": "Snakes & Ladders, reimagined for the two of you. A dare waits on all 100 squares, climbing from sweet warm-ups to a wild climax. Take turns rolling — ladders are a \"Heat Rush\" up to something hotter, snakes are a \"Slow Burn\" that teases you back, and whoever reaches 100 first directs the finale. Reword every square, set its heat, and share it by a link only you two hold.",
+    "status": "live",
+    "display_order": 17
+  },
+  {
+    "code": "love-coupons",
+    "name": "Love Coupons",
+    "description": "The love-coupon book, reimagined: write your own redeemable coupons — a slow dance, a massage, your choice tonight — set a heat for each, and share the booklet. They open the link, pick one, and tap Redeem; you get a ping to deliver. No expiry, no limits, fully yours.",
+    "status": "live",
+    "display_order": 18
+  },
+  {
+    "code": "naughty-spins",
+    "name": "Naughty Spins",
+    "description": "The naughty spinner board, reimagined for the two of you. Set your own categories — Action, Deep Talk, Dare, whatever you like — give each a colour and its own stack of prompts, then spin a real, weighted wheel that lands on one and deals a card. Endlessly customizable, and shared by a link only you two hold.",
+    "status": "live",
+    "display_order": 19
+  }
+]

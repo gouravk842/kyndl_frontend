@@ -1,36 +1,33 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-import { env } from "@/config/env";
-import { COOKIE_MAX_AGE, COOKIE_NAMES } from "@/constants/cookies";
 import { queryKeys } from "@/constants/query-keys";
 import { ROUTES } from "@/constants/routes";
+import { postAuthDestination, withCallbackUrl } from "@/lib/navigation";
 import { authService } from "@/services/auth/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import type { LoginCredentials, RegisterPayload } from "@/types/auth";
-import { removeCookie, setCookie } from "@/utils/cookies";
+import type { ApiError } from "@/types/api";
+import type {
+  LoginCredentials,
+  PasswordResetConfirmPayload,
+  PasswordResetRequestPayload,
+  RegisterPayload,
+  VerifyEmailPayload,
+} from "@/types/auth";
 
-function persistTokens(accessToken: string, refreshToken: string) {
-  setCookie(COOKIE_NAMES.ACCESS_TOKEN, accessToken, {
-    maxAge: COOKIE_MAX_AGE.ACCESS,
-    secure: env.isProd,
-  });
-  setCookie(COOKIE_NAMES.REFRESH_TOKEN, refreshToken, {
-    maxAge: COOKIE_MAX_AGE.REFRESH,
-    secure: env.isProd,
-  });
-}
-
-function clearTokens() {
-  removeCookie(COOKIE_NAMES.ACCESS_TOKEN);
-  removeCookie(COOKIE_NAMES.REFRESH_TOKEN);
+function errorMessage(error: unknown, fallback: string): string {
+  return (error as ApiError)?.message ?? fallback;
 }
 
 export function useAuth() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Where proxy.ts (or a "Sign in to save" link) wanted the user to end up.
+  // Preserved through the whole auth flow so login/verify returns them there.
+  const callbackUrl = searchParams.get("callbackUrl");
   const queryClient = useQueryClient();
   const { user, isAuthenticated, isHydrated, setUser, clearAuth } =
     useAuthStore();
@@ -39,7 +36,8 @@ export function useAuth() {
     queryKey: queryKeys.auth.profile(),
     queryFn: async () => {
       const res = await authService.getProfile();
-      return res.data;
+      setUser(res.user);
+      return res.user;
     },
     enabled: isAuthenticated && isHydrated,
     staleTime: 5 * 60 * 1000,
@@ -49,37 +47,84 @@ export function useAuth() {
     mutationFn: (credentials: LoginCredentials) =>
       authService.login(credentials),
     onSuccess: (res) => {
-      const { user, tokens } = res.data;
-      persistTokens(tokens.accessToken, tokens.refreshToken);
-      setUser(user);
+      // Tokens are stored as httpOnly cookies by the BFF; we only keep the user
+      // in client state for rendering.
+      setUser(res.user);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success("Welcome back!");
-      router.push(ROUTES.dashboard);
+      router.push(postAuthDestination(callbackUrl));
     },
-    onError: (error: { message?: string }) => {
-      toast.error(error.message ?? "Login failed");
+    onError: (error) => {
+      toast.error(errorMessage(error, "Login failed"));
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: (payload: RegisterPayload) => authService.register(payload),
+  const signupMutation = useMutation({
+    mutationFn: (payload: RegisterPayload) => authService.signup(payload),
     onSuccess: (res) => {
-      const { user, tokens } = res.data;
-      persistTokens(tokens.accessToken, tokens.refreshToken);
-      setUser(user);
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
-      toast.success("Account created successfully");
-      router.push(ROUTES.dashboard);
+      // No session yet — an OTP was emailed. Move to the verification step,
+      // carrying the callbackUrl so the post-verify redirect lands on target.
+      toast.success("Check your email for a verification code.");
+      router.push(
+        withCallbackUrl(
+          `${ROUTES.verifyEmail}?email=${encodeURIComponent(res.email)}`,
+          callbackUrl,
+        ),
+      );
     },
-    onError: (error: { message?: string }) => {
-      toast.error(error.message ?? "Registration failed");
+    onError: (error) => {
+      toast.error(errorMessage(error, "Registration failed"));
+    },
+  });
+
+  const verifyEmailMutation = useMutation({
+    mutationFn: (payload: VerifyEmailPayload) =>
+      authService.verifyEmail(payload),
+    onSuccess: (res) => {
+      setUser(res.user);
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
+      toast.success("Email verified — welcome to Kyndl!");
+      router.push(postAuthDestination(callbackUrl));
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "Verification failed"));
+    },
+  });
+
+  const resendOtpMutation = useMutation({
+    mutationFn: (email: string) => authService.resendOtp({ email }),
+    onSuccess: () => {
+      toast.success("A new code is on its way.");
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "Could not resend the code"));
+    },
+  });
+
+  const requestResetMutation = useMutation({
+    mutationFn: (payload: PasswordResetRequestPayload) =>
+      authService.requestPasswordReset(payload),
+    onError: (error) => {
+      toast.error(errorMessage(error, "Could not send reset code"));
+    },
+  });
+
+  const confirmResetMutation = useMutation({
+    mutationFn: (payload: PasswordResetConfirmPayload) =>
+      authService.confirmPasswordReset(payload),
+    onSuccess: () => {
+      toast.success("Password reset. Please sign in.");
+      router.push(ROUTES.login);
+    },
+    onError: (error) => {
+      toast.error(errorMessage(error, "Could not reset password"));
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: () => authService.logout(),
     onSettled: () => {
-      clearTokens();
+      // The BFF clears the httpOnly cookies; we just reset client state.
       clearAuth();
       queryClient.clear();
       router.push(ROUTES.login);
@@ -94,10 +139,18 @@ export function useAuth() {
     profile: profileQuery.data ?? user,
     isLoadingProfile: profileQuery.isLoading,
     login: loginMutation.mutate,
-    register: registerMutation.mutate,
-    logout: logoutMutation.mutate,
     isLoggingIn: loginMutation.isPending,
-    isRegistering: registerMutation.isPending,
+    signup: signupMutation.mutate,
+    isSigningUp: signupMutation.isPending,
+    verifyEmail: verifyEmailMutation.mutate,
+    isVerifying: verifyEmailMutation.isPending,
+    resendOtp: resendOtpMutation.mutate,
+    isResendingOtp: resendOtpMutation.isPending,
+    requestPasswordReset: requestResetMutation.mutate,
+    isRequestingReset: requestResetMutation.isPending,
+    confirmPasswordReset: confirmResetMutation.mutate,
+    isConfirmingReset: confirmResetMutation.isPending,
+    logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };
 }

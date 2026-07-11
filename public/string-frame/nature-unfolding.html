@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Nature Unfolding</title>
+
+    <!--
+      ============================================================================
+       NATURE UNFOLDING — single-file skeuomorphic gift experience
+      ----------------------------------------------------------------------------
+       Architecture (see the ROLE spec):
+         COMPONENT 1  Canvas & background state ...... CSS radial forest + bokeh
+         COMPONENT 2  3D stone box (State A) ......... Three.js WebGL scene
+         COMPONENT 3  Glowing bird VFX engine ........ Three.js additive Points
+         COMPONENT 4  Driftwood & leaf display (B) ... HTML/SVG + leaf clip-path
+         RUNTIME      State machine coordinator ...... class NatureUnfolding
+       The whole thing is driven by ONE requestAnimationFrame loop plus a couple
+       of CSS-transition hand-offs, sequenced on the exact millisecond timeline.
+      ============================================================================
+    -->
+
+    <!-- three.js as an ES module (modern build, no UMD global) -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./three.module.js"
+        }
+      }
+    </script>
+
+    <style>
+      /* ─────────────────────────────────────────────────────────────────────
+         COMPONENT 1 — Canvas & background state
+         A full-bleed forest-twilight gradient with a soft depth-of-field blur
+         layer and floating bokeh discs for lens depth.
+         ───────────────────────────────────────────────────────────────────── */
+      :root {
+        --amber: #e9b06a;
+        --rose: #d98a7a;
+        --slate-1: #223141;
+        --slate-2: #16212e;
+        --leaf-1: #6f9a44;
+        --leaf-2: #567d34;
+        --bark-1: #7c5a3a;
+        --bark-2: #4a331d;
+        --paper: #f6efe1;
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: #f4ecdd;
+        background: #10161d;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* the serene forest-twilight → warm-dawn gradient */
+      #stage {
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(120% 90% at 50% 118%, rgba(233, 176, 106, 0.55) 0%, rgba(217, 138, 122, 0.28) 26%, rgba(34, 49, 65, 0) 58%),
+          radial-gradient(140% 120% at 50% -10%, #2b3d4f 0%, #1c2836 42%, #121a24 100%);
+        overflow: hidden;
+      }
+
+      /* deep-lens blur veil sitting over the gradient */
+      #dof {
+        position: absolute;
+        inset: 0;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      /* floating bokeh discs (5–10) */
+      .bokeh {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(6px);
+        opacity: 0.5;
+        mix-blend-mode: screen;
+        animation: drift linear infinite;
+        z-index: 0;
+      }
+      @keyframes drift {
+        0% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(14px, -26px, 0) scale(1.12); }
+        100% { transform: translate3d(0, 0, 0) scale(1); }
+      }
+
+      /* ─────────────────────────────────────────────────────────────────────
+         COMPONENT 2/3 — WebGL canvas
+         The Three.js renderer draws here, above the background, below the DOM
+         content view. It cross-fades + blurs out on reveal.
+         ───────────────────────────────────────────────────────────────────── */
+      #gl {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: block;
+        transition: opacity 800ms ease, filter 800ms ease;
+      }
+      #gl.faded {
+        opacity: 0;
+        filter: blur(15px);
+        pointer-events: none;
+      }
+      /* subtle press feedback on the whole scene */
+      #gl.tap {
+        animation: haptic 260ms ease;
+      }
+      @keyframes haptic {
+        0% { transform: scale(1); }
+        40% { transform: scale(0.975); }
+        100% { transform: scale(1); }
+      }
+
+      /* the "Tap to open" hint */
+      #hint {
+        position: absolute;
+        left: 50%;
+        bottom: 12%;
+        transform: translateX(-50%);
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1.2rem;
+        border-radius: 999px;
+        background: rgba(10, 14, 18, 0.35);
+        border: 1px solid rgba(255, 240, 210, 0.18);
+        backdrop-filter: blur(6px);
+        font-size: 0.92rem;
+        letter-spacing: 0.02em;
+        color: #f3e7cf;
+        cursor: pointer;
+        user-select: none;
+        transition: opacity 500ms ease;
+        animation: pulse 2.6s ease-in-out infinite;
+      }
+      @keyframes pulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+      #hint.gone { opacity: 0; pointer-events: none; animation: none; }
+      #hint .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #fff, #e9b06a);
+        box-shadow: 0 0 10px 2px rgba(233, 176, 106, 0.8);
+      }
+
+      /* eyebrow */
+      #eyebrow {
+        position: absolute;
+        top: 6%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 3;
+        text-transform: uppercase;
+        letter-spacing: 0.34em;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: rgba(244, 236, 221, 0.75);
+      }
+
+      /* ─────────────────────────────────────────────────────────────────────
+         COMPONENT 4 — Driftwood & leaf display (State B)
+         Hidden until the reveal, then faded + sprung into view.
+         ───────────────────────────────────────────────────────────────────── */
+      .content-view {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(0.5rem, 3vh, 2rem);
+        padding: 4vh 4vw;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 800ms ease;
+      }
+      .content-view.shown { opacity: 1; pointer-events: auto; }
+
+      /* the driftwood arch the leaves hang from */
+      .driftwood {
+        position: relative;
+        width: min(760px, 92vw);
+        filter: drop-shadow(0 18px 30px rgba(10, 8, 4, 0.55));
+      }
+      .driftwood svg { width: 100%; height: auto; display: block; }
+
+      /* name cluster */
+      .nameplate {
+        position: absolute;
+        top: -6%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        font-family: "Brush Script MT", "Segoe Script", cursive;
+        font-size: clamp(2.4rem, 7vw, 4.2rem);
+        line-height: 1;
+        text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.4);
+        white-space: nowrap;
+      }
+      .nameplate span { display: inline-block; }
+
+      /* the row of hanging leaves */
+      .leaf-row {
+        display: flex;
+        justify-content: center;
+        gap: clamp(0.75rem, 4vw, 3rem);
+        margin-top: -2%;
+      }
+      .leaf {
+        position: relative;
+        width: clamp(120px, 22vw, 190px);
+        transform: scale(0.85);
+        opacity: 0;
+        transition:
+          transform 900ms cubic-bezier(0.34, 1.56, 0.64, 1),
+          opacity 700ms ease;
+        will-change: transform, opacity;
+      }
+      .content-view.revealed .leaf { transform: scale(1); opacity: 1; }
+      .content-view.revealed .leaf:nth-child(2) { transition-delay: 90ms; }
+      .content-view.revealed .leaf:nth-child(3) { transition-delay: 180ms; }
+
+      /* the hanging twine */
+      .leaf .twine {
+        position: absolute;
+        top: -14%;
+        left: 50%;
+        width: 2px;
+        height: 16%;
+        background: linear-gradient(#c9ad82, #8a6f4a);
+        transform: translateX(-50%);
+      }
+
+      /* the green leaf backing behind the clipped photo */
+      .leaf .backing { width: 100%; height: auto; display: block; }
+
+      /* the photo, masked into a flawless leaf outline */
+      .leaf .photo {
+        position: absolute;
+        inset: 8% 12% 10% 12%;
+        width: 76%;
+        height: 82%;
+        object-fit: cover;
+        clip-path: url(#leaf-mask);
+        -webkit-clip-path: url(#leaf-mask);
+      }
+
+      /* the message that fades onto the leaf surface */
+      .leaf .msg {
+        position: absolute;
+        left: 50%;
+        bottom: 6%;
+        transform: translateX(-50%);
+        width: 74%;
+        text-align: center;
+        font-size: clamp(0.6rem, 1.4vw, 0.82rem);
+        line-height: 1.25;
+        color: #eaf3dc;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+        opacity: 0;
+        transition: opacity 600ms ease 500ms;
+      }
+      .content-view.revealed .leaf .msg { opacity: 1; }
+
+      /* carved wooden title */
+      .woodtag {
+        z-index: 4;
+        padding: 0.5rem 1.4rem;
+        border-radius: 0.6rem;
+        font-family: "Brush Script MT", "Segoe Script", cursive;
+        font-size: clamp(1.2rem, 3.4vw, 1.9rem);
+        color: var(--paper);
+        background: linear-gradient(150deg, var(--bark-1), var(--bark-2));
+        box-shadow:
+          0 12px 22px -12px rgba(20, 14, 6, 0.7),
+          inset 0 1px 0 rgba(255, 240, 220, 0.25),
+          inset 0 -3px 6px rgba(0, 0, 0, 0.4);
+      }
+
+      /* tiny loader / error note */
+      #note {
+        position: absolute; z-index: 6; left: 50%; top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.85rem; color: #cdbfa6; opacity: 0.8;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="stage">
+      <!-- COMPONENT 1: bokeh discs are injected by JS -->
+      <div id="dof"></div>
+
+      <div id="eyebrow">Gift Countdown · Gift 3</div>
+
+      <!-- COMPONENT 2/3: WebGL scene draws here -->
+      <canvas id="gl"></canvas>
+
+      <div id="hint"><span class="dot"></span> Tap to open</div>
+      <div id="note">Waking the forest…</div>
+
+      <!-- ───────────────────────────────────────────────────────────────────
+           COMPONENT 4: Driftwood & leaf display (State B) — hidden initially
+           ─────────────────────────────────────────────────────────────────── -->
+      <div class="content-view" id="content">
+        <div class="driftwood">
+          <!-- the branch -->
+          <svg viewBox="0 0 760 90" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="bark" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#8a6540" />
+                <stop offset="0.5" stop-color="#5e4126" />
+                <stop offset="1" stop-color="#3a2814" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M6 40 C160 20 320 26 400 34 C520 46 640 40 754 24 L754 44 C640 60 520 66 400 54 C320 46 160 40 10 58 Z"
+              fill="url(#bark)"
+            />
+            <path d="M40 42 C220 30 460 40 720 36" stroke="rgba(0,0,0,0.22)" stroke-width="1.5" stroke-linecap="round" />
+            <path d="M60 50 C240 42 470 50 700 44" stroke="rgba(255,240,220,0.16)" stroke-width="1.4" stroke-linecap="round" />
+          </svg>
+
+          <!-- the personalised name, coloured per-letter by JS -->
+          <div class="nameplate" id="nameplate"></div>
+        </div>
+
+        <!-- three leaf photo containers, built by JS -->
+        <div class="leaf-row" id="leafRow"></div>
+
+        <div class="woodtag">Nature Unfolding</div>
+      </div>
+    </div>
+
+    <!-- Inline SVG defining the leaf clip-path (objectBoundingBox → 0..1) used
+         by every .photo. A single natural leaf silhouette. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <clipPath id="leaf-mask" clipPathUnits="objectBoundingBox">
+          <path d="M0.5,0.02 C0.16,0.2 0.08,0.6 0.5,0.99 C0.92,0.6 0.84,0.2 0.5,0.02 Z" />
+        </clipPath>
+      </defs>
+    </svg>
+
+    <!-- ═════════════════════════════════════════════════════════════════════
+         RUNTIME — the state-machine coordinator
+         ═════════════════════════════════════════════════════════════════════ -->
+    <script type="module">
+      import * as THREE from "three";
+
+      /* -------------------------------------------------------------------- */
+      /*  Personalisation payload — swap these for real recipient content.    */
+      /* -------------------------------------------------------------------- */
+      const DATA = {
+        name: "Rodrick",
+        namePalette: ["#ff5d73", "#ffb43b", "#ffe14d", "#4bd0a0", "#4aa8ff", "#b478ff"],
+        emblem: "3",
+        // three leaves: photo (any URL) + a short message
+        leaves: [
+          { photo: portrait("#5a8f3a", "#2f5320"), msg: "Every walk with you" },
+          { photo: portrait("#c98a2e", "#7a4d12"), msg: "felt like the forest" },
+          { photo: portrait("#4a86b0", "#234a63"), msg: "was holding its breath." },
+        ],
+      };
+
+      /* A self-contained placeholder portrait as a data-URI (no network).    */
+      function portrait(a, b) {
+        const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='380'>
+          <defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+            <stop offset='0' stop-color='${a}'/><stop offset='1' stop-color='${b}'/>
+          </linearGradient></defs>
+          <rect width='300' height='380' fill='url(#g)'/>
+          <circle cx='150' cy='150' r='58' fill='rgba(255,255,255,0.85)'/>
+          <path d='M60 360 C60 270 240 270 240 360 Z' fill='rgba(255,255,255,0.85)'/>
+        </svg>`;
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+      }
+
+      /* -------------------------------------------------------------------- */
+      /*  COMPONENT 1 helper — spawn floating bokeh discs                     */
+      /* -------------------------------------------------------------------- */
+      (function bokeh() {
+        const dof = document.getElementById("dof");
+        const tints = ["#e9b06a", "#d98a7a", "#9fd08a", "#f6e2b0", "#8fb7d6"];
+        for (let i = 0; i < 8; i++) {
+          const b = document.createElement("div");
+          b.className = "bokeh";
+          const size = 40 + Math.random() * 130;
+          b.style.width = b.style.height = size + "px";
+          b.style.left = Math.random() * 100 + "%";
+          b.style.top = Math.random() * 100 + "%";
+          const c = tints[i % tints.length];
+          b.style.background = `radial-gradient(circle at 35% 35%, ${c}, transparent 70%)`;
+          b.style.animationDuration = 8 + Math.random() * 10 + "s";
+          b.style.animationDelay = -Math.random() * 8 + "s";
+          b.style.opacity = 0.25 + Math.random() * 0.3;
+          dof.parentElement.insertBefore(b, dof);
+        }
+      })();
+
+      /* -------------------------------------------------------------------- */
+      /*  Build COMPONENT 4 DOM (name letters + leaf cards)                   */
+      /* -------------------------------------------------------------------- */
+      (function buildContent() {
+        const np = document.getElementById("nameplate");
+        [...DATA.name].forEach((ch, i) => {
+          const s = document.createElement("span");
+          s.textContent = ch;
+          s.style.color = DATA.namePalette[i % DATA.namePalette.length];
+          s.style.transform = `translateY(${i % 2 ? "0.05em" : "-0.04em"}) rotate(${i % 2 ? 2 : -3}deg)`;
+          np.appendChild(s);
+        });
+
+        const row = document.getElementById("leafRow");
+        DATA.leaves.forEach((leaf) => {
+          const el = document.createElement("div");
+          el.className = "leaf";
+          el.innerHTML = `
+            <div class="twine"></div>
+            <svg class="backing" viewBox="0 0 200 250" aria-hidden="true">
+              <defs>
+                <linearGradient id="lf${Math.random().toString(36).slice(2)}" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#7ea84a"/><stop offset="1" stop-color="#4c7328"/>
+                </linearGradient>
+              </defs>
+              <path d="M100 6 C34 44 26 168 100 244 C174 168 166 44 100 6 Z"
+                    fill="#3f5e24"/>
+              <path d="M100 14 C42 50 34 162 100 234 C166 162 158 50 100 14 Z"
+                    fill="#5f8f3a"/>
+              <path d="M100 22 L100 226" stroke="rgba(0,0,0,0.25)" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <img class="photo" alt="" src="${leaf.photo}" />
+            <div class="msg">${leaf.msg}</div>
+          `;
+          row.appendChild(el);
+        });
+      })();
+
+      /* ==================================================================== */
+      /*  The coordinator: builds the 3D scene, owns the timeline & rAF loop  */
+      /* ==================================================================== */
+      class NatureUnfolding {
+        constructor(canvas) {
+          this.canvas = canvas;
+          this.state = "idle"; // idle → opening → revealed
+          this.t0 = 0; // ms timestamp of the trigger
+          this.clock = new THREE.Clock();
+          this._initScene();
+          this._initBox();
+          this._initParticles();
+          this._bind();
+          document.getElementById("note").style.display = "none";
+          this._loop();
+        }
+
+        /* ---- Scene, camera, lights, pedestal --------------------------- */
+        _initScene() {
+          const r = (this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvas,
+            antialias: true,
+            alpha: true,
+          }));
+          r.setPixelRatio(Math.min(devicePixelRatio, 2));
+          r.setSize(innerWidth, innerHeight);
+          r.shadowMap.enabled = true;
+          r.shadowMap.type = THREE.PCFSoftShadowMap;
+
+          const scene = (this.scene = new THREE.Scene());
+
+          const cam = (this.camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 100));
+          cam.position.set(0, 2.4, 7.2);
+          cam.lookAt(0, 0.9, 0);
+
+          // soft ambient fill + a warm, low-angle key light (dawn side-light)
+          scene.add(new THREE.HemisphereLight(0xbfd3e6, 0x2a2015, 0.65));
+          const key = new THREE.DirectionalLight(0xffe6bf, 2.1);
+          key.position.set(-4, 5, 3);
+          key.castShadow = true;
+          key.shadow.mapSize.set(1024, 1024);
+          key.shadow.camera.near = 1;
+          key.shadow.camera.far = 20;
+          scene.add(key);
+          const rim = new THREE.DirectionalLight(0x9fd08a, 0.7);
+          rim.position.set(5, 2, -4);
+          scene.add(rim);
+
+          // polished river-stone pedestal slab
+          const stoneTex = this._noiseTexture(0.6);
+          const pedestal = new THREE.Mesh(
+            new THREE.CylinderGeometry(2.7, 2.9, 0.5, 48),
+            new THREE.MeshStandardMaterial({
+              color: 0x8b8d8f,
+              roughness: 0.35,
+              metalness: 0.05,
+              bumpMap: stoneTex,
+              bumpScale: 0.02,
+            })
+          );
+          pedestal.position.y = -0.05;
+          pedestal.receiveShadow = true;
+          scene.add(pedestal);
+        }
+
+        /* Procedural grainy-stone bump texture (canvas noise + blotches).   */
+        _noiseTexture(contrast = 1) {
+          const s = 256;
+          const c = document.createElement("canvas");
+          c.width = c.height = s;
+          const ctx = c.getContext("2d");
+          const img = ctx.createImageData(s, s);
+          for (let i = 0; i < img.data.length; i += 4) {
+            const n = 128 + (Math.random() - 0.5) * 255 * contrast;
+            img.data[i] = img.data[i + 1] = img.data[i + 2] = n;
+            img.data[i + 3] = 255;
+          }
+          ctx.putImageData(img, 0, 0);
+          // a few larger chiselled blotches for macro texture
+          for (let k = 0; k < 40; k++) {
+            ctx.fillStyle = `rgba(${Math.random() * 255 | 0},${Math.random() * 255 | 0},${Math.random() * 255 | 0},0.05)`;
+            ctx.beginPath();
+            ctx.arc(Math.random() * s, Math.random() * s, 6 + Math.random() * 26, 0, 7);
+            ctx.fill();
+          }
+          const tex = new THREE.CanvasTexture(c);
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(2, 2);
+          return tex;
+        }
+
+        /* ---- COMPONENT 2: the stone box body + hinged lid -------------- */
+        _initBox() {
+          const bump = this._noiseTexture(0.9);
+          const slate = new THREE.MeshStandardMaterial({
+            color: 0x4b5560,
+            roughness: 0.82,
+            metalness: 0.08,
+            bumpMap: bump,
+            bumpScale: 0.05,
+          });
+
+          // box body — heavy slate prism resting on the pedestal
+          const W = 2.4, H = 1.5, D = 1.8;
+          const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D, 4, 4, 4), slate);
+          body.position.y = 0.2 + H / 2; // sits on pedestal top (~y 0.2)
+          body.castShadow = body.receiveShadow = true;
+          this.scene.add(body);
+          this.body = body;
+
+          // debossed "3" emblem — a light medallion on the front (+Z) face
+          const em = document.createElement("canvas");
+          em.width = em.height = 256;
+          const ex = em.getContext("2d");
+          const grd = ex.createRadialGradient(128, 118, 20, 128, 128, 120);
+          grd.addColorStop(0, "#f4ece0");
+          grd.addColorStop(1, "#cbbfa8");
+          ex.fillStyle = grd;
+          ex.beginPath(); ex.arc(128, 128, 96, 0, 7); ex.fill();
+          ex.fillStyle = "#7a6a4a";
+          ex.font = "bold 150px Georgia, serif";
+          ex.textAlign = "center"; ex.textBaseline = "middle";
+          ex.fillText(DATA.emblem, 128, 138);
+          const emblem = new THREE.Mesh(
+            new THREE.CircleGeometry(0.42, 48),
+            new THREE.MeshStandardMaterial({
+              map: new THREE.CanvasTexture(em),
+              roughness: 0.5,
+              transparent: true,
+            })
+          );
+          emblem.position.set(0, 0.2 + H / 2, D / 2 + 0.01);
+          this.scene.add(emblem);
+          this.emblem = emblem;
+
+          // lid — its own group, pivot set to the REAR hinge edge (−Z)
+          const lidGroup = new THREE.Group();
+          lidGroup.position.set(0, 0.2 + H, -D / 2); // hinge line at top-rear
+          const lid = new THREE.Mesh(new THREE.BoxGeometry(W + 0.12, 0.32, D + 0.12, 3, 1, 3), slate);
+          lid.position.set(0, 0.14, D / 2); // shift forward so it caps the body
+          lid.castShadow = true;
+          lidGroup.add(lid);
+          this.scene.add(lidGroup);
+          this.lidGroup = lidGroup;
+        }
+
+        /* ---- COMPONENT 3: the glowing bird particle system ------------- */
+        _initParticles() {
+          const N = (this.N = 250);
+          const geo = new THREE.BufferGeometry();
+          const pos = new Float32Array(N * 3);
+          // per-particle seeds: velocity, lateral freq/phase, size
+          this.seed = [];
+          for (let i = 0; i < N; i++) {
+            pos[i * 3 + 0] = (Math.random() - 0.5) * 0.6;
+            pos[i * 3 + 1] = 0.2 + 1.5; // box opening height
+            pos[i * 3 + 2] = (Math.random() - 0.5) * 0.6;
+            this.seed.push({
+              vx: (Math.random() - 0.5) * 1.4,
+              vy: 2.6 + Math.random() * 2.4,
+              vz: (Math.random() - 0.5) * 1.4,
+              freq: 2 + Math.random() * 4,
+              phase: Math.random() * 7,
+              amp: 0.3 + Math.random() * 0.7,
+            });
+          }
+          geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+
+          // soft round glow sprite
+          const g = document.createElement("canvas");
+          g.width = g.height = 64;
+          const gx = g.getContext("2d");
+          const rg = gx.createRadialGradient(32, 32, 0, 32, 32, 32);
+          rg.addColorStop(0, "rgba(255,255,255,1)");
+          rg.addColorStop(0.3, "rgba(255,236,180,0.9)");
+          rg.addColorStop(1, "rgba(255,210,120,0)");
+          gx.fillStyle = rg;
+          gx.fillRect(0, 0, 64, 64);
+
+          const mat = new THREE.PointsMaterial({
+            size: 0.22,
+            map: new THREE.CanvasTexture(g),
+            color: 0xfff0c8,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true,
+          });
+          const pts = new THREE.Points(geo, mat);
+          pts.visible = false;
+          this.scene.add(pts);
+          this.points = pts;
+        }
+
+        /* ---- input + resize -------------------------------------------- */
+        _bind() {
+          const open = () => this.trigger();
+          this.canvas.addEventListener("pointerdown", open);
+          document.getElementById("hint").addEventListener("pointerdown", open);
+          addEventListener("resize", () => {
+            this.camera.aspect = innerWidth / innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(innerWidth, innerHeight);
+          });
+          // ?state=content jumps straight to the reveal (for previewing State B)
+          if (new URLSearchParams(location.search).get("state") === "content") {
+            this.trigger();
+          }
+        }
+
+        /* ---- THE TRIGGER — kick off the timeline ----------------------- */
+        trigger() {
+          if (this.state !== "idle") return;
+          this.state = "opening";
+          this.t0 = performance.now();
+
+          // FRAME 0ms: haptic press + dismiss the hint
+          this.canvas.classList.add("tap");
+          setTimeout(() => this.canvas.classList.remove("tap"), 300);
+          document.getElementById("hint").classList.add("gone");
+          document.getElementById("eyebrow").style.transition = "opacity .6s";
+          document.getElementById("eyebrow").style.opacity = "0";
+          this.points.visible = true;
+
+          const content = document.getElementById("content");
+          // FRAME 1200ms: cross-fade — blur the WebGL out, fade content in
+          setTimeout(() => {
+            this.canvas.classList.add("faded");
+            content.classList.add("shown");
+          }, 1200);
+          // FRAME 1800ms: elastic spring the leaves + messages into focus
+          setTimeout(() => content.classList.add("revealed"), 1800);
+          // after the canvas is invisible, stop rendering to save the GPU
+          setTimeout(() => (this.state = "revealed"), 2200);
+        }
+
+        /* ---- per-frame updates driven off the trigger clock ------------ */
+        _update() {
+          if (this.state === "idle") {
+            // gentle idle float + the whole rig breathing
+            const t = this.clock.getElapsedTime();
+            this.body.rotation.y = Math.sin(t * 0.4) * 0.05;
+            this.lidGroup.rotation.y = this.body.rotation.y;
+            return;
+          }
+
+          const e = performance.now() - this.t0; // ms since trigger
+
+          // FRAME 100–800ms: rotate the lid backward on its hinge to ~50°
+          const OPEN = -0.9; // rad (≈ 51°), tips away from the viewer
+          if (e <= 800) {
+            const p = smooth(clamp((e - 100) / 700, 0, 1));
+            this.lidGroup.rotation.x = OPEN * p;
+          } else {
+            this.lidGroup.rotation.x = OPEN;
+          }
+
+          // FRAME 300–1500ms: the bird burst — rise + flock + fade
+          if (e >= 300) {
+            const p = clamp((e - 300) / 1500, 0, 1); // 0..1 over 1.5s
+            const attr = this.points.geometry.attributes.position;
+            for (let i = 0; i < this.N; i++) {
+              const s = this.seed[i];
+              const life = p; // shared progress
+              // rising motion with a decelerating ease
+              const y = 1.7 + s.vy * life * (1 - life * 0.35);
+              // lateral swirl — sine/cosine offsets = flocking bird wave
+              const swirl = s.amp * Math.sin(s.freq * life * 3 + s.phase);
+              const x = s.vx * life + swirl;
+              const z = s.vz * life + Math.cos(s.freq * life * 3 + s.phase) * s.amp * 0.6;
+              attr.array[i * 3 + 0] = x;
+              attr.array[i * 3 + 1] = y;
+              attr.array[i * 3 + 2] = z;
+            }
+            attr.needsUpdate = true;
+            // additive glow: bloom in, then fade out as they disperse
+            this.points.material.opacity = 0.85 * Math.sin(Math.min(p, 1) * Math.PI);
+            if (p >= 1) this.points.visible = false;
+          }
+        }
+
+        _loop() {
+          const tick = () => {
+            requestAnimationFrame(tick);
+            // once fully revealed the canvas is invisible — skip drawing
+            if (this.state === "revealed") return;
+            this._update();
+            this.renderer.render(this.scene, this.camera);
+          };
+          tick();
+        }
+      }
+
+      /* small math helpers */
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const smooth = (t) => t * t * (3 - 2 * t); // smoothstep
+
+      /* Boot — degrade gracefully if WebGL is unavailable. */
+      try {
+        new NatureUnfolding(document.getElementById("gl"));
+      } catch (err) {
+        console.error(err);
+        const note = document.getElementById("note");
+        note.textContent = "WebGL unavailable — tap to reveal.";
+        const reveal = () => {
+          document.getElementById("gl").classList.add("faded");
+          const c = document.getElementById("content");
+          c.classList.add("shown");
+          setTimeout(() => c.classList.add("revealed"), 200);
+        };
+        document.body.addEventListener("pointerdown", reveal, { once: true });
+      }
+    </script>
+  </body>
+</html>

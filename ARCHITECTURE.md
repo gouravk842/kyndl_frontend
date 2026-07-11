@@ -90,12 +90,12 @@ kyndl_frontend/
 │   ├── query-client.ts
 │   ├── seo.ts
 │   └── animations/
-├── utils/                        # Pure helpers (cookies, format)
+├── utils/                        # Pure helpers (format)
 ├── types/                        # Shared TypeScript types
 ├── constants/                    # Routes, roles, query keys, cookies
 ├── config/                       # env validation, site config
 ├── public/
-├── middleware.ts                 # Auth + RBAC edge checks
+├── proxy.ts                      # Auth + RBAC edge checks (Next 16 "proxy")
 ├── .env.example / .env.local
 ├── .husky/pre-commit
 └── ARCHITECTURE.md
@@ -142,8 +142,10 @@ kyndl_frontend/
 - Env validation with Zod (fail at startup)
 - ESLint (Next core web vitals) + Prettier + import sorting
 - Husky + lint-staged on commit
-- `poweredByHeader: false`, optimized images (AVIF/WebP)
-- Error boundary (`app/error.tsx`), loading skeletons
+- `poweredByHeader: false`, optimized images (AVIF/WebP) scoped to known hosts
+- Security headers via `next.config.ts`: CSP, HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`
+- httpOnly cookie auth (tokens never reach JS) — see §11
+- Error boundaries (`app/error.tsx` + `app/global-error.tsx`) routed through a single `lib/report-error.ts` seam (drop-in for Sentry); loading skeletons
 - Query retry policy skips 4xx
 - SEO: metadata helper, sitemap, robots, canonical URLs
 
@@ -232,24 +234,44 @@ kyndl_frontend/
 Component → useAuth / useQuery → auth.service → apiClient → Backend
 ```
 
-- **`services/api/client.ts`** — Axios instance, auth header, 401 refresh queue
+- **`services/api/client.ts`** — Axios instance (`withCredentials`), 401 refresh queue
 - **`services/api/errors.ts`** — Normalized `ApiError` for UI/toasts
 - **`services/auth/auth.service.ts`** — Domain endpoints only
 
-**Refresh strategy:** Single in-flight `refreshPromise` prevents thundering herd on token expiry.
+**Refresh strategy:** Single in-flight `refreshPromise` prevents thundering herd on token expiry. Because cookies are `httpOnly`, the client never reads the token — it only retries the original request after the refresh endpoint rotates the cookie.
 
 ---
 
-## 11. Authentication
+## 11. Authentication (httpOnly cookie flow)
 
-- JWT access token in cookie (`kyndl_access_token`) for middleware visibility
-- Refresh token cookie + `/auth/refresh` rotation
-- `middleware.ts` — redirect unauthenticated users from `/dashboard`, `/admin`
-- RBAC — decode JWT role for `/admin` (production: verify signature server-side)
-- `useAuth` hook — login/register/logout mutations + profile query
-- `store/auth.store.ts` — persisted user snapshot
+Tokens are **never readable by JavaScript** — this is the primary defense against
+XSS token theft. The backend owns the entire cookie lifecycle; the frontend only
+sends credentials (`withCredentials: true`) and checks cookie _presence_ in
+the proxy (edge) layer.
 
-**Security note:** For maximum security, prefer **httpOnly** cookies set by your Django API; middleware then only checks presence, not client-readable tokens.
+**Backend contract (the API must implement this):**
+
+| Endpoint                                  | On success                                                                                                       |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `POST /auth/login`, `POST /auth/register` | Set `kyndl_access_token` (~15 min) and `kyndl_refresh_token` (~7 d) as `Set-Cookie`; return `{ data: { user } }` |
+| `POST /auth/refresh`                      | Read the refresh cookie, rotate **both** cookies, return `2xx`                                                   |
+| `POST /auth/logout`                       | Clear both cookies (`Max-Age=0`)                                                                                 |
+
+All auth cookies **must** use: `HttpOnly; Secure; SameSite=Lax; Path=/`
+(refresh token may be scoped to `Path=/auth/refresh`). CORS must send
+`Access-Control-Allow-Credentials: true` with an explicit origin (never `*`).
+
+**Frontend responsibilities:**
+
+- `proxy.ts` (Next 16's renamed middleware) — redirects unauthenticated users (no access **or** refresh
+  cookie) away from `/dashboard`, `/admin`; a present refresh cookie counts as a
+  live session so short-lived access tokens don't bounce users to login.
+- RBAC — decodes the JWT `role` claim for `/admin` gating (defense-in-depth only;
+  the API must still authorize every admin request server-side).
+- `useAuth` hook — login/register/logout mutations + profile query; keeps only a
+  non-sensitive `user` snapshot in state.
+- `store/auth.store.ts` — persisted `user` snapshot for instant UI, revalidated
+  via TanStack Query.
 
 ---
 

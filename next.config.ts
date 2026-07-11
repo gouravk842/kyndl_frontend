@@ -1,15 +1,126 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+/**
+ * Origin of the backend API, used to scope `connect-src` (CSP) and the image
+ * optimizer's `remotePatterns`. Falls back to localhost in dev so a missing env
+ * var never breaks the build.
+ */
+function apiOrigin(): string {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
+      .origin;
+  } catch {
+    return "http://localhost:8000";
+  }
+}
+
+const API_ORIGIN = apiOrigin();
+
+/**
+ * Origin of the object store (S3/MinIO). Photo uploads POST presigned forms
+ * straight to the bucket — a different origin from the API — so it must be
+ * whitelisted in `connect-src`/`img-src`. Defaults to the local MinIO endpoint
+ * in dev; set `NEXT_PUBLIC_STORAGE_URL` to the bucket/CDN origin in production.
+ */
+function storageOrigin(): string | null {
+  const raw =
+    process.env.NEXT_PUBLIC_STORAGE_URL ??
+    (isDev ? "http://localhost:9000" : "");
+  if (!raw) return null;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
+const STORAGE_ORIGIN = storageOrigin();
+
+/**
+ * External origins the browser is allowed to fetch from (CSP `connect-src`).
+ * Our Places searches locations via OpenStreetMap's key-less Nominatim API.
+ */
+const CONNECT_ALLOWLIST = ["https://nominatim.openstreetmap.org"];
+
+/**
+ * Content-Security-Policy. Next.js injects a small amount of inline JS/CSS
+ * (theme bootstrap, streaming runtime) so `'unsafe-inline'` is required without
+ * a nonce pipeline; dev additionally needs `'unsafe-eval'` + websockets for HMR.
+ * Everything else is locked to same-origin.
+ */
+function contentSecurityPolicy(): string {
+  const directives: Record<string, string[]> = {
+    "default-src": ["'self'"],
+    "script-src": [
+      "'self'",
+      "'unsafe-inline'",
+      ...(isDev ? ["'unsafe-eval'"] : []),
+    ],
+    "style-src": ["'self'", "'unsafe-inline'"],
+    "img-src": [
+      "'self'",
+      "data:",
+      "blob:",
+      "https:",
+      ...(STORAGE_ORIGIN ? [STORAGE_ORIGIN] : []),
+    ],
+    "font-src": ["'self'", "data:"],
+    "connect-src": [
+      "'self'",
+      API_ORIGIN,
+      ...(STORAGE_ORIGIN ? [STORAGE_ORIGIN] : []),
+      ...CONNECT_ALLOWLIST,
+      ...(isDev ? ["ws:", "wss:"] : []),
+    ],
+    "frame-ancestors": ["'none'"],
+    "base-uri": ["'self'"],
+    "form-action": ["'self'"],
+    "object-src": ["'none'"],
+    ...(isDev ? {} : { "upgrade-insecure-requests": [] }),
+  };
+
+  return Object.entries(directives)
+    .map(([key, values]) =>
+      values.length ? `${key} ${values.join(" ")}` : key,
+    )
+    .join("; ");
+}
+
+const securityHeaders = [
+  { key: "Content-Security-Policy", value: contentSecurityPolicy() },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  },
+  // HSTS is only meaningful over HTTPS; skip it in dev to avoid pinning localhost.
+  ...(isDev
+    ? []
+    : [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=63072000; includeSubDomains; preload",
+        },
+      ]),
+];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Scope the optimizer to known hosts only — `hostname: "**"` would let it
+    // proxy arbitrary URLs (an SSRF/abuse vector). Add CDN hosts here as needed.
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
+      { protocol: "https", hostname: new URL(API_ORIGIN).hostname },
+      ...(isDev ? [{ protocol: "http" as const, hostname: "localhost" }] : []),
     ],
   },
   experimental: {

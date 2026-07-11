@@ -16,49 +16,49 @@ export const experiences = [
     id: "love-cards",
     title: "Digital Love Cards",
     description: "Handwritten emotion, delivered at the perfect moment.",
-    accent: "from-[#8E1020]/40 to-transparent",
+    accent: "from-[#FF7A59]/25 to-transparent",
   },
   {
     id: "couple-games",
     title: "Couple Games",
     description: "Playful rituals that bring you closer, night after night.",
-    accent: "from-[#B11226]/40 to-transparent",
+    accent: "from-[#F2596F]/25 to-transparent",
   },
   {
     id: "secret-messages",
     title: "Hidden Messages",
     description: "Words meant for one person — revealed when it matters.",
-    accent: "from-[#C21830]/35 to-transparent",
+    accent: "from-[#F0A13D]/25 to-transparent",
   },
   {
     id: "surprise-gifting",
     title: "Surprise Gifting",
     description: "Anticipation built in — the reveal is the experience.",
-    accent: "from-[#D7263D]/30 to-transparent",
+    accent: "from-[#FF9A7B]/25 to-transparent",
   },
   {
     id: "midnight",
     title: "Midnight Deliveries",
     description: "Timed to the hour when feelings feel loudest.",
-    accent: "from-[#8E1020]/35 to-transparent",
+    accent: "from-[#F2596F]/20 to-transparent",
   },
   {
     id: "memory",
     title: "Memory Capsules",
     description: "Preserve a moment. Open it together, months later.",
-    accent: "from-[#B11226]/35 to-transparent",
+    accent: "from-[#FF7A59]/20 to-transparent",
   },
   {
     id: "physical",
     title: "Physical Gifts",
     description: "Curated surprises that arrive with intention.",
-    accent: "from-[#C21830]/30 to-transparent",
+    accent: "from-[#F0A13D]/20 to-transparent",
   },
   {
     id: "playlists",
     title: "Shared Playlists",
     description: "Soundtracks for the spaces between you.",
-    accent: "from-[#D7263D]/25 to-transparent",
+    accent: "from-[#FF9A7B]/20 to-transparent",
   },
 ] as const;
 
@@ -71,7 +71,7 @@ export const giftCollections = [
     description:
       "Animated cards with private notes, reveal effects, and timed delivery.",
     features: ["Name + photo personalization", "Open-on-date scheduling"],
-    accent: "from-[#8E1020]/50 via-[#B11226]/25 to-transparent",
+    accent: "from-[#FF7A59]/30 via-[#F2596F]/15 to-transparent",
   },
   {
     id: "micro-games",
@@ -81,7 +81,7 @@ export const giftCollections = [
     description:
       "Playful quizzes, challenge decks, and intimacy prompts you can play together.",
     features: ["Difficulty presets", "Long-distance friendly mode"],
-    accent: "from-[#B11226]/45 via-[#C21830]/20 to-transparent",
+    accent: "from-[#F2596F]/30 via-[#FF9A7B]/15 to-transparent",
   },
   {
     id: "memory-capsules",
@@ -91,7 +91,7 @@ export const giftCollections = [
     description:
       "A private time-locked message with voice notes, photos, and mini surprise reveals.",
     features: ["Voice + photo bundles", "Timed unlock links"],
-    accent: "from-[#C21830]/35 via-[#D7263D]/20 to-transparent",
+    accent: "from-[#F0A13D]/30 via-[#FF7A59]/15 to-transparent",
   },
   {
     id: "surprise-boxes",
@@ -101,7 +101,7 @@ export const giftCollections = [
     description:
       "Curated digital bundles that combine a card, game, and hidden keepsake in one flow.",
     features: ["Occasion templates", "Guided story builder"],
-    accent: "from-[#D7263D]/35 via-[#B11226]/20 to-transparent",
+    accent: "from-[#FF9A7B]/30 via-[#F2596F]/15 to-transparent",
   },
 ] as const;
 

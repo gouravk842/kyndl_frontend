@@ -4,31 +4,27 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
-import { clientEnv, env } from "@/config/env";
-import { COOKIE_NAMES } from "@/constants/cookies";
 import { normalizeApiError } from "@/services/api/errors";
-import { getCookie } from "@/utils/cookies";
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
+/**
+ * The browser talks only to the same-origin Next BFF (`/api/*`), never to
+ * Django directly. The BFF stores the JWTs as `httpOnly; Secure; SameSite`
+ * cookies, which the browser attaches automatically via `withCredentials`. The
+ * frontend never reads or writes these tokens — that is what protects them from
+ * XSS. Server-side, the BFF forwards them to Django as bearer tokens.
+ */
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: clientEnv.NEXT_PUBLIC_API_URL,
+  baseURL: "/api",
   timeout: 30_000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
   withCredentials: true,
-});
-
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = getCookie(COOKIE_NAMES.ACCESS_TOKEN);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
 });
 
 apiClient.interceptors.response.use(
@@ -44,13 +40,13 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          // The refresh endpoint set a fresh access-token cookie; retry.
           return apiClient(originalRequest);
         }
       } catch {
-        // Fall through to reject
+        // Fall through to reject.
       }
     }
 
@@ -58,21 +54,22 @@ apiClient.interceptors.response.use(
   },
 );
 
-async function refreshAccessToken(): Promise<string | null> {
+/**
+ * Single-flight token refresh: concurrent 401s share one refresh call so we
+ * never fire multiple `/auth/refresh` requests. The backend rotates the cookies
+ * on success; we only need to know whether it succeeded.
+ */
+async function refreshAccessToken(): Promise<boolean> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const { authService } = await import("@/services/auth/auth.service");
-      const tokens = await authService.refreshToken();
-      const { setCookie } = await import("@/utils/cookies");
-      const { COOKIE_MAX_AGE } = await import("@/constants/cookies");
-      setCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.accessToken, {
-        maxAge: COOKIE_MAX_AGE.ACCESS,
-        secure: env.isProd,
+      await authService.refreshToken();
+      return true;
+    })()
+      .catch(() => false)
+      .finally(() => {
+        refreshPromise = null;
       });
-      return tokens.accessToken;
-    })().finally(() => {
-      refreshPromise = null;
-    });
   }
   return refreshPromise;
 }

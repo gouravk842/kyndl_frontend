@@ -1,105 +1,136 @@
+import { ArrowUpRight, Dices, Heart, Puzzle } from "lucide-react";
 import Link from "next/link";
 
+import { PageContainer } from "@/components/layout/page-container";
+import { PageHeader } from "@/components/shared/page-header";
+import { ROUTES } from "@/constants/routes";
 import { createMetadata } from "@/lib/seo";
+import { cn } from "@/lib/utils";
 
 export const metadata = createMetadata({
   title: "Games",
   description:
-    "Play interactive couple and friends games on Kyndl. Start with Ludo Party and discover more games as they launch.",
+    "Play interactive couple and friends games on Kyndl. Start with Ludo for Two and discover more games as they launch.",
   path: "/games",
 });
 
 const games = [
   {
-    title: "Ludo Party",
+    title: "Ludo for Two",
     description:
-      "A multiplayer Ludo board with activity mode challenges for couples and friends.",
+      "Classic Ludo reimagined for date night — realistic dice, captures, and a tunable couple-activity mode.",
     href: "/games/ludo",
-    status: "Live",
+    icon: Dices,
+    live: true,
   },
   {
     title: "Truth Spark",
     description: "Quick turn-based prompts to start meaningful conversations.",
     href: "#",
-    status: "Coming Soon",
+    icon: Heart,
+    live: false,
   },
   {
     title: "Memory Match",
     description: "Match little moments, memories, and cute surprises together.",
     href: "#",
-    status: "Coming Soon",
+    icon: Puzzle,
+    live: false,
   },
 ];
 
 export default function GamesPage() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="mb-2 text-sm tracking-[0.18em] text-[#D4A373] uppercase">
-            Play Together
-          </p>
-          <h1 className="font-display text-4xl text-[#F5E9E2] sm:text-5xl">
-            Couple & Friends Games
-          </h1>
-          <p className="mt-3 max-w-2xl text-[#B3B3B3]">
-            Pick a game and start instantly. More co-op and date-night games are
-            on the way.
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="inline-flex h-11 items-center rounded-full border border-white/20 px-5 text-sm text-[#F5E9E2] transition-colors hover:border-[#C21830]/40 hover:bg-white/5"
-        >
-          ← Back to Home
-        </Link>
-      </div>
+    <div className="relative overflow-hidden">
+      <PageHeader
+        eyebrow="Play together"
+        title={
+          <>
+            Game night, <span className="kyndl-text-warm">just for two.</span>
+          </>
+        }
+        subtitle="Pick a game and start instantly — no setup, no install. More co-op and date-night games are on the way."
+      />
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {games.map((game) => {
-          const live = game.status === "Live";
-          return (
-            <article
-              key={game.title}
-              className="rounded-3xl border border-white/10 bg-[#111111]/85 p-6 shadow-[0_18px_55px_rgba(0,0,0,0.4)]"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-[#F5E9E2]">
+      <section className="relative py-12 md:py-16">
+        <PageContainer size="xl">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {games.map((game) => (
+              <article
+                key={game.title}
+                className={cn(
+                  "kyndl-card-soft group relative flex flex-col rounded-3xl border border-[#F4DDD0] bg-white p-6 transition-all duration-500",
+                  game.live
+                    ? "hover:-translate-y-1 hover:border-[#FF7A59]/45 hover:shadow-[0_28px_64px_-26px_rgba(242,89,111,0.45)]"
+                    : "opacity-90",
+                )}
+              >
+                <div className="flex items-start justify-between">
+                  <span className="flex size-12 items-center justify-center rounded-2xl border border-[#F4DDD0] bg-[#FFF7F1] text-[#FF7A59]">
+                    <game.icon className="size-6" />
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium tracking-wider uppercase",
+                      game.live
+                        ? "border border-[#FF7A59]/30 bg-[#FFF1E9] text-[#C75B39]"
+                        : "border border-[#3A2A25]/10 bg-[#FFF7F1] text-[#92786C]",
+                    )}
+                  >
+                    {game.live && (
+                      <span className="size-1.5 rounded-full bg-[#2fb672]" />
+                    )}
+                    {game.live ? "Live" : "Coming soon"}
+                  </span>
+                </div>
+
+                <h2 className="mt-6 font-display text-xl text-[#3A2A25]">
                   {game.title}
                 </h2>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs ${
-                    live
-                      ? "border border-[#C21830]/40 bg-[#C21830]/20 text-[#F8D7DB]"
-                      : "border border-white/20 bg-white/5 text-[#B3B3B3]"
-                  }`}
-                >
-                  {game.status}
-                </span>
-              </div>
-              <p className="mb-6 text-sm leading-relaxed text-[#B3B3B3]">
-                {game.description}
-              </p>
-              {live ? (
-                <Link
-                  href={game.href}
-                  className="inline-flex h-11 items-center rounded-full bg-[#B11226] px-5 text-sm font-medium text-[#F5E9E2] transition-all hover:bg-[#C21830]"
-                >
-                  Open Game
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex h-11 cursor-not-allowed items-center rounded-full border border-white/15 px-5 text-sm text-[#7F7F7F]"
-                >
-                  Coming soon
-                </button>
-              )}
-            </article>
-          );
-        })}
-      </div>
-    </section>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-[#7A6258]">
+                  {game.description}
+                </p>
+
+                <div className="mt-6">
+                  {game.live ? (
+                    <Link
+                      href={game.href}
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#C75B39]"
+                    >
+                      Play now
+                      <ArrowUpRight className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </Link>
+                  ) : (
+                    <span className="text-sm font-medium text-[#B5A096]">
+                      In the works
+                    </span>
+                  )}
+                </div>
+
+                {game.live && (
+                  <Link
+                    href={game.href}
+                    className="absolute inset-0 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2596F]/50"
+                    aria-label={`Play ${game.title}`}
+                  />
+                )}
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-12 rounded-[1.75rem] border border-[#F4DDD0] bg-white/70 p-6 text-center backdrop-blur-sm md:p-8">
+            <p className="text-[#7A6258]">
+              Looking for something to keep instead?{" "}
+              <Link
+                href={ROUTES.experiences}
+                className="font-semibold text-[#C75B39] hover:text-[#9e3f21]"
+              >
+                Explore all experiences →
+              </Link>
+            </p>
+          </div>
+        </PageContainer>
+      </section>
+    </div>
   );
 }

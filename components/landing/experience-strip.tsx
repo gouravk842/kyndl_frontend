@@ -12,13 +12,13 @@ export function ExperienceStrip() {
     <section id="experiences" className="relative py-24 md:py-32">
       <PageContainer size="xl">
         <FadeIn>
-          <p className="text-center text-sm font-medium tracking-[0.2em] text-[#D4A373] uppercase">
+          <p className="text-center text-sm font-medium tracking-[0.2em] text-[#C75B39] uppercase">
             Experiences
           </p>
-          <h2 className="mt-4 text-center font-display text-3xl text-[#F5E9E2] md:text-4xl lg:text-5xl">
+          <h2 className="mt-4 text-center font-display text-3xl text-[#3A2A25] md:text-4xl lg:text-5xl">
             More than gifting.
             <br />
-            <span className="text-[#B3B3B3]">Emotion, by design.</span>
+            <span className="text-[#B08C7D]">Warmth, by design.</span>
           </h2>
         </FadeIn>
 
@@ -28,9 +28,9 @@ export function ExperienceStrip() {
               <motion.article
                 key={item.id}
                 className={cn(
-                  "group relative w-[280px] shrink-0 overflow-hidden rounded-2xl border border-white/[0.06]",
-                  "bg-[#111111] p-6 transition-all duration-500 md:w-[300px]",
-                  "hover:-translate-y-1 hover:border-[#B11226]/30 hover:shadow-[0_20px_60px_-20px_#8E1020]",
+                  "kyndl-card-soft group relative w-[280px] shrink-0 overflow-hidden rounded-2xl border border-[#F4DDD0]",
+                  "bg-white p-6 transition-all duration-500 md:w-[300px]",
+                  "hover:-translate-y-1 hover:border-[#FF7A59]/40 hover:shadow-[0_24px_60px_-22px_rgba(242,89,111,0.4)]",
                 )}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -48,13 +48,13 @@ export function ExperienceStrip() {
                   )}
                 />
                 <div className="relative">
-                  <span className="text-xs font-medium tracking-wider text-[#C21830] uppercase">
+                  <span className="text-xs font-medium tracking-wider text-[#FF7A59] uppercase">
                     0{index + 1}
                   </span>
-                  <h3 className="mt-3 font-display text-xl text-[#F5E9E2]">
+                  <h3 className="mt-3 font-display text-xl text-[#3A2A25]">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#B3B3B3]">
+                  <p className="mt-2 text-sm leading-relaxed text-[#7A6258]">
                     {item.description}
                   </p>
                 </div>

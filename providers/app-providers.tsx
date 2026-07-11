@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
@@ -15,6 +16,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     <ThemeProvider>
       <QueryProvider>
         {children}
+        <PageViewTracker />
         <Toaster richColors closeButton position="top-right" />
       </QueryProvider>
     </ThemeProvider>

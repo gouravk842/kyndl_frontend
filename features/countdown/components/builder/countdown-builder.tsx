@@ -1,0 +1,88 @@
+"use client";
+
+import { Clock, Gift, X } from "lucide-react";
+import { useMemo, useState } from "react";
+
+import { useCountdownSync } from "@/hooks/use-countdown-sync";
+
+import { useBuilderStore } from "../../store/builder.store";
+import { CountdownExperience } from "../countdown-experience";
+import { BuilderPanel } from "./builder-panel";
+
+/**
+ * The Countdown customization panel: an editor rail beside a live clock that
+ * re-renders from the draft as you type. A "peek" toggle jumps the preview to
+ * the surprise so you can see what lands at zero without changing the date; a
+ * "Preview" button opens the whole thing full-screen.
+ */
+export function CountdownBuilder() {
+  const sync = useCountdownSync();
+  const doc = useBuilderStore((s) => s.doc);
+  const assets = useBuilderStore((s) => s.assets);
+  const localPreviews = useBuilderStore((s) => s.localPreviews);
+
+  const [previewing, setPreviewing] = useState(false);
+  const [peek, setPeek] = useState(false);
+
+  const mediaUrls = useMemo(
+    () => ({ ...assets, ...localPreviews }),
+    [assets, localPreviews],
+  );
+
+  return (
+    <div className="flex h-[calc(100dvh-4rem)] w-full flex-col-reverse sm:flex-row">
+      <BuilderPanel
+        sync={sync}
+        onPreview={() => setPreviewing(true)}
+        className="h-1/2 w-full shrink-0 border-t sm:h-full sm:w-[380px] sm:border-t-0 sm:border-r"
+      />
+
+      {/* Live preview — the real experience, fed the draft. */}
+      <div className="relative h-1/2 flex-1 overflow-y-auto sm:h-full">
+        <CountdownExperience
+          config={doc}
+          assets={mediaUrls}
+          forceReveal={peek}
+          playMusic={false}
+          className="min-h-full"
+        />
+
+        {/* Peek toggle: counting ⇄ surprise */}
+        <button
+          type="button"
+          onClick={() => setPeek((p) => !p)}
+          className="fixed right-4 bottom-4 z-[60] inline-flex items-center gap-1.5 rounded-full bg-black/55 px-4 py-2 text-sm font-semibold text-white shadow-lg backdrop-blur transition-colors hover:bg-black/70 sm:absolute"
+        >
+          {peek ? (
+            <>
+              <Clock className="size-4" /> Back to the clock
+            </>
+          ) : (
+            <>
+              <Gift className="size-4" /> Peek at the surprise
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Full-screen preview overlay */}
+      {previewing && (
+        <div className="fixed inset-0 z-[80] overflow-y-auto">
+          <button
+            type="button"
+            aria-label="Close preview"
+            onClick={() => setPreviewing(false)}
+            className="fixed top-4 right-4 z-[81] grid size-10 place-items-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur transition-colors hover:bg-black/75"
+          >
+            <X className="size-5" />
+          </button>
+          <CountdownExperience
+            config={doc}
+            assets={mediaUrls}
+            forceReveal={peek}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

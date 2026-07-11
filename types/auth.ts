@@ -1,10 +1,4 @@
-import type { Role } from "@/constants/roles";
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
+import type { User } from "@/types/user";
 
 export interface LoginCredentials {
   email: string;
@@ -13,19 +7,39 @@ export interface LoginCredentials {
 
 export interface RegisterPayload {
   email: string;
+  first_name: string;
+  last_name: string;
   password: string;
-  name: string;
+  password_confirm: string;
 }
 
-export interface AuthSession {
-  user: import("@/types/user").User;
-  tokens: AuthTokens;
-}
-
-export interface JwtPayload {
-  sub: string;
+/** Response from signup — no session yet; an OTP was emailed. */
+export interface SignupResult {
+  detail: string;
   email: string;
-  role: Role;
-  exp: number;
-  iat: number;
+}
+
+export interface VerifyEmailPayload {
+  email: string;
+  otp: string;
+}
+
+export interface ResendOtpPayload {
+  email: string;
+}
+
+export interface PasswordResetRequestPayload {
+  email: string;
+}
+
+export interface PasswordResetConfirmPayload {
+  email: string;
+  otp: string;
+  new_password: string;
+  new_password_confirm: string;
+}
+
+/** Shape returned by the BFF for session-establishing calls. */
+export interface AuthSession {
+  user: User;
 }

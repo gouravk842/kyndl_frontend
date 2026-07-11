@@ -1,0 +1,37 @@
+import { apiRequest } from "@/services/api/client";
+import type {
+  CheckoutParams,
+  RazorpaySuccess,
+} from "@/types/payment";
+
+// Hits the same-origin Next BFF, which forwards to Django with the httpOnly
+// access cookie as a bearer token.
+const BASE = "/payments";
+
+export interface CreatePaymentPayload {
+  product_code: string;
+  /** The caller's own object this payment is for — e.g. a creation id. */
+  reference_id?: string;
+  metadata?: Record<string, unknown>;
+  idempotency_key?: string;
+}
+
+export const paymentService = {
+  // Open a payment and get back provider checkout params (Razorpay order, key).
+  create(payload: CreatePaymentPayload) {
+    return apiRequest<CheckoutParams>({
+      method: "POST",
+      url: `${BASE}/create`,
+      data: payload,
+    });
+  },
+
+  // Verify a successful checkout and capture the payment.
+  verify(payload: RazorpaySuccess) {
+    return apiRequest<{ id: string; status: string }>({
+      method: "POST",
+      url: `${BASE}/verify`,
+      data: payload,
+    });
+  },
+};

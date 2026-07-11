@@ -9,6 +9,10 @@ const serverSchema = z.object({
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url(),
   NEXT_PUBLIC_API_URL: z.url(),
+  // WebSocket origin for live conversations (comments & chat). Optional — when
+  // unset the client derives it from NEXT_PUBLIC_API_URL (http→ws, drop the
+  // /api/v1 path). e.g. ws://localhost:8000
+  NEXT_PUBLIC_WS_URL: z.string().optional(),
   NEXT_PUBLIC_APP_NAME: z.string().min(1),
   NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS: z
     .enum(["true", "false"])
@@ -37,6 +41,7 @@ export const serverEnv = parseEnv(serverSchema, {
 export const clientEnv = parseEnv(clientSchema, {
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
   NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS:
     process.env.NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS,

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -16,34 +17,36 @@ import { useAuth } from "@/hooks/use-auth";
 
 export function DashboardHeaderActions() {
   const { profile, logout, isLoggingOut } = useAuth();
+  const displayName = profile?.full_name?.trim() || "User";
   const initials =
-    profile?.name
-      ?.split(" ")
+    displayName
+      .split(" ")
       .map((n) => n[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() ?? "U";
+      .toUpperCase() || "U";
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button variant="ghost" className="relative size-9 rounded-full p-0">
-          <Avatar>
-            <AvatarImage
-              src={profile?.avatarUrl ?? undefined}
-              alt={profile?.name}
-            />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-        </Button>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" className="relative size-9 rounded-full p-0" />
+        }
+      >
+        <Avatar>
+          <AvatarImage alt={displayName} />
+          <AvatarFallback>{initials}</AvatarFallback>
+        </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <p className="font-medium">{profile?.name ?? "User"}</p>
-          <p className="text-xs font-normal text-muted-foreground">
-            {profile?.email}
-          </p>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            <p className="font-medium">{displayName}</p>
+            <p className="text-xs font-normal text-muted-foreground">
+              {profile?.email}
+            </p>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => logout()}

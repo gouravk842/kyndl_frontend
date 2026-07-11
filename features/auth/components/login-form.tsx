@@ -2,28 +2,23 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ROUTES } from "@/constants/routes";
+import { AuthField } from "@/features/auth/components/auth-field";
+import { AuthSheet } from "@/features/auth/components/auth-sheet";
+import { MetalButton } from "@/features/auth/components/metal-button";
 import {
   type LoginFormValues,
   loginSchema,
-} from "@/features/auth/schemas/login.schema";
+} from "@/features/auth/schemas/auth.schema";
 import { useAuth } from "@/hooks/use-auth";
+import { withCallbackUrl } from "@/lib/navigation";
 
 export function LoginForm() {
   const { login, isLoggingIn } = useAuth();
+  const callbackUrl = useSearchParams().get("callbackUrl");
   const {
     register,
     handleSubmit,
@@ -34,55 +29,51 @@ export function LoginForm() {
   });
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
-        <CardDescription>Sign in to your Kyndl account</CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit((data) => login(data))}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoggingIn}>
-            {isLoggingIn ? "Signing in..." : "Sign in"}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            No account?{" "}
+    <AuthSheet
+      title="Welcome back"
+      description="Sign in to keep sending a little warmth."
+    >
+      <form
+        onSubmit={handleSubmit((data) => login(data))}
+        className="space-y-6"
+      >
+        <AuthField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+        <AuthField
+          id="password"
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          error={errors.password?.message}
+          action={
             <Link
-              href={ROUTES.register}
-              className="text-primary underline-offset-4 hover:underline"
+              href={ROUTES.forgotPassword}
+              className="text-[12.5px] text-[#a06848] underline-offset-4 hover:underline"
             >
-              Create one
+              Forgot password?
             </Link>
-          </p>
-        </CardFooter>
+          }
+          {...register("password")}
+        />
+        <MetalButton type="submit" disabled={isLoggingIn} className="mt-2">
+          {isLoggingIn ? "Signing in…" : "Sign in"}
+        </MetalButton>
+        <p className="text-center font-cursive text-[19px] text-[#7A6258]">
+          New account?{" "}
+          <Link
+            href={withCallbackUrl(ROUTES.register, callbackUrl)}
+            className="text-[#C75B39] underline underline-offset-2"
+          >
+            Create one
+          </Link>
+        </p>
       </form>
-    </Card>
+    </AuthSheet>
   );
 }

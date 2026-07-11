@@ -1,1996 +1,2385 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ludo Party</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  />
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-  <style>
-    :root {
-      --bg: #0b1020;
-      --card: #121933;
-      --card-2: #1a2345;
-      --text: #f4f7ff;
-      --muted: #9dadcf;
-      --line: #2a3764;
-      --accent: #7f97ff;
-      --success: #3ad59f;
-      --danger: #ff6b6b;
-      --red: #ff5d6c;
-      --blue: #4a8cff;
-      --green: #34c77b;
-      --yellow: #f3bf4f;
-      --safe: #ffd966;
-      --shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ludo Party</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --card: #121933;
+        --card-2: #1a2345;
+        --text: #f4f7ff;
+        --muted: #9dadcf;
+        --line: #2a3764;
+        --accent: #7f97ff;
+        --success: #3ad59f;
+        --danger: #ff6b6b;
+        --red: #ff5d6c;
+        --blue: #4a8cff;
+        --green: #34c77b;
+        --yellow: #f3bf4f;
+        --safe: #ffd966;
+        --shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+      }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-      font-family: "Poppins", system-ui, sans-serif;
-      background: radial-gradient(circle at 20% 0%, #1b2450, var(--bg) 38%);
-      color: var(--text);
-    }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family: "Poppins", system-ui, sans-serif;
+        background: radial-gradient(circle at 20% 0%, #1b2450, var(--bg) 38%);
+        color: var(--text);
+      }
 
-    .app {
-      min-height: 100vh;
-      position: relative;
-      overflow: hidden;
-    }
+      .app {
+        min-height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
 
-    .screen {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 200ms ease;
-      display: flex;
-      flex-direction: column;
-    }
+      .screen {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 200ms ease;
+        display: flex;
+        flex-direction: column;
+      }
 
-    .screen.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+      .screen.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
 
-    .panel {
-      width: min(760px, 96vw);
-      margin: auto;
-      background: linear-gradient(165deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: var(--shadow);
-      max-height: 95vh;
-      overflow: auto;
-    }
+      .panel {
+        width: min(760px, 96vw);
+        margin: auto;
+        background: linear-gradient(
+          165deg,
+          rgba(255, 255, 255, 0.04),
+          rgba(255, 255, 255, 0.01)
+        );
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 18px;
+        box-shadow: var(--shadow);
+        max-height: 95vh;
+        overflow: auto;
+      }
 
-    h1, h2, h3, p {
-      margin: 0;
-    }
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
 
-    .title {
-      font-weight: 800;
-      font-size: clamp(1.5rem, 4vw, 2.2rem);
-      margin-bottom: 8px;
-    }
+      .title {
+        font-weight: 800;
+        font-size: clamp(1.5rem, 4vw, 2.2rem);
+        margin-bottom: 8px;
+      }
 
-    .subtle {
-      color: var(--muted);
-      font-size: 0.95rem;
-      margin-bottom: 12px;
-    }
+      .subtle {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin-bottom: 12px;
+      }
 
-    .section {
-      background: rgba(0, 0, 0, 0.18);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
+      .section {
+        background: rgba(0, 0, 0, 0.18);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
 
-    .section h3 {
-      font-size: 1rem;
-      margin-bottom: 10px;
-    }
+      .section h3 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+      }
 
-    .segmented {
-      display: grid;
-      gap: 8px;
-      background: #0f1631;
-      padding: 6px;
-      border-radius: 14px;
-      border: 1px solid #25325f;
-    }
+      .segmented {
+        display: grid;
+        gap: 8px;
+        background: #0f1631;
+        padding: 6px;
+        border-radius: 14px;
+        border: 1px solid #25325f;
+      }
 
-    .segmented.three {
-      grid-template-columns: repeat(3, 1fr);
-    }
+      .segmented.three {
+        grid-template-columns: repeat(3, 1fr);
+      }
 
-    .segmented.two {
-      grid-template-columns: repeat(2, 1fr);
-    }
+      .segmented.two {
+        grid-template-columns: repeat(2, 1fr);
+      }
 
-    .seg-btn {
-      min-height: 48px;
-      border: none;
-      border-radius: 10px;
-      color: var(--text);
-      background: transparent;
-      cursor: pointer;
-      font-weight: 600;
-      padding: 0 12px;
-    }
+      .seg-btn {
+        min-height: 48px;
+        border: none;
+        border-radius: 10px;
+        color: var(--text);
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        padding: 0 12px;
+      }
 
-    .seg-btn.active {
-      background: linear-gradient(135deg, #3a4d9e, #4e63c5);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-    }
+      .seg-btn.active {
+        background: linear-gradient(135deg, #3a4d9e, #4e63c5);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+      }
 
-    .name-row {
-      display: grid;
-      grid-template-columns: 18px 1fr;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
+      .name-row {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
 
-    .dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-    }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+      }
 
-    input,
-    button {
-      font: inherit;
-    }
+      input,
+      button {
+        font: inherit;
+      }
 
-    .name-row input,
-    .activity-input input {
-      width: 100%;
-      min-height: 48px;
-      border-radius: 10px;
-      border: 1px solid #344784;
-      background: #121b3a;
-      color: var(--text);
-      padding: 0 12px;
-    }
+      .name-row input,
+      .activity-input input {
+        width: 100%;
+        min-height: 48px;
+        border-radius: 10px;
+        border: 1px solid #344784;
+        background: #121b3a;
+        color: var(--text);
+        padding: 0 12px;
+      }
 
-    .mode-desc {
-      margin-top: 10px;
-      color: #c8d3f9;
-      font-size: 0.92rem;
-    }
+      .mode-desc {
+        margin-top: 10px;
+        color: #c8d3f9;
+        font-size: 0.92rem;
+      }
 
-    .chips {
-      max-height: 180px;
-      overflow-y: auto;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding-right: 2px;
-      margin-bottom: 10px;
-    }
+      .chips {
+        max-height: 180px;
+        overflow-y: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-right: 2px;
+        margin-bottom: 10px;
+      }
 
-    .chip {
-      border-radius: 999px;
-      background: #253567;
-      padding: 7px 12px;
-      font-size: 0.86rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
+      .chip {
+        border-radius: 999px;
+        background: #253567;
+        padding: 7px 12px;
+        font-size: 0.86rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-    .chip button {
-      min-width: 24px;
-      min-height: 24px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.15);
-      color: white;
-      cursor: pointer;
-    }
+      .chip button {
+        min-width: 24px;
+        min-height: 24px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        cursor: pointer;
+      }
 
-    .activity-input {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 8px;
-      align-items: center;
-    }
+      .activity-input {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 8px;
+        align-items: center;
+      }
 
-    .btn {
-      border: none;
-      min-height: 48px;
-      border-radius: 12px;
-      cursor: pointer;
-      color: var(--text);
-      background: linear-gradient(135deg, #4d62c2, #7288eb);
-      font-weight: 700;
-      padding: 0 14px;
-    }
+      .btn {
+        border: none;
+        min-height: 48px;
+        border-radius: 12px;
+        cursor: pointer;
+        color: var(--text);
+        background: linear-gradient(135deg, #4d62c2, #7288eb);
+        font-weight: 700;
+        padding: 0 14px;
+      }
 
-    .btn.secondary {
-      background: #233462;
-      border: 1px solid #3a4f95;
-      font-weight: 600;
-    }
+      .btn.secondary {
+        background: #233462;
+        border: 1px solid #3a4f95;
+        font-weight: 600;
+      }
 
-    .btn.ghost {
-      background: #202b4f;
-      border: 1px dashed #3f528e;
-    }
+      .btn.ghost {
+        background: #202b4f;
+        border: 1px dashed #3f528e;
+      }
 
-    .icon-btn {
-      min-width: 48px;
-      min-height: 48px;
-      border-radius: 12px;
-      border: 1px solid #40548e;
-      background: #1f2d57;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 1.1rem;
-    }
+      .icon-btn {
+        min-width: 48px;
+        min-height: 48px;
+        border-radius: 12px;
+        border: 1px solid #40548e;
+        background: #1f2d57;
+        color: var(--text);
+        cursor: pointer;
+        font-size: 1.1rem;
+      }
 
-    .toggle-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 10px;
-      align-items: center;
-      padding: 10px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      margin-bottom: 8px;
-      background: #172246;
-    }
+      .toggle-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        margin-bottom: 8px;
+        background: #172246;
+      }
 
-    .toggle-row .icon {
-      font-size: 1.1rem;
-      width: 24px;
-      text-align: center;
-    }
+      .toggle-row .icon {
+        font-size: 1.1rem;
+        width: 24px;
+        text-align: center;
+      }
 
-    .toggle-row h4 {
-      font-size: 0.95rem;
-      margin: 0;
-    }
+      .toggle-row h4 {
+        font-size: 0.95rem;
+        margin: 0;
+      }
 
-    .toggle-row small {
-      color: var(--muted);
-      display: block;
-      margin-top: 2px;
-      line-height: 1.25;
-    }
+      .toggle-row small {
+        color: var(--muted);
+        display: block;
+        margin-top: 2px;
+        line-height: 1.25;
+      }
 
-    .switch {
-      width: 54px;
-      height: 30px;
-      background: #34457c;
-      border-radius: 999px;
-      position: relative;
-      border: 1px solid #4b61a7;
-      cursor: pointer;
-    }
+      .switch {
+        width: 54px;
+        height: 30px;
+        background: #34457c;
+        border-radius: 999px;
+        position: relative;
+        border: 1px solid #4b61a7;
+        cursor: pointer;
+      }
 
-    .switch::after {
-      content: "";
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #fff;
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      transition: 180ms ease;
-    }
+      .switch::after {
+        content: "";
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #fff;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: 180ms ease;
+      }
 
-    .switch.on {
-      background: #3fca90;
-      border-color: #58dfaa;
-    }
+      .switch.on {
+        background: #3fca90;
+        border-color: #58dfaa;
+      }
 
-    .switch.on::after {
-      left: 26px;
-    }
+      .switch.on::after {
+        left: 26px;
+      }
 
-    .full-cta {
-      width: 100%;
-      min-height: 56px;
-      font-size: 1rem;
-      margin-top: 8px;
-    }
+      .full-cta {
+        width: 100%;
+        min-height: 56px;
+        font-size: 1rem;
+        margin-top: 8px;
+      }
 
-    .resume-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 60;
-      display: none;
-      place-items: center;
-      background: rgba(5, 8, 20, 0.86);
-      padding: 16px;
-    }
+      .resume-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: none;
+        place-items: center;
+        background: rgba(5, 8, 20, 0.86);
+        padding: 16px;
+      }
 
-    .resume-overlay.show {
-      display: grid;
-    }
+      .resume-overlay.show {
+        display: grid;
+      }
 
-    .resume-card {
-      width: min(520px, 95vw);
-      border-radius: 18px;
-      background: #111936;
-      border: 1px solid #2a3b74;
-      padding: 20px;
-      text-align: center;
-    }
+      .resume-card {
+        width: min(520px, 95vw);
+        border-radius: 18px;
+        background: #111936;
+        border: 1px solid #2a3b74;
+        padding: 20px;
+        text-align: center;
+      }
 
-    .resume-actions {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+      .resume-actions {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
 
-    .game-shell {
-      width: min(1200px, 100vw);
-      margin: 0 auto;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      height: 100dvh;
-      gap: 8px;
-      overflow: hidden;
-    }
+      .game-shell {
+        width: min(1200px, 100vw);
+        margin: 0 auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        gap: 8px;
+        overflow: hidden;
+      }
 
-    .game-header {
-      border: 1px solid var(--line);
-      background: rgba(0, 0, 0, 0.22);
-      border-radius: 16px;
-      padding: 10px;
-      position: relative;
-    }
+      .game-header {
+        border: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.22);
+        border-radius: 16px;
+        padding: 10px;
+        position: relative;
+      }
 
-    .save-flash {
-      position: absolute;
-      top: 8px;
-      right: 106px;
-      font-size: 0.82rem;
-      color: #8af0be;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 180ms ease;
-    }
+      .save-flash {
+        position: absolute;
+        top: 8px;
+        right: 106px;
+        font-size: 0.82rem;
+        color: #8af0be;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+      }
 
-    .save-flash.show {
-      opacity: 1;
-      animation: fadeOut 1s ease forwards;
-    }
+      .save-flash.show {
+        opacity: 1;
+        animation: fadeOut 1s ease forwards;
+      }
 
-    @keyframes fadeOut {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
-    }
+      @keyframes fadeOut {
+        0% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
 
-    .settings-btn {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      border: 1px solid #3e538f;
-      background: #1c2a54;
-      color: white;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 1rem;
-    }
+      .settings-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        border: 1px solid #3e538f;
+        background: #1c2a54;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1rem;
+      }
 
-    .help-btn {
-      position: absolute;
-      top: 6px;
-      right: 52px;
-      border: 1px solid #3e538f;
-      background: #1c2a54;
-      color: white;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 1rem;
-    }
+      .help-btn {
+        position: absolute;
+        top: 6px;
+        right: 52px;
+        border: 1px solid #3e538f;
+        background: #1c2a54;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1rem;
+      }
 
-    .pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-right: 104px;
-    }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-right: 104px;
+      }
 
-    .pill {
-      border: 1px solid #39518f;
-      border-radius: 999px;
-      padding: 7px 12px;
-      font-size: 0.84rem;
-      background: #1b2a55;
-      opacity: 0.55;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: 180ms ease;
-    }
+      .pill {
+        border: 1px solid #39518f;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 0.84rem;
+        background: #1b2a55;
+        opacity: 0.55;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: 180ms ease;
+      }
 
-    .pill.active {
-      opacity: 1;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
-      border-color: #6c89d6;
-    }
+      .pill.active {
+        opacity: 1;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+        border-color: #6c89d6;
+      }
 
-    .turn-note {
-      margin-top: 8px;
-      font-weight: 600;
-      color: #dce5ff;
-      animation: pulse 1.6s ease-in-out infinite;
-    }
+      .turn-note {
+        margin-top: 8px;
+        font-weight: 600;
+        color: #dce5ff;
+        animation: pulse 1.6s ease-in-out infinite;
+      }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 0.75; }
-      50% { opacity: 1; }
-    }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.75;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
 
-    .board-wrap {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 0;
-      overflow: hidden;
-    }
+      .board-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0;
+        overflow: hidden;
+      }
 
-    .board {
-      /*
+      .board {
+        /*
         Reserve ~260 px for the game-header + dice zone + gaps/padding.
         This keeps the board square and ensures dice is always visible.
       */
-      width: min(95vw, calc(100dvh - 260px), 760px);
-      aspect-ratio: 1 / 1;
-      position: relative;
-      background: #0f1734;
-      border: 2px solid #3a4f91;
-      border-radius: 12px;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
+        width: min(95vw, calc(100dvh - 260px), 760px);
+        aspect-ratio: 1 / 1;
+        position: relative;
+        background: #0f1734;
+        border: 2px solid #3a4f91;
+        border-radius: 12px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
 
-    .grid {
-      width: 100%;
-      height: 100%;
-      display: grid;
-      grid-template-columns: repeat(15, 1fr);
-      grid-template-rows: repeat(15, 1fr);
-    }
+      .grid {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: repeat(15, 1fr);
+        grid-template-rows: repeat(15, 1fr);
+      }
 
-    .cell {
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      display: grid;
-      place-items: center;
-      font-size: clamp(10px, 1.4vw, 15px);
-      color: #ffe17d;
-      position: relative;
-    }
+      .cell {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        font-size: clamp(10px, 1.4vw, 15px);
+        color: #ffe17d;
+        position: relative;
+      }
 
-    .path {
-      background: #f5f8ff;
-      border-color: #d8def0;
-    }
+      .path {
+        background: #f5f8ff;
+        border-color: #d8def0;
+      }
 
-    .inactive-base {
-      opacity: 0.3;
-    }
+      .inactive-base {
+        opacity: 0.3;
+      }
 
-    .center {
-      background:
-        conic-gradient(from 45deg,
+      .center {
+        background: conic-gradient(
+          from 45deg,
           rgba(255, 93, 108, 0.92) 0 25%,
           rgba(243, 191, 79, 0.92) 25% 50%,
           rgba(52, 199, 123, 0.92) 50% 75%,
-          rgba(74, 140, 255, 0.92) 75% 100%);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      z-index: 2;
-    }
-
-    .home-blue { background: rgba(74, 140, 255, 0.7); }
-    .home-red { background: rgba(255, 93, 108, 0.7); }
-    .home-green { background: rgba(52, 199, 123, 0.7); }
-    .home-yellow { background: rgba(243, 191, 79, 0.7); }
-
-    /* Home lane colored strips (leading to center) */
-    .lane-red    { background: rgba(255, 93, 108, 0.28); border-color: rgba(255, 93, 108, 0.45); }
-    .lane-blue   { background: rgba(74, 140, 255, 0.28); border-color: rgba(74, 140, 255, 0.45); }
-    .lane-green  { background: rgba(52, 199, 123, 0.28); border-color: rgba(52, 199, 123, 0.45); }
-    .lane-yellow { background: rgba(243, 191, 79, 0.28); border-color: rgba(243, 191, 79, 0.45); }
-
-    .token-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    .token {
-      position: absolute;
-      width: min(5.8vw, 34px);
-      height: min(5.8vw, 34px);
-      min-width: 22px;
-      min-height: 22px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.9);
-      display: grid;
-      place-items: center;
-      color: #fff;
-      font-weight: 700;
-      font-size: clamp(10px, 1.4vw, 14px);
-      transform: translate(-50%, -50%);
-      transition: left 150ms ease-in-out, top 150ms ease-in-out;
-      pointer-events: auto;
-      z-index: 8;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    .token.red { background: var(--red); }
-    .token.blue { background: var(--blue); }
-    .token.green { background: var(--green); }
-    .token.yellow { background: var(--yellow); }
-
-    .token.selectable {
-      cursor: pointer;
-      box-shadow:
-        0 0 0 0 rgba(255, 255, 255, 0.85),
-        0 0 0 8px rgba(255, 255, 255, 0.05);
-      animation: glow 1s ease-in-out infinite;
-    }
-
-    @keyframes glow {
-      0% {
-        box-shadow:
-          0 0 0 0 rgba(255, 255, 255, 0.8),
-          0 0 0 8px rgba(255, 255, 255, 0.06);
+          rgba(74, 140, 255, 0.92) 75% 100%
+        );
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        z-index: 2;
       }
-      70% {
-        box-shadow:
-          0 0 0 8px rgba(255, 255, 255, 0),
-          0 0 0 14px rgba(255, 255, 255, 0.02);
+
+      .home-blue {
+        background: rgba(74, 140, 255, 0.7);
       }
-      100% {
-        box-shadow:
-          0 0 0 0 rgba(255, 255, 255, 0),
-          0 0 0 8px rgba(255, 255, 255, 0.02);
+      .home-red {
+        background: rgba(255, 93, 108, 0.7);
       }
-    }
+      .home-green {
+        background: rgba(52, 199, 123, 0.7);
+      }
+      .home-yellow {
+        background: rgba(243, 191, 79, 0.7);
+      }
 
-    .dice-zone {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      padding: 6px 0 8px;
-      flex-shrink: 0;
-    }
+      /* Home lane colored strips (leading to center) */
+      .lane-red {
+        background: rgba(255, 93, 108, 0.28);
+        border-color: rgba(255, 93, 108, 0.45);
+      }
+      .lane-blue {
+        background: rgba(74, 140, 255, 0.28);
+        border-color: rgba(74, 140, 255, 0.45);
+      }
+      .lane-green {
+        background: rgba(52, 199, 123, 0.28);
+        border-color: rgba(52, 199, 123, 0.45);
+      }
+      .lane-yellow {
+        background: rgba(243, 191, 79, 0.28);
+        border-color: rgba(243, 191, 79, 0.45);
+      }
 
-    .dice-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+      .token-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
 
-    /* ── 3-D Dice ─────────────────────────────────────── */
-    .dice-btn {
-      background: none;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      width: 88px;
-      height: 88px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      flex-shrink: 0;
-    }
+      .token {
+        position: absolute;
+        width: min(5.8vw, 34px);
+        height: min(5.8vw, 34px);
+        min-width: 22px;
+        min-height: 22px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: clamp(10px, 1.4vw, 14px);
+        transform: translate(-50%, -50%);
+        transition:
+          left 150ms ease-in-out,
+          top 150ms ease-in-out;
+        pointer-events: auto;
+        z-index: 8;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
 
-    .dice-btn:hover:not([disabled]) .dice-scene {
-      filter: drop-shadow(0 0 10px rgba(127, 151, 255, 0.7));
-    }
+      .token.red {
+        background: var(--red);
+      }
+      .token.blue {
+        background: var(--blue);
+      }
+      .token.green {
+        background: var(--green);
+      }
+      .token.yellow {
+        background: var(--yellow);
+      }
 
-    .dice-btn:active:not([disabled]) .dice-scene {
-      transform: scale(0.92);
-    }
+      .token.selectable {
+        cursor: pointer;
+        box-shadow:
+          0 0 0 0 rgba(255, 255, 255, 0.85),
+          0 0 0 8px rgba(255, 255, 255, 0.05);
+        animation: glow 1s ease-in-out infinite;
+      }
 
-    .dice-btn[disabled] {
-      cursor: not-allowed;
-      opacity: 0.42;
-      filter: grayscale(0.75);
-    }
+      @keyframes glow {
+        0% {
+          box-shadow:
+            0 0 0 0 rgba(255, 255, 255, 0.8),
+            0 0 0 8px rgba(255, 255, 255, 0.06);
+        }
+        70% {
+          box-shadow:
+            0 0 0 8px rgba(255, 255, 255, 0),
+            0 0 0 14px rgba(255, 255, 255, 0.02);
+        }
+        100% {
+          box-shadow:
+            0 0 0 0 rgba(255, 255, 255, 0),
+            0 0 0 8px rgba(255, 255, 255, 0.02);
+        }
+      }
 
-    .dice-scene {
-      width: 68px;
-      height: 68px;
-      perspective: 260px;
-      transition: transform 120ms ease, filter 120ms ease;
-    }
+      .dice-zone {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 6px 0 8px;
+        flex-shrink: 0;
+      }
 
-    .dice-cube {
-      width: 68px;
-      height: 68px;
-      position: relative;
-      transform-style: preserve-3d;
-      transform: rotateX(-20deg) rotateY(25deg);
-      transition: transform 420ms cubic-bezier(0.34, 1.35, 0.64, 1);
-      will-change: transform;
-    }
+      .dice-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    /* Tumbling roll animation */
-    @keyframes diceRoll {
-      0%   { transform: rotateX(0deg)    rotateY(0deg); }
-      18%  { transform: rotateX(-200deg) rotateY(130deg)  rotateZ(15deg); }
-      36%  { transform: rotateX(-350deg) rotateY(240deg)  rotateZ(-10deg); }
-      55%  { transform: rotateX(-540deg) rotateY(380deg)  rotateZ(20deg); }
-      73%  { transform: rotateX(-680deg) rotateY(490deg)  rotateZ(-5deg); }
-      90%  { transform: rotateX(-710deg) rotateY(700deg); }
-      100% { transform: rotateX(-720deg) rotateY(720deg); }
-    }
+      /* ── 3-D Dice ─────────────────────────────────────── */
+      .dice-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        width: 88px;
+        height: 88px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        flex-shrink: 0;
+      }
 
-    .dice-cube.rolling {
-      animation: diceRoll 0.55s cubic-bezier(0.22, 0.78, 0.35, 1) forwards;
-      transition: none !important;
-    }
+      .dice-btn:hover:not([disabled]) .dice-scene {
+        filter: drop-shadow(0 0 10px rgba(127, 151, 255, 0.7));
+      }
 
-    /* Die faces */
-    .dface {
-      position: absolute;
-      width: 68px;
-      height: 68px;
-      background: linear-gradient(148deg, #f6f8ff 0%, #dde3f8 100%);
-      border-radius: 13px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      padding: 9px;
-      box-shadow:
-        inset 0 2px 5px rgba(255,255,255,0.9),
-        inset 0 -2px 5px rgba(30,50,120,0.12),
-        0 4px 14px rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.65);
-    }
+      .dice-btn:active:not([disabled]) .dice-scene {
+        transform: scale(0.92);
+      }
 
-    /* Different shading per face for realism */
-    .dface-front  { transform: translateZ(34px); background: linear-gradient(148deg,#f8faff,#dfe6f8); }
-    .dface-back   { transform: rotateY(180deg) translateZ(34px); background: linear-gradient(148deg,#e8eeff,#ccd6f0); }
-    .dface-right  { transform: rotateY(90deg)  translateZ(34px); background: linear-gradient(148deg,#edf1ff,#d4dcf5); }
-    .dface-left   { transform: rotateY(-90deg) translateZ(34px); background: linear-gradient(148deg,#edf1ff,#d4dcf5); }
-    .dface-top    { transform: rotateX(-90deg) translateZ(34px); background: linear-gradient(148deg,#f2f5ff,#dbe3f6); }
-    .dface-bottom { transform: rotateX(90deg)  translateZ(34px); background: linear-gradient(148deg,#d8dff5,#c8d0ec); }
+      .dice-btn[disabled] {
+        cursor: not-allowed;
+        opacity: 0.42;
+        filter: grayscale(0.75);
+      }
 
-    /* Pips */
-    .dpip {
-      border-radius: 50%;
-      align-self: center;
-      justify-self: center;
-      width: 11px;
-      height: 11px;
-    }
+      .dice-scene {
+        width: 68px;
+        height: 68px;
+        perspective: 260px;
+        transition:
+          transform 120ms ease,
+          filter 120ms ease;
+      }
 
-    .dpip.on {
-      background: radial-gradient(circle at 35% 30%, #384090, #1a1e3d);
-      box-shadow: 1px 2px 4px rgba(0,0,0,0.45), inset -1px -1px 2px rgba(255,255,255,0.08);
-    }
+      .dice-cube {
+        width: 68px;
+        height: 68px;
+        position: relative;
+        transform-style: preserve-3d;
+        transform: rotateX(-20deg) rotateY(25deg);
+        transition: transform 420ms cubic-bezier(0.34, 1.35, 0.64, 1);
+        will-change: transform;
+      }
 
-    .dice-result {
-      min-width: 56px;
-      font-size: 2rem;
-      font-weight: 800;
-      line-height: 1;
-    }
+      /* Tumbling roll animation */
+      @keyframes diceRoll {
+        0% {
+          transform: rotateX(0deg) rotateY(0deg);
+        }
+        18% {
+          transform: rotateX(-200deg) rotateY(130deg) rotateZ(15deg);
+        }
+        36% {
+          transform: rotateX(-350deg) rotateY(240deg) rotateZ(-10deg);
+        }
+        55% {
+          transform: rotateX(-540deg) rotateY(380deg) rotateZ(20deg);
+        }
+        73% {
+          transform: rotateX(-680deg) rotateY(490deg) rotateZ(-5deg);
+        }
+        90% {
+          transform: rotateX(-710deg) rotateY(700deg);
+        }
+        100% {
+          transform: rotateX(-720deg) rotateY(720deg);
+        }
+      }
 
-    .reroll-badge {
-      font-size: 0.88rem;
-      background: #1f915f;
-      border: 1px solid #37b57f;
-      border-radius: 999px;
-      padding: 6px 12px;
-      color: #ecfff6;
-      opacity: 0;
-      transform: translateX(8px);
-      transition: 160ms ease;
-      white-space: nowrap;
-    }
+      .dice-cube.rolling {
+        animation: diceRoll 0.55s cubic-bezier(0.22, 0.78, 0.35, 1) forwards;
+        transition: none !important;
+      }
 
-    .reroll-badge.show {
-      opacity: 1;
-      transform: translateX(0);
-    }
+      /* Die faces */
+      .dface {
+        position: absolute;
+        width: 68px;
+        height: 68px;
+        background: linear-gradient(148deg, #f6f8ff 0%, #dde3f8 100%);
+        border-radius: 13px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        padding: 9px;
+        box-shadow:
+          inset 0 2px 5px rgba(255, 255, 255, 0.9),
+          inset 0 -2px 5px rgba(30, 50, 120, 0.12),
+          0 4px 14px rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+      }
 
-    /* Tap hint label below dice */
-    .dice-label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      text-align: center;
-      margin-top: 2px;
-    }
+      /* Different shading per face for realism */
+      .dface-front {
+        transform: translateZ(34px);
+        background: linear-gradient(148deg, #f8faff, #dfe6f8);
+      }
+      .dface-back {
+        transform: rotateY(180deg) translateZ(34px);
+        background: linear-gradient(148deg, #e8eeff, #ccd6f0);
+      }
+      .dface-right {
+        transform: rotateY(90deg) translateZ(34px);
+        background: linear-gradient(148deg, #edf1ff, #d4dcf5);
+      }
+      .dface-left {
+        transform: rotateY(-90deg) translateZ(34px);
+        background: linear-gradient(148deg, #edf1ff, #d4dcf5);
+      }
+      .dface-top {
+        transform: rotateX(-90deg) translateZ(34px);
+        background: linear-gradient(148deg, #f2f5ff, #dbe3f6);
+      }
+      .dface-bottom {
+        transform: rotateX(90deg) translateZ(34px);
+        background: linear-gradient(148deg, #d8dff5, #c8d0ec);
+      }
 
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: none;
-      place-items: center;
-      z-index: 40;
-      padding: 14px;
-    }
+      /* Pips */
+      .dpip {
+        border-radius: 50%;
+        align-self: center;
+        justify-self: center;
+        width: 11px;
+        height: 11px;
+      }
 
-    .modal-overlay.show {
-      display: grid;
-    }
+      .dpip.on {
+        background: radial-gradient(circle at 35% 30%, #384090, #1a1e3d);
+        box-shadow:
+          1px 2px 4px rgba(0, 0, 0, 0.45),
+          inset -1px -1px 2px rgba(255, 255, 255, 0.08);
+      }
 
-    .activity-modal {
-      width: min(640px, 95vw);
-      background: #131c3b;
-      border: 1px solid #324782;
-      border-radius: 18px;
-      padding: 18px;
-      text-align: center;
-      transform: scale(0.85);
-      opacity: 0;
-      animation: modalIn 250ms ease-out forwards;
-    }
+      .dice-result {
+        min-width: 56px;
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+      }
 
-    @keyframes modalIn {
-      to {
-        transform: scale(1);
+      .reroll-badge {
+        font-size: 0.88rem;
+        background: #1f915f;
+        border: 1px solid #37b57f;
+        border-radius: 999px;
+        padding: 6px 12px;
+        color: #ecfff6;
+        opacity: 0;
+        transform: translateX(8px);
+        transition: 160ms ease;
+        white-space: nowrap;
+      }
+
+      .reroll-badge.show {
         opacity: 1;
+        transform: translateX(0);
       }
-    }
 
-    .trigger-badge {
-      display: inline-block;
-      padding: 7px 12px;
-      border-radius: 999px;
-      margin-bottom: 10px;
-      font-weight: 700;
-      font-size: 0.86rem;
-      background: #2a3c76;
-      border: 1px solid #4f66ad;
-    }
+      /* Tap hint label below dice */
+      .dice-label {
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 2px;
+      }
 
-    .challenge-player {
-      font-weight: 700;
-      font-size: 1.1rem;
-      margin-bottom: 10px;
-    }
-
-    .challenge-text {
-      font-weight: 800;
-      font-size: clamp(1.2rem, 4vw, 1.8rem);
-      line-height: 1.3;
-      margin-bottom: 14px;
-      padding: 10px;
-    }
-
-    .modal-actions {
-      display: grid;
-      gap: 10px;
-    }
-
-    .toast-wrap {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 16px;
-      z-index: 70;
-      display: grid;
-      place-items: center;
-      pointer-events: none;
-    }
-
-    .toast {
-      max-width: min(560px, 95vw);
-      background: #1c2b55;
-      border: 1px solid #4760a8;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-size: 0.9rem;
-      color: #f1f5ff;
-      box-shadow: var(--shadow);
-      transform: translateY(18px);
-      opacity: 0;
-      animation: toastInOut 2s ease forwards;
-    }
-
-    @keyframes toastInOut {
-      0% { transform: translateY(18px); opacity: 0; }
-      10% { transform: translateY(0); opacity: 1; }
-      85% { transform: translateY(0); opacity: 1; }
-      100% { transform: translateY(14px); opacity: 0; }
-    }
-
-    .results {
-      width: min(680px, 95vw);
-      margin: auto;
-      background: #111a37;
-      border: 1px solid #314886;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: var(--shadow);
-    }
-
-    .ranking {
-      margin-top: 12px;
-      margin-bottom: 12px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .rank-item {
-      background: #1a2954;
-      border: 1px solid #355193;
-      border-radius: 12px;
-      padding: 10px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: 600;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin: 14px 0;
-    }
-
-    .stat {
-      background: #1a2750;
-      border: 1px solid #34508f;
-      border-radius: 12px;
-      padding: 10px;
-      text-align: center;
-      font-size: 0.88rem;
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 1.2rem;
-      margin-bottom: 3px;
-    }
-
-    .result-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .howto-list {
-      margin: 10px 0 0;
-      padding-left: 18px;
-      text-align: left;
-      color: #dfe8ff;
-      line-height: 1.45;
-      font-size: 0.95rem;
-    }
-
-    .howto-list li {
-      margin-bottom: 8px;
-    }
-
-    @media (max-width: 760px) {
-      .panel {
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        place-items: center;
+        z-index: 40;
         padding: 14px;
-        border-radius: 16px;
       }
+
+      .modal-overlay.show {
+        display: grid;
+      }
+
+      .activity-modal {
+        width: min(640px, 95vw);
+        background: #131c3b;
+        border: 1px solid #324782;
+        border-radius: 18px;
+        padding: 18px;
+        text-align: center;
+        transform: scale(0.85);
+        opacity: 0;
+        animation: modalIn 250ms ease-out forwards;
+      }
+
+      @keyframes modalIn {
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .trigger-badge {
+        display: inline-block;
+        padding: 7px 12px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+        font-weight: 700;
+        font-size: 0.86rem;
+        background: #2a3c76;
+        border: 1px solid #4f66ad;
+      }
+
+      .challenge-player {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+      }
+
+      .challenge-text {
+        font-weight: 800;
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
+        line-height: 1.3;
+        margin-bottom: 14px;
+        padding: 10px;
+      }
+
+      .modal-actions {
+        display: grid;
+        gap: 10px;
+      }
+
+      .toast-wrap {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 16px;
+        z-index: 70;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+      }
+
+      .toast {
+        max-width: min(560px, 95vw);
+        background: #1c2b55;
+        border: 1px solid #4760a8;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        color: #f1f5ff;
+        box-shadow: var(--shadow);
+        transform: translateY(18px);
+        opacity: 0;
+        animation: toastInOut 2s ease forwards;
+      }
+
+      @keyframes toastInOut {
+        0% {
+          transform: translateY(18px);
+          opacity: 0;
+        }
+        10% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        85% {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(14px);
+          opacity: 0;
+        }
+      }
+
+      .results {
+        width: min(680px, 95vw);
+        margin: auto;
+        background: #111a37;
+        border: 1px solid #314886;
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .ranking {
+        margin-top: 12px;
+        margin-bottom: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .rank-item {
+        background: #1a2954;
+        border: 1px solid #355193;
+        border-radius: 12px;
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+      }
+
       .stats {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 14px 0;
       }
+
+      .stat {
+        background: #1a2750;
+        border: 1px solid #34508f;
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+        font-size: 0.88rem;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.2rem;
+        margin-bottom: 3px;
+      }
+
       .result-actions {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
-    }
 
-    /* On very short screens (landscape phones), shrink the board further */
-    @media (max-height: 480px) {
-      .board {
-        width: min(95vw, calc(100dvh - 200px), 760px);
+      .hidden {
+        display: none !important;
       }
-      .dice-btn   { width: 64px; height: 64px; }
-      .dice-scene { width: 50px; height: 50px; }
-      .dice-cube  { width: 50px; height: 50px; }
-      .dface      { width: 50px; height: 50px; padding: 6px; }
-      .dface-front  { transform: translateZ(25px); }
-      .dface-back   { transform: rotateY(180deg)  translateZ(25px); }
-      .dface-right  { transform: rotateY(90deg)   translateZ(25px); }
-      .dface-left   { transform: rotateY(-90deg)  translateZ(25px); }
-      .dface-top    { transform: rotateX(-90deg)  translateZ(25px); }
-      .dface-bottom { transform: rotateX(90deg)   translateZ(25px); }
-      .dice-label   { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <section id="screen-config" class="screen">
-      <div class="panel">
-        <h1 class="title">Ludo Night</h1>
-        <p class="subtle">Set up the game before rolling the first dice.</p>
 
-        <div class="section">
-          <h3>Players</h3>
-          <div id="playerCountToggle" class="segmented three"></div>
-          <div id="nameRows" style="margin-top:10px;"></div>
-        </div>
+      .howto-list {
+        margin: 10px 0 0;
+        padding-left: 18px;
+        text-align: left;
+        color: #dfe8ff;
+        line-height: 1.45;
+        font-size: 0.95rem;
+      }
 
-        <div class="section">
-          <h3>Game Mode</h3>
-          <div id="modeToggle" class="segmented two"></div>
-          <p id="modeDescription" class="mode-desc"></p>
-        </div>
+      .howto-list li {
+        margin-bottom: 8px;
+      }
 
-        <div id="activitySection" class="section">
-          <h3>Activity List</h3>
-          <div id="activityChips" class="chips"></div>
-          <div class="activity-input">
-            <input id="activityInput" maxlength="100" placeholder="Add a fun custom activity" />
-            <button id="addActivityBtn" class="btn secondary">Add</button>
-            <button id="previewActivityBtn" class="icon-btn" title="Preview random activity">🔀</button>
+      @media (max-width: 760px) {
+        .panel {
+          padding: 14px;
+          border-radius: 16px;
+        }
+        .stats {
+          grid-template-columns: 1fr;
+        }
+        .result-actions {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* On very short screens (landscape phones), shrink the board further */
+      @media (max-height: 480px) {
+        .board {
+          width: min(95vw, calc(100dvh - 200px), 760px);
+        }
+        .dice-btn {
+          width: 64px;
+          height: 64px;
+        }
+        .dice-scene {
+          width: 50px;
+          height: 50px;
+        }
+        .dice-cube {
+          width: 50px;
+          height: 50px;
+        }
+        .dface {
+          width: 50px;
+          height: 50px;
+          padding: 6px;
+        }
+        .dface-front {
+          transform: translateZ(25px);
+        }
+        .dface-back {
+          transform: rotateY(180deg) translateZ(25px);
+        }
+        .dface-right {
+          transform: rotateY(90deg) translateZ(25px);
+        }
+        .dface-left {
+          transform: rotateY(-90deg) translateZ(25px);
+        }
+        .dface-top {
+          transform: rotateX(-90deg) translateZ(25px);
+        }
+        .dface-bottom {
+          transform: rotateX(90deg) translateZ(25px);
+        }
+        .dice-label {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <section id="screen-config" class="screen">
+        <div class="panel">
+          <h1 class="title">Ludo Night</h1>
+          <p class="subtle">Set up the game before rolling the first dice.</p>
+
+          <div class="section">
+            <h3>Players</h3>
+            <div id="playerCountToggle" class="segmented three"></div>
+            <div id="nameRows" style="margin-top: 10px"></div>
           </div>
-        </div>
 
-        <div id="triggerSection" class="section">
-          <h3>Activity Triggers</h3>
-          <div id="triggerRows"></div>
-        </div>
-
-        <button id="startGameBtn" class="btn full-cta">Start Game</button>
-      </div>
-    </section>
-
-    <section id="screen-game" class="screen">
-      <div class="game-shell">
-        <header class="game-header">
-          <div id="saveFlash" class="save-flash">Saved ✓</div>
-          <button id="settingsBtn" class="settings-btn" title="Configure new game">⚙️</button>
-          <button id="howToBtn" class="help-btn" title="How to play">❔</button>
-          <div id="playerPills" class="pills"></div>
-          <p id="turnNote" class="turn-note">Your turn!</p>
-        </header>
-
-        <div class="board-wrap">
-          <div id="board" class="board">
-            <div id="boardGrid" class="grid"></div>
-            <div id="tokenLayer" class="token-layer"></div>
+          <div class="section">
+            <h3>Game Mode</h3>
+            <div id="modeToggle" class="segmented two"></div>
+            <p id="modeDescription" class="mode-desc"></p>
           </div>
-        </div>
 
-        <div class="dice-zone">
-          <div class="dice-controls">
-            <button id="diceBtn" class="dice-btn" aria-label="Roll dice">
-              <div class="dice-scene">
-                <div class="dice-cube" id="diceCube">
-                  <!-- front=1, back=6, top=2, bottom=5, right=3, left=4 -->
-                  <div class="dface dface-front" id="dface1"></div>
-                  <div class="dface dface-back"  id="dface6"></div>
-                  <div class="dface dface-top"   id="dface2"></div>
-                  <div class="dface dface-bottom" id="dface5"></div>
-                  <div class="dface dface-right" id="dface3"></div>
-                  <div class="dface dface-left"  id="dface4"></div>
-                </div>
-              </div>
-              <span class="dice-label">Tap to roll</span>
+          <div id="activitySection" class="section">
+            <h3>Activity List</h3>
+            <div id="activityChips" class="chips"></div>
+            <div class="activity-input">
+              <input
+                id="activityInput"
+                maxlength="100"
+                placeholder="Add a fun custom activity"
+              />
+              <button id="addActivityBtn" class="btn secondary">Add</button>
+              <button
+                id="previewActivityBtn"
+                class="icon-btn"
+                title="Preview random activity"
+              >
+                🔀
+              </button>
+            </div>
+          </div>
+
+          <div id="triggerSection" class="section">
+            <h3>Activity Triggers</h3>
+            <div id="triggerRows"></div>
+          </div>
+
+          <button id="startGameBtn" class="btn full-cta">Start Game</button>
+        </div>
+      </section>
+
+      <section id="screen-game" class="screen">
+        <div class="game-shell">
+          <header class="game-header">
+            <div id="saveFlash" class="save-flash">Saved ✓</div>
+            <button
+              id="settingsBtn"
+              class="settings-btn"
+              title="Configure new game"
+            >
+              ⚙️
             </button>
-            <div id="diceResult" class="dice-result"></div>
+            <button id="howToBtn" class="help-btn" title="How to play">
+              ❔
+            </button>
+            <div id="playerPills" class="pills"></div>
+            <p id="turnNote" class="turn-note">Your turn!</p>
+          </header>
+
+          <div class="board-wrap">
+            <div id="board" class="board">
+              <div id="boardGrid" class="grid"></div>
+              <div id="tokenLayer" class="token-layer"></div>
+            </div>
           </div>
-          <div id="rerollBadge" class="reroll-badge">Roll again! 🎲</div>
+
+          <div class="dice-zone">
+            <div class="dice-controls">
+              <button id="diceBtn" class="dice-btn" aria-label="Roll dice">
+                <div class="dice-scene">
+                  <div class="dice-cube" id="diceCube">
+                    <!-- front=1, back=6, top=2, bottom=5, right=3, left=4 -->
+                    <div class="dface dface-front" id="dface1"></div>
+                    <div class="dface dface-back" id="dface6"></div>
+                    <div class="dface dface-top" id="dface2"></div>
+                    <div class="dface dface-bottom" id="dface5"></div>
+                    <div class="dface dface-right" id="dface3"></div>
+                    <div class="dface dface-left" id="dface4"></div>
+                  </div>
+                </div>
+                <span class="dice-label">Tap to roll</span>
+              </button>
+              <div id="diceResult" class="dice-result"></div>
+            </div>
+            <div id="rerollBadge" class="reroll-badge">Roll again! 🎲</div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="screen-results"
+        class="screen"
+        style="overflow-y: auto; padding: 16px"
+      >
+        <div class="results">
+          <h2 class="title">Game Results</h2>
+          <p class="subtle">Final rankings and match stats.</p>
+          <div id="rankingList" class="ranking"></div>
+          <div class="stats">
+            <div class="stat">
+              <strong id="statActivities">0</strong>activities completed
+            </div>
+            <div class="stat"><strong id="statMoves">0</strong>total moves</div>
+            <div class="stat"><strong id="statCuts">0</strong>cuts made</div>
+          </div>
+          <div class="result-actions">
+            <button id="playAgainBtn" class="btn">🔄 Play Again</button>
+            <button id="newGameBtn" class="btn secondary">⚙️ New Game</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="activityOverlay" class="modal-overlay">
+      <div class="activity-modal">
+        <div id="triggerBadge" class="trigger-badge"></div>
+        <div id="challengePlayer" class="challenge-player"></div>
+        <div id="challengeText" class="challenge-text"></div>
+        <div class="modal-actions">
+          <button id="tryAnotherBtn" class="btn secondary">
+            🔀 Try a different one
+          </button>
+          <button id="doneActivityBtn" class="btn">
+            ✅ Done! Keep playing
+          </button>
         </div>
       </div>
-    </section>
+    </div>
 
-    <section id="screen-results" class="screen" style="overflow-y:auto;padding:16px;">
-      <div class="results">
-        <h2 class="title">Game Results</h2>
-        <p class="subtle">Final rankings and match stats.</p>
-        <div id="rankingList" class="ranking"></div>
-        <div class="stats">
-          <div class="stat"><strong id="statActivities">0</strong>activities completed</div>
-          <div class="stat"><strong id="statMoves">0</strong>total moves</div>
-          <div class="stat"><strong id="statCuts">0</strong>cuts made</div>
+    <div id="settingsOverlay" class="modal-overlay"></div>
+    <div id="howToOverlay" class="modal-overlay">
+      <div class="activity-modal" style="text-align: left">
+        <div class="trigger-badge">📘 How to Play</div>
+        <h3 style="margin: 6px 0 8px">Quick Rules</h3>
+        <ul class="howto-list">
+          <li>
+            Roll the dice on your turn. A <strong>6</strong> can bring a token
+            out of base and gives an extra roll.
+          </li>
+          <li>
+            Tap any glowing token to move it. Tokens animate one cell at a time.
+          </li>
+          <li>
+            Land on an opponent on a non-safe cell to capture and send them back
+            to base.
+          </li>
+          <li>
+            ⭐ Star cells are safe. Tokens cannot be captured on safe cells.
+          </li>
+          <li>Get all 4 tokens to the center home triangle to finish.</li>
+          <li>
+            In Activity Mode, special triggers open a fun challenge popup.
+          </li>
+        </ul>
+        <button id="closeHowToBtn" class="btn full-cta" style="margin-top: 8px">
+          Got it
+        </button>
+      </div>
+    </div>
+    <div id="resumeOverlay" class="resume-overlay">
+      <div class="resume-card">
+        <h2 style="margin-bottom: 8px">Unfinished game found</h2>
+        <p style="color: var(--muted)">
+          You have an unfinished game. Resume or start fresh?
+        </p>
+        <div class="resume-actions">
+          <button id="resumeBtn" class="btn">Resume Game</button>
+          <button id="freshBtn" class="btn secondary">Start Fresh</button>
         </div>
-        <div class="result-actions">
-          <button id="playAgainBtn" class="btn">🔄 Play Again</button>
-          <button id="newGameBtn" class="btn secondary">⚙️ New Game</button>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <div id="activityOverlay" class="modal-overlay">
-    <div class="activity-modal">
-      <div id="triggerBadge" class="trigger-badge"></div>
-      <div id="challengePlayer" class="challenge-player"></div>
-      <div id="challengeText" class="challenge-text"></div>
-      <div class="modal-actions">
-        <button id="tryAnotherBtn" class="btn secondary">🔀 Try a different one</button>
-        <button id="doneActivityBtn" class="btn">✅ Done! Keep playing</button>
       </div>
     </div>
-  </div>
 
-  <div id="settingsOverlay" class="modal-overlay"></div>
-  <div id="howToOverlay" class="modal-overlay">
-    <div class="activity-modal" style="text-align:left;">
-      <div class="trigger-badge">📘 How to Play</div>
-      <h3 style="margin:6px 0 8px;">Quick Rules</h3>
-      <ul class="howto-list">
-        <li>Roll the dice on your turn. A <strong>6</strong> can bring a token out of base and gives an extra roll.</li>
-        <li>Tap any glowing token to move it. Tokens animate one cell at a time.</li>
-        <li>Land on an opponent on a non-safe cell to capture and send them back to base.</li>
-        <li>⭐ Star cells are safe. Tokens cannot be captured on safe cells.</li>
-        <li>Get all 4 tokens to the center home triangle to finish.</li>
-        <li>In Activity Mode, special triggers open a fun challenge popup.</li>
-      </ul>
-      <button id="closeHowToBtn" class="btn full-cta" style="margin-top:8px;">Got it</button>
-    </div>
-  </div>
-  <div id="resumeOverlay" class="resume-overlay">
-    <div class="resume-card">
-      <h2 style="margin-bottom:8px;">Unfinished game found</h2>
-      <p style="color:var(--muted);">You have an unfinished game. Resume or start fresh?</p>
-      <div class="resume-actions">
-        <button id="resumeBtn" class="btn">Resume Game</button>
-        <button id="freshBtn" class="btn secondary">Start Fresh</button>
-      </div>
-    </div>
-  </div>
+    <div id="toastWrap" class="toast-wrap"></div>
 
-  <div id="toastWrap" class="toast-wrap"></div>
+    <script>
+      const STORAGE = {
+        CONFIG: "ludo_config",
+        GAME: "ludo_gamestate",
+        ACTIVITY_LOG: "ludo_activity_log",
+      };
 
-  <script>
-    const STORAGE = {
-      CONFIG: "ludo_config",
-      GAME: "ludo_gamestate",
-      ACTIVITY_LOG: "ludo_activity_log",
-    };
+      const PLAYER_META = [
+        { id: "p1", color: "red", label: "Red", base: "bottom-right" },
+        { id: "p2", color: "blue", label: "Blue", base: "top-left" },
+        { id: "p3", color: "green", label: "Green", base: "bottom-left" },
+        { id: "p4", color: "yellow", label: "Yellow", base: "top-right" },
+      ];
 
-    const PLAYER_META = [
-      { id: "p1", color: "red", label: "Red", base: "bottom-right" },
-      { id: "p2", color: "blue", label: "Blue", base: "top-left" },
-      { id: "p3", color: "green", label: "Green", base: "bottom-left" },
-      { id: "p4", color: "yellow", label: "Yellow", base: "top-right" },
-    ];
+      const DEFAULT_ACTIVITIES = [
+        "Dance together for 10 seconds",
+        "Give your partner a genuine compliment",
+        "Sing the first line of your favourite song",
+        "Stare into each other's eyes for 10 seconds",
+        "Do the funniest face you can",
+        "Blow a kiss dramatically",
+        "Play a thumb war - loser skips their next turn",
+        "Draw your partner in 30 seconds",
+        "Tell one thing you love about them right now",
+        "Both do 5 jumping jacks together",
+        "Re-enact your first meeting in 20 seconds",
+        "Feed each other an imaginary meal",
+      ];
 
-    const DEFAULT_ACTIVITIES = [
-      "Dance together for 10 seconds",
-      "Give your partner a genuine compliment",
-      "Sing the first line of your favourite song",
-      "Stare into each other's eyes for 10 seconds",
-      "Do the funniest face you can",
-      "Blow a kiss dramatically",
-      "Play a thumb war - loser skips their next turn",
-      "Draw your partner in 30 seconds",
-      "Tell one thing you love about them right now",
-      "Both do 5 jumping jacks together",
-      "Re-enact your first meeting in 20 seconds",
-      "Feed each other an imaginary meal",
-    ];
+      const DEFAULT_CONFIG = {
+        playerCount: 2,
+        players: PLAYER_META.map((p, i) => ({
+          id: p.id,
+          name: `Player ${i + 1}`,
+          color: p.color,
+        })),
+        mode: "activity",
+        activities: [...DEFAULT_ACTIVITIES],
+        triggers: {
+          star: true,
+          homeArrival: true,
+          leavingHome: false,
+          cut: true,
+        },
+      };
 
-    const DEFAULT_CONFIG = {
-      playerCount: 2,
-      players: PLAYER_META.map((p, i) => ({ id: p.id, name: `Player ${i + 1}`, color: p.color })),
-      mode: "activity",
-      activities: [...DEFAULT_ACTIVITIES],
-      triggers: {
-        star: true,
-        homeArrival: true,
-        leavingHome: false,
-        cut: true,
-      },
-    };
+      const RING = [
+        [6, 1],
+        [6, 2],
+        [6, 3],
+        [6, 4],
+        [6, 5],
+        [5, 6],
+        [4, 6],
+        [3, 6],
+        [2, 6],
+        [1, 6],
+        [0, 6],
+        [0, 7],
+        [0, 8],
+        [1, 8],
+        [2, 8],
+        [3, 8],
+        [4, 8],
+        [5, 8],
+        [6, 9],
+        [6, 10],
+        [6, 11],
+        [6, 12],
+        [6, 13],
+        [6, 14],
+        [7, 14],
+        [8, 14],
+        [8, 13],
+        [8, 12],
+        [8, 11],
+        [8, 10],
+        [8, 9],
+        [9, 8],
+        [10, 8],
+        [11, 8],
+        [12, 8],
+        [13, 8],
+        [14, 8],
+        [14, 7],
+        [14, 6],
+        [13, 6],
+        [12, 6],
+        [11, 6],
+        [10, 6],
+        [9, 6],
+        [8, 5],
+        [8, 4],
+        [8, 3],
+        [8, 2],
+        [8, 1],
+        [8, 0],
+        [7, 0],
+        [6, 0],
+      ];
 
-    const RING = [
-      [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [5, 6], [4, 6], [3, 6], [2, 6], [1, 6],
-      [0, 6], [0, 7], [0, 8], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 9], [6, 10],
-      [6, 11], [6, 12], [6, 13], [6, 14], [7, 14], [8, 14], [8, 13], [8, 12], [8, 11], [8, 10],
-      [8, 9], [9, 8], [10, 8], [11, 8], [12, 8], [13, 8], [14, 8], [14, 7], [14, 6], [13, 6],
-      [12, 6], [11, 6], [10, 6], [9, 6], [8, 5], [8, 4], [8, 3], [8, 2], [8, 1], [8, 0],
-      [7, 0], [6, 0],
-    ];
+      const PLAYER_PATH_META = {
+        p1: {
+          start: 26,
+          homeEntry: 24,
+          homeLane: [
+            [7, 13],
+            [7, 12],
+            [7, 11],
+            [7, 10],
+            [7, 9],
+          ],
+        },
+        p2: {
+          start: 0,
+          homeEntry: 50,
+          homeLane: [
+            [7, 1],
+            [7, 2],
+            [7, 3],
+            [7, 4],
+            [7, 5],
+          ],
+        },
+        p3: {
+          start: 39,
+          homeEntry: 37,
+          homeLane: [
+            [13, 7],
+            [12, 7],
+            [11, 7],
+            [10, 7],
+            [9, 7],
+          ],
+        },
+        p4: {
+          start: 13,
+          homeEntry: 11,
+          homeLane: [
+            [1, 7],
+            [2, 7],
+            [3, 7],
+            [4, 7],
+            [5, 7],
+          ],
+        },
+      };
 
-    const PLAYER_PATH_META = {
-      p1: { start: 26, homeEntry: 24, homeLane: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]] },
-      p2: { start: 0, homeEntry: 50, homeLane: [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]] },
-      p3: { start: 39, homeEntry: 37, homeLane: [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]] },
-      p4: { start: 13, homeEntry: 11, homeLane: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]] },
-    };
+      const BASE_SLOTS = {
+        p1: [
+          [10, 10],
+          [10, 12],
+          [12, 10],
+          [12, 12],
+        ],
+        p2: [
+          [2, 2],
+          [2, 4],
+          [4, 2],
+          [4, 4],
+        ],
+        p3: [
+          [10, 2],
+          [10, 4],
+          [12, 2],
+          [12, 4],
+        ],
+        p4: [
+          [2, 10],
+          [2, 12],
+          [4, 10],
+          [4, 12],
+        ],
+      };
 
-    const BASE_SLOTS = {
-      p1: [[10, 10], [10, 12], [12, 10], [12, 12]],
-      p2: [[2, 2], [2, 4], [4, 2], [4, 4]],
-      p3: [[10, 2], [10, 4], [12, 2], [12, 4]],
-      p4: [[2, 10], [2, 12], [4, 10], [4, 12]],
-    };
+      const STAR_INDICES = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+      // Corner junction cells (visual only, always safe since not in RING)
+      const CORNER_SAFE_CELLS = [
+        [6, 6],
+        [6, 8],
+        [8, 6],
+        [8, 8],
+      ];
+      const CENTER = [7, 7];
 
-    const STAR_INDICES = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
-    // Corner junction cells (visual only, always safe since not in RING)
-    const CORNER_SAFE_CELLS = [[6,6],[6,8],[8,6],[8,8]];
-    const CENTER = [7, 7];
+      const STATE = {
+        screen: "config",
+        config: null,
+        game: null,
+        selectableTokens: [],
+        pendingRoll: null,
+        isAnimating: false,
+        popupOpen: false,
+        recentActivities: [],
+        currentPopup: null,
+        popupRerolled: false,
+        pendingTurnAction: null,
+        resultTimer: null,
+        skipTurns: { p1: 0, p2: 0, p3: 0, p4: 0 },
+      };
 
-    const STATE = {
-      screen: "config",
-      config: null,
-      game: null,
-      selectableTokens: [],
-      pendingRoll: null,
-      isAnimating: false,
-      popupOpen: false,
-      recentActivities: [],
-      currentPopup: null,
-      popupRerolled: false,
-      pendingTurnAction: null,
-      resultTimer: null,
-      skipTurns: { p1: 0, p2: 0, p3: 0, p4: 0 },
-    };
+      const els = {};
 
-    const els = {};
-
-    function q(id) {
-      return document.getElementById(id);
-    }
-
-    function initEls() {
-      [
-        "screen-config", "screen-game", "screen-results", "playerCountToggle", "nameRows", "modeToggle",
-        "modeDescription", "activitySection", "activityChips", "activityInput", "addActivityBtn",
-        "previewActivityBtn", "triggerSection", "triggerRows", "startGameBtn", "playerPills",
-        "turnNote", "settingsBtn", "boardGrid", "tokenLayer", "diceBtn", "diceCube", "diceResult",
-        "rerollBadge", "activityOverlay", "triggerBadge", "challengePlayer", "challengeText",
-        "tryAnotherBtn", "doneActivityBtn", "toastWrap", "settingsOverlay", "saveFlash", "resumeOverlay",
-        "resumeBtn", "freshBtn", "rankingList", "statActivities", "statMoves", "statCuts", "playAgainBtn",
-        "newGameBtn", "howToBtn", "howToOverlay", "closeHowToBtn", "board",
-      ].forEach((id) => (els[id] = q(id)));
-    }
-
-    function showToast(text) {
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.textContent = text;
-      els.toastWrap.appendChild(toast);
-      setTimeout(() => toast.remove(), 2050);
-    }
-
-    function clearLudoSession() {
-      Object.keys(sessionStorage).forEach((k) => {
-        if (k.startsWith("ludo_")) sessionStorage.removeItem(k);
-      });
-    }
-
-    function saveJson(key, val, flash = false) {
-      sessionStorage.setItem(key, JSON.stringify(val));
-      if (flash && STATE.screen === "game") {
-        els.saveFlash.classList.remove("show");
-        void els.saveFlash.offsetWidth;
-        els.saveFlash.classList.add("show");
+      function q(id) {
+        return document.getElementById(id);
       }
-    }
 
-    function getJson(key, fallback) {
-      try {
-        const raw = sessionStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch {
-        return fallback;
+      function initEls() {
+        [
+          "screen-config",
+          "screen-game",
+          "screen-results",
+          "playerCountToggle",
+          "nameRows",
+          "modeToggle",
+          "modeDescription",
+          "activitySection",
+          "activityChips",
+          "activityInput",
+          "addActivityBtn",
+          "previewActivityBtn",
+          "triggerSection",
+          "triggerRows",
+          "startGameBtn",
+          "playerPills",
+          "turnNote",
+          "settingsBtn",
+          "boardGrid",
+          "tokenLayer",
+          "diceBtn",
+          "diceCube",
+          "diceResult",
+          "rerollBadge",
+          "activityOverlay",
+          "triggerBadge",
+          "challengePlayer",
+          "challengeText",
+          "tryAnotherBtn",
+          "doneActivityBtn",
+          "toastWrap",
+          "settingsOverlay",
+          "saveFlash",
+          "resumeOverlay",
+          "resumeBtn",
+          "freshBtn",
+          "rankingList",
+          "statActivities",
+          "statMoves",
+          "statCuts",
+          "playAgainBtn",
+          "newGameBtn",
+          "howToBtn",
+          "howToOverlay",
+          "closeHowToBtn",
+          "board",
+        ].forEach((id) => (els[id] = q(id)));
       }
-    }
 
-    function deepClone(v) {
-      return JSON.parse(JSON.stringify(v));
-    }
+      function showToast(text) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = text;
+        els.toastWrap.appendChild(toast);
+        setTimeout(() => toast.remove(), 2050);
+      }
 
-    function setScreen(id) {
-      STATE.screen = id;
-      ["screen-config", "screen-game", "screen-results"].forEach((sid) => {
-        els[sid].classList.toggle("active", sid === `screen-${id}`);
-      });
-    }
+      function clearLudoSession() {
+        Object.keys(sessionStorage).forEach((k) => {
+          if (k.startsWith("ludo_")) sessionStorage.removeItem(k);
+        });
+      }
 
-    function getOrdinal(n) {
-      if (n === 1) return "1st";
-      if (n === 2) return "2nd";
-      if (n === 3) return "3rd";
-      return `${n}th`;
-    }
+      function saveJson(key, val, flash = false) {
+        sessionStorage.setItem(key, JSON.stringify(val));
+        if (flash && STATE.screen === "game") {
+          els.saveFlash.classList.remove("show");
+          void els.saveFlash.offsetWidth;
+          els.saveFlash.classList.add("show");
+        }
+      }
 
-    function getActivePlayerMeta() {
-      return STATE.config.players.slice(0, STATE.config.playerCount);
-    }
+      function getJson(key, fallback) {
+        try {
+          const raw = sessionStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        } catch {
+          return fallback;
+        }
+      }
 
-    function renderConfig(target) {
-      const cfg = STATE.config;
-      const playerCountToggle = target.querySelector("#playerCountToggle");
-      const nameRows = target.querySelector("#nameRows");
-      const modeToggle = target.querySelector("#modeToggle");
-      const modeDescription = target.querySelector("#modeDescription");
-      const activitySection = target.querySelector("#activitySection");
-      const activityChips = target.querySelector("#activityChips");
-      const triggerSection = target.querySelector("#triggerSection");
-      const triggerRows = target.querySelector("#triggerRows");
-      const activityInput = target.querySelector("#activityInput");
-      const addActivityBtn = target.querySelector("#addActivityBtn");
-      const previewActivityBtn = target.querySelector("#previewActivityBtn");
-      const startGameBtn = target.querySelector("#startGameBtn");
+      function deepClone(v) {
+        return JSON.parse(JSON.stringify(v));
+      }
 
-      const countOpts = [2, 3, 4];
-      playerCountToggle.innerHTML = "";
-      countOpts.forEach((count) => {
-        const btn = document.createElement("button");
-        btn.className = `seg-btn ${cfg.playerCount === count ? "active" : ""}`;
-        btn.textContent = `${count} Players`;
-        btn.onclick = () => {
-          cfg.playerCount = count;
-          renderConfig(target);
-        };
-        playerCountToggle.appendChild(btn);
-      });
+      function setScreen(id) {
+        STATE.screen = id;
+        ["screen-config", "screen-game", "screen-results"].forEach((sid) => {
+          els[sid].classList.toggle("active", sid === `screen-${id}`);
+        });
+      }
 
-      nameRows.innerHTML = "";
-      cfg.players.forEach((p, idx) => {
-        const row = document.createElement("div");
-        row.className = "name-row";
-        if (idx + 1 > cfg.playerCount) row.classList.add("hidden");
-        row.innerHTML = `
+      function getOrdinal(n) {
+        if (n === 1) return "1st";
+        if (n === 2) return "2nd";
+        if (n === 3) return "3rd";
+        return `${n}th`;
+      }
+
+      function getActivePlayerMeta() {
+        return STATE.config.players.slice(0, STATE.config.playerCount);
+      }
+
+      function renderConfig(target) {
+        const cfg = STATE.config;
+        const playerCountToggle = target.querySelector("#playerCountToggle");
+        const nameRows = target.querySelector("#nameRows");
+        const modeToggle = target.querySelector("#modeToggle");
+        const modeDescription = target.querySelector("#modeDescription");
+        const activitySection = target.querySelector("#activitySection");
+        const activityChips = target.querySelector("#activityChips");
+        const triggerSection = target.querySelector("#triggerSection");
+        const triggerRows = target.querySelector("#triggerRows");
+        const activityInput = target.querySelector("#activityInput");
+        const addActivityBtn = target.querySelector("#addActivityBtn");
+        const previewActivityBtn = target.querySelector("#previewActivityBtn");
+        const startGameBtn = target.querySelector("#startGameBtn");
+
+        const countOpts = [2, 3, 4];
+        playerCountToggle.innerHTML = "";
+        countOpts.forEach((count) => {
+          const btn = document.createElement("button");
+          btn.className = `seg-btn ${cfg.playerCount === count ? "active" : ""}`;
+          btn.textContent = `${count} Players`;
+          btn.onclick = () => {
+            cfg.playerCount = count;
+            renderConfig(target);
+          };
+          playerCountToggle.appendChild(btn);
+        });
+
+        nameRows.innerHTML = "";
+        cfg.players.forEach((p, idx) => {
+          const row = document.createElement("div");
+          row.className = "name-row";
+          if (idx + 1 > cfg.playerCount) row.classList.add("hidden");
+          row.innerHTML = `
           <span class="dot" style="background:var(--${p.color});"></span>
           <input maxlength="12" value="${p.name.replace(/"/g, "&quot;")}" />
         `;
-        row.querySelector("input").addEventListener("input", (e) => {
-          p.name = e.target.value.slice(0, 12);
+          row.querySelector("input").addEventListener("input", (e) => {
+            p.name = e.target.value.slice(0, 12);
+          });
+          nameRows.appendChild(row);
         });
-        nameRows.appendChild(row);
-      });
 
-      modeToggle.innerHTML = "";
-      [
-        { id: "straight", label: "🎯 Straight Mode" },
-        { id: "activity", label: "🎲 Activity Mode" },
-      ].forEach((mode) => {
-        const btn = document.createElement("button");
-        btn.className = `seg-btn ${cfg.mode === mode.id ? "active" : ""}`;
-        btn.textContent = mode.label;
-        btn.onclick = () => {
-          cfg.mode = mode.id;
-          renderConfig(target);
-        };
-        modeToggle.appendChild(btn);
-      });
-
-      modeDescription.textContent =
-        cfg.mode === "straight"
-          ? "Classic Ludo - no challenges, just the game."
-          : "Land on special squares to unlock fun couple challenges!";
-
-      const showActivity = cfg.mode === "activity";
-      activitySection.classList.toggle("hidden", !showActivity);
-      triggerSection.classList.toggle("hidden", !showActivity);
-
-      if (showActivity) {
-        activityChips.innerHTML = "";
-        cfg.activities.forEach((activity, index) => {
-          const chip = document.createElement("div");
-          chip.className = "chip";
-          chip.innerHTML = `<span>${activity}</span><button aria-label="remove">×</button>`;
-          chip.querySelector("button").onclick = () => {
-            cfg.activities.splice(index, 1);
+        modeToggle.innerHTML = "";
+        [
+          { id: "straight", label: "🎯 Straight Mode" },
+          { id: "activity", label: "🎲 Activity Mode" },
+        ].forEach((mode) => {
+          const btn = document.createElement("button");
+          btn.className = `seg-btn ${cfg.mode === mode.id ? "active" : ""}`;
+          btn.textContent = mode.label;
+          btn.onclick = () => {
+            cfg.mode = mode.id;
             renderConfig(target);
           };
-          activityChips.appendChild(chip);
+          modeToggle.appendChild(btn);
         });
 
-        addActivityBtn.onclick = () => {
-          const val = activityInput.value.trim();
-          if (!val) return;
-          cfg.activities.push(val);
-          activityInput.value = "";
-          renderConfig(target);
-        };
+        modeDescription.textContent =
+          cfg.mode === "straight"
+            ? "Classic Ludo - no challenges, just the game."
+            : "Land on special squares to unlock fun couple challenges!";
 
-        previewActivityBtn.onclick = () => {
-          if (!cfg.activities.length) {
-            showToast("No activities available");
-            return;
-          }
-          const pick = cfg.activities[Math.floor(Math.random() * cfg.activities.length)];
-          showToast(`Preview: ${pick}`);
-        };
+        const showActivity = cfg.mode === "activity";
+        activitySection.classList.toggle("hidden", !showActivity);
+        triggerSection.classList.toggle("hidden", !showActivity);
 
-        triggerRows.innerHTML = "";
-        const triggerDefs = [
-          { key: "star", icon: "⭐", title: "Star cell", sub: "Player lands on a starred safe square" },
-          { key: "homeArrival", icon: "🏠", title: "Home arrival", sub: "A token reaches the final home triangle" },
-          { key: "leavingHome", icon: "🚪", title: "Leaving home base", sub: "A token exits the starting yard on a 6" },
-          { key: "cut", icon: "⚔️", title: "Cut / Capture", sub: "Your token sends an opponent's token back" },
-        ];
-        triggerDefs.forEach((t) => {
-          const row = document.createElement("div");
-          row.className = "toggle-row";
-          row.innerHTML = `
+        if (showActivity) {
+          activityChips.innerHTML = "";
+          cfg.activities.forEach((activity, index) => {
+            const chip = document.createElement("div");
+            chip.className = "chip";
+            chip.innerHTML = `<span>${activity}</span><button aria-label="remove">×</button>`;
+            chip.querySelector("button").onclick = () => {
+              cfg.activities.splice(index, 1);
+              renderConfig(target);
+            };
+            activityChips.appendChild(chip);
+          });
+
+          addActivityBtn.onclick = () => {
+            const val = activityInput.value.trim();
+            if (!val) return;
+            cfg.activities.push(val);
+            activityInput.value = "";
+            renderConfig(target);
+          };
+
+          previewActivityBtn.onclick = () => {
+            if (!cfg.activities.length) {
+              showToast("No activities available");
+              return;
+            }
+            const pick =
+              cfg.activities[Math.floor(Math.random() * cfg.activities.length)];
+            showToast(`Preview: ${pick}`);
+          };
+
+          triggerRows.innerHTML = "";
+          const triggerDefs = [
+            {
+              key: "star",
+              icon: "⭐",
+              title: "Star cell",
+              sub: "Player lands on a starred safe square",
+            },
+            {
+              key: "homeArrival",
+              icon: "🏠",
+              title: "Home arrival",
+              sub: "A token reaches the final home triangle",
+            },
+            {
+              key: "leavingHome",
+              icon: "🚪",
+              title: "Leaving home base",
+              sub: "A token exits the starting yard on a 6",
+            },
+            {
+              key: "cut",
+              icon: "⚔️",
+              title: "Cut / Capture",
+              sub: "Your token sends an opponent's token back",
+            },
+          ];
+          triggerDefs.forEach((t) => {
+            const row = document.createElement("div");
+            row.className = "toggle-row";
+            row.innerHTML = `
             <span class="icon">${t.icon}</span>
             <div><h4>${t.title}</h4><small>${t.sub}</small></div>
             <button class="switch ${cfg.triggers[t.key] ? "on" : ""}" aria-label="toggle trigger"></button>
           `;
-          row.querySelector(".switch").onclick = () => {
-            cfg.triggers[t.key] = !cfg.triggers[t.key];
-            renderConfig(target);
-          };
-          triggerRows.appendChild(row);
-        });
-      }
-
-      startGameBtn.textContent = "🎲 Start New Game";
-      startGameBtn.onclick = () => {
-        const err = validateConfig(cfg);
-        if (err) {
-          showToast(err);
-          return;
+            row.querySelector(".switch").onclick = () => {
+              cfg.triggers[t.key] = !cfg.triggers[t.key];
+              renderConfig(target);
+            };
+            triggerRows.appendChild(row);
+          });
         }
-        cfg.players.forEach((p, idx) => {
-          if (!p.name.trim()) p.name = `Player ${idx + 1}`;
-          p.name = p.name.slice(0, 12);
-        });
-        saveJson(STORAGE.CONFIG, cfg);
-        closeSettingsOverlay();
-        startNewGameFromConfig();
-      };
-    }
 
-    function validateConfig(cfg) {
-      const activePlayers = cfg.players.slice(0, cfg.playerCount);
-      if (activePlayers.some((p) => !p.name || !p.name.trim())) {
-        return "Player names must not be empty";
-      }
-      if (cfg.mode === "activity") {
-        if (cfg.activities.length < 2) return "Add at least 2 activities";
-        const hasTrigger = Object.values(cfg.triggers).some(Boolean);
-        if (!hasTrigger) return "Enable at least one activity trigger";
-      }
-      return null;
-    }
-
-    function initialGameState() {
-      const active = getActivePlayerMeta().map((p) => p.id);
-      return {
-        playerCount: STATE.config.playerCount,
-        currentTurnIndex: 0,
-        activePlayers: [...active],
-        finishedPlayers: [],
-        tokens: {
-          p1: [ -1, -1, -1, -1 ],
-          p2: [ -1, -1, -1, -1 ],
-          p3: STATE.config.playerCount >= 3 ? [ -1, -1, -1, -1 ] : null,
-          p4: STATE.config.playerCount === 4 ? [ -1, -1, -1, -1 ] : null,
-        },
-        lastDice: 1,
-        isRollAgain: false,
-        moveCount: 0,
-        cutCount: 0,
-        winner: null,
-      };
-    }
-
-    function startNewGameFromConfig() {
-      STATE.game = initialGameState();
-      STATE.selectableTokens = [];
-      STATE.pendingRoll = null;
-      STATE.isAnimating = false;
-      STATE.popupOpen = false;
-      STATE.currentPopup = null;
-      STATE.popupRerolled = false;
-      STATE.pendingTurnAction = null;
-      STATE.recentActivities = [];
-      STATE.skipTurns = { p1: 0, p2: 0, p3: 0, p4: 0 };
-      saveJson(STORAGE.ACTIVITY_LOG, []);
-      saveJson(STORAGE.GAME, STATE.game, true);
-      setScreen("game");
-      renderBoard();
-      renderGameUI();
-    }
-
-    function getPlayerById(id) {
-      return STATE.config.players.find((p) => p.id === id);
-    }
-
-    function getCurrentPlayerId() {
-      if (!STATE.game.activePlayers.length) return null;
-      return STATE.game.activePlayers[STATE.game.currentTurnIndex] || STATE.game.activePlayers[0];
-    }
-
-    function getCellFromPos(playerId, tokenPos, tokenIndex = 0) {
-      if (tokenPos === -1) return BASE_SLOTS[playerId][tokenIndex];
-      if (tokenPos >= 56) return CENTER;
-      const meta = PLAYER_PATH_META[playerId];
-      if (tokenPos <= 50) {
-        const ringIndex = (meta.start + tokenPos) % 52;
-        return RING[ringIndex];
-      }
-      // Home lane: positions 51–55 → lane index 0–4
-      const laneIdx = tokenPos - 51;
-      return meta.homeLane[Math.min(laneIdx, meta.homeLane.length - 1)];
-    }
-
-    function ringIndexFor(playerId, tokenPos) {
-      if (tokenPos < 0 || tokenPos > 50) return null;
-      return (PLAYER_PATH_META[playerId].start + tokenPos) % 52;
-    }
-
-    function isSafePosition(playerId, tokenPos) {
-      const idx = ringIndexFor(playerId, tokenPos);
-      if (idx === null) return true;
-      return STAR_INDICES.has(idx);
-    }
-
-    function createBoardGrid() {
-      els.boardGrid.innerHTML = "";
-      for (let r = 0; r < 15; r += 1) {
-        for (let c = 0; c < 15; c += 1) {
-          const cell = document.createElement("div");
-          cell.className = "cell";
-          cell.dataset.r = r;
-          cell.dataset.c = c;
-
-          // Corner base areas (only if NOT a path cell)
-          if (!isPathCell(r, c)) {
-            if (isBaseCell(r, c, "p2")) cell.classList.add("home-blue");
-            if (isBaseCell(r, c, "p1")) cell.classList.add("home-red");
-            if (isBaseCell(r, c, "p3")) cell.classList.add("home-green");
-            if (isBaseCell(r, c, "p4")) cell.classList.add("home-yellow");
+        startGameBtn.textContent = "🎲 Start New Game";
+        startGameBtn.onclick = () => {
+          const err = validateConfig(cfg);
+          if (err) {
+            showToast(err);
+            return;
           }
+          cfg.players.forEach((p, idx) => {
+            if (!p.name.trim()) p.name = `Player ${idx + 1}`;
+            p.name = p.name.slice(0, 12);
+          });
+          saveJson(STORAGE.CONFIG, cfg);
+          closeSettingsOverlay();
+          startNewGameFromConfig();
+        };
+      }
 
-          if (isPathCell(r, c)) cell.classList.add("path");
-
-          // Colored home lane strips (overrides plain path color)
-          if (isHomeLaneCell(r, c, "p1")) cell.classList.add("lane-red");
-          if (isHomeLaneCell(r, c, "p2")) cell.classList.add("lane-blue");
-          if (isHomeLaneCell(r, c, "p3")) cell.classList.add("lane-green");
-          if (isHomeLaneCell(r, c, "p4")) cell.classList.add("lane-yellow");
-
-          // Center 3×3 (overrides everything)
-          if (r === 7 && c === 7) cell.classList.add("center");
-
-          if (starCellAt(r, c)) cell.textContent = "⭐";
-
-          els.boardGrid.appendChild(cell);
+      function validateConfig(cfg) {
+        const activePlayers = cfg.players.slice(0, cfg.playerCount);
+        if (activePlayers.some((p) => !p.name || !p.name.trim())) {
+          return "Player names must not be empty";
         }
-      }
-    }
-
-    function isHomeLaneCell(r, c, pid) {
-      return PLAYER_PATH_META[pid].homeLane.some(([lr, lc]) => lr === r && lc === c);
-    }
-
-    function starCellAt(r, c) {
-      for (const idx of STAR_INDICES) {
-        const p = RING[idx];
-        if (p[0] === r && p[1] === c) return true;
-      }
-      // Corner junction cells are visual safe squares
-      return CORNER_SAFE_CELLS.some(([cr, cc]) => cr === r && cc === c);
-    }
-
-    function isPathCell(r, c) {
-      // Outer ring
-      if (RING.some((p) => p[0] === r && p[1] === c)) return true;
-      // Home lane cells (all four players)
-      if (r === 7 && c >= 1 && c <= 13) return true;
-      if (c === 7 && r >= 1 && r <= 13) return true;
-      // Corner junction cells that connect RING segments (visual only, not in game path)
-      if ((r === 6 || r === 8) && (c === 6 || c === 8)) return true;
-      return false;
-    }
-
-    function isBaseCell(r, c, pid) {
-      // Exclude the path corridor rows/cols: rows 6-8 and cols 6-8 are never base
-      if (r >= 6 && r <= 8) return false;
-      if (c >= 6 && c <= 8) return false;
-      if (pid === "p2") return r <= 5 && c <= 5;
-      if (pid === "p4") return r <= 5 && c >= 9;
-      if (pid === "p3") return r >= 9 && c <= 5;
-      return r >= 9 && c >= 9;
-    }
-
-    function renderBoard() {
-      createBoardGrid();
-      const activeIds = new Set(getActivePlayerMeta().map((p) => p.id));
-      Array.from(els.boardGrid.children).forEach((cell) => {
-        const r = Number(cell.dataset.r);
-        const c = Number(cell.dataset.c);
-        // Dim inactive player home base areas (corner 6×6 areas only)
-        const pidForCell =
-          isBaseCell(r, c, "p1") ? "p1" :
-          isBaseCell(r, c, "p2") ? "p2" :
-          isBaseCell(r, c, "p3") ? "p3" :
-          isBaseCell(r, c, "p4") ? "p4" : null;
-        if (pidForCell && !activeIds.has(pidForCell)) {
-          cell.classList.add("inactive-base");
+        if (cfg.mode === "activity") {
+          if (cfg.activities.length < 2) return "Add at least 2 activities";
+          const hasTrigger = Object.values(cfg.triggers).some(Boolean);
+          if (!hasTrigger) return "Enable at least one activity trigger";
         }
-      });
-      renderTokens();
-    }
-
-    function renderTokens() {
-      els.tokenLayer.innerHTML = "";
-      if (!STATE.game) return;
-      const boardWidth = els.board ? els.board.clientWidth : 0;
-      if (!boardWidth) {
-        requestAnimationFrame(renderTokens);
-        return;
+        return null;
       }
-      const byCell = new Map();
 
-      getActivePlayerMeta().forEach((player) => {
-        const tokenPositions = STATE.game.tokens[player.id];
-        tokenPositions.forEach((pos, idx) => {
-          const coord = getCellFromPos(player.id, pos, idx);
-          const key = `${coord[0]}-${coord[1]}`;
-          if (!byCell.has(key)) byCell.set(key, []);
-          byCell.get(key).push({ playerId: player.id, tokenIndex: idx, coord });
-        });
-      });
-
-      const size = boardWidth / 15;
-      byCell.forEach((items) => {
-        items.forEach((item, stackIdx) => {
-          const token = document.createElement("button");
-          token.className = `token ${getPlayerById(item.playerId).color}`;
-          token.textContent = String(item.tokenIndex + 1);
-          const [r, c] = item.coord;
-          const offsetPattern = [
-            [0, 0], [-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18],
-          ];
-          const [or, oc] = offsetPattern[stackIdx % offsetPattern.length];
-          token.style.left = `${((c + 0.5 + oc) * size).toFixed(2)}px`;
-          token.style.top = `${((r + 0.5 + or) * size).toFixed(2)}px`;
-          token.dataset.player = item.playerId;
-          token.dataset.token = item.tokenIndex;
-          if (isSelectableToken(item.playerId, item.tokenIndex)) token.classList.add("selectable");
-          token.onclick = () => onTokenClick(item.playerId, item.tokenIndex);
-          els.tokenLayer.appendChild(token);
-        });
-      });
-    }
-
-    function renderGameUI() {
-      if (!STATE.game) return;
-      const currentId = getCurrentPlayerId();
-      els.playerPills.innerHTML = "";
-      getActivePlayerMeta().forEach((p) => {
-        const meta = PLAYER_META.find((m) => m.id === p.id);
-        const label = meta ? meta.label : p.id;
-        const pill = document.createElement("div");
-        pill.className = `pill ${currentId === p.id ? "active" : ""}`;
-        pill.innerHTML = `<span class="dot" style="background:var(--${p.color});"></span><span>${label}</span><span style="opacity:0.7;font-size:0.8rem;">${p.name}</span>`;
-        els.playerPills.appendChild(pill);
-      });
-      const current = getPlayerById(currentId);
-      els.turnNote.textContent = current ? `Your turn, ${current.name}!` : "Game finished";
-      renderDice(STATE.game.lastDice);
-      updateDiceInteractivity();
-      renderTokens();
-      els.rerollBadge.classList.toggle("show", !!STATE.game.isRollAgain);
-    }
-
-    function updateDiceInteractivity() {
-      const canRoll =
-        STATE.screen === "game" &&
-        !STATE.popupOpen &&
-        !STATE.isAnimating &&
-        !STATE.pendingRoll &&
-        STATE.selectableTokens.length === 0 &&
-        !!STATE.game &&
-        !STATE.game.winner;
-      els.diceBtn.disabled = !canRoll;
-    }
-
-    /* Cube face target rotations — bring each face toward the viewer with a
-       slight tilt so the edges stay visible for 3-D depth. */
-    const DICE_FACE_ROTATIONS = {
-      1: "rotateX(-15deg) rotateY(-15deg)",   // front
-      2: "rotateX(-80deg) rotateY(-15deg)",   // top
-      3: "rotateX(-15deg) rotateY(-80deg)",   // right
-      4: "rotateX(-15deg) rotateY(80deg)",    // left
-      5: "rotateX(80deg)  rotateY(-15deg)",   // bottom
-      6: "rotateX(-15deg) rotateY(165deg)",   // back
-    };
-
-    /* Pip grid index patterns for faces 1-6 (9-cell row-major grid) */
-    const DICE_PIP_PATTERNS = {
-      1: [4],
-      2: [2, 6],
-      3: [2, 4, 6],
-      4: [0, 2, 6, 8],
-      5: [0, 2, 4, 6, 8],
-      6: [0, 2, 3, 5, 6, 8],
-    };
-
-    function buildFacePips(faceEl, value) {
-      faceEl.innerHTML = "";
-      const active = DICE_PIP_PATTERNS[value] || [];
-      for (let i = 0; i < 9; i++) {
-        const s = document.createElement("span");
-        s.className = "dpip" + (active.includes(i) ? " on" : "");
-        faceEl.appendChild(s);
+      function initialGameState() {
+        const active = getActivePlayerMeta().map((p) => p.id);
+        return {
+          playerCount: STATE.config.playerCount,
+          currentTurnIndex: 0,
+          activePlayers: [...active],
+          finishedPlayers: [],
+          tokens: {
+            p1: [-1, -1, -1, -1],
+            p2: [-1, -1, -1, -1],
+            p3: STATE.config.playerCount >= 3 ? [-1, -1, -1, -1] : null,
+            p4: STATE.config.playerCount === 4 ? [-1, -1, -1, -1] : null,
+          },
+          lastDice: 1,
+          isRollAgain: false,
+          moveCount: 0,
+          cutCount: 0,
+          winner: null,
+        };
       }
-    }
 
-    /* Populate all 6 cube faces once on page load */
-    function initDiceFaces() {
-      for (let v = 1; v <= 6; v++) {
-        const el = document.getElementById("dface" + v);
-        if (el) buildFacePips(el, v);
-      }
-    }
-
-    function renderDice(value) {
-      if (!els.diceCube) return;
-      els.diceCube.style.transform = DICE_FACE_ROTATIONS[value] || DICE_FACE_ROTATIONS[1];
-    }
-
-    function legalTokensForRoll(playerId, dice) {
-      const positions = STATE.game.tokens[playerId];
-      const legal = [];
-      positions.forEach((pos, idx) => {
-        // Already home — skip
-        if (pos === 56) return;
-        // At base — only a 6 lets you enter
-        if (pos === -1) {
-          if (dice === 6) legal.push(idx);
-          return;
-        }
-        // On board — can move if it doesn't overshoot home (pos 56)
-        // Tokens in home lane (pos 51-55) can only advance if the exact move ≤ 56
-        if (pos + dice <= 56) legal.push(idx);
-      });
-      return legal;
-    }
-
-    function isSelectableToken(playerId, tokenIndex) {
-      return STATE.selectableTokens.some((t) => t.playerId === playerId && t.tokenIndex === tokenIndex);
-    }
-
-    function currentPlayerCanAct(playerId) {
-      return playerId === getCurrentPlayerId();
-    }
-
-    function maybeSkipBlockedPlayer() {
-      const pid = getCurrentPlayerId();
-      if (!pid) return;
-      if ((STATE.skipTurns[pid] || 0) > 0) {
-        STATE.skipTurns[pid] -= 1;
-        showToast(`${getPlayerById(pid).name} skips this turn`);
-        advanceTurnAfterCurrent(false);
+      function startNewGameFromConfig() {
+        STATE.game = initialGameState();
+        STATE.selectableTokens = [];
+        STATE.pendingRoll = null;
+        STATE.isAnimating = false;
+        STATE.popupOpen = false;
+        STATE.currentPopup = null;
+        STATE.popupRerolled = false;
+        STATE.pendingTurnAction = null;
+        STATE.recentActivities = [];
+        STATE.skipTurns = { p1: 0, p2: 0, p3: 0, p4: 0 };
+        saveJson(STORAGE.ACTIVITY_LOG, []);
         saveJson(STORAGE.GAME, STATE.game, true);
+        setScreen("game");
+        renderBoard();
         renderGameUI();
       }
-    }
 
-    function rollDice() {
-      if (els.diceBtn.disabled) return;
-      const playerId = getCurrentPlayerId();
-      if (!playerId) return;
+      function getPlayerById(id) {
+        return STATE.config.players.find((p) => p.id === id);
+      }
 
-      STATE.pendingRoll = true;
-      STATE.selectableTokens = [];
-      updateDiceInteractivity();
-      renderTokens();
+      function getCurrentPlayerId() {
+        if (!STATE.game.activePlayers.length) return null;
+        return (
+          STATE.game.activePlayers[STATE.game.currentTurnIndex] ||
+          STATE.game.activePlayers[0]
+        );
+      }
 
-      const cube = els.diceCube;
+      function getCellFromPos(playerId, tokenPos, tokenIndex = 0) {
+        if (tokenPos === -1) return BASE_SLOTS[playerId][tokenIndex];
+        if (tokenPos >= 56) return CENTER;
+        const meta = PLAYER_PATH_META[playerId];
+        if (tokenPos <= 50) {
+          const ringIndex = (meta.start + tokenPos) % 52;
+          return RING[ringIndex];
+        }
+        // Home lane: positions 51–55 → lane index 0–4
+        const laneIdx = tokenPos - 51;
+        return meta.homeLane[Math.min(laneIdx, meta.homeLane.length - 1)];
+      }
 
-      /* 1. Play the CSS tumbling animation */
-      cube.classList.add("rolling");
+      function ringIndexFor(playerId, tokenPos) {
+        if (tokenPos < 0 || tokenPos > 50) return null;
+        return (PLAYER_PATH_META[playerId].start + tokenPos) % 52;
+      }
 
-      /* 2. Pick the final value partway through so it's ready when animation ends */
-      const value = 1 + Math.floor(Math.random() * 6);
+      function isSafePosition(playerId, tokenPos) {
+        const idx = ringIndexFor(playerId, tokenPos);
+        if (idx === null) return true;
+        return STAR_INDICES.has(idx);
+      }
 
-      setTimeout(() => {
-        /* 3. Stop the animation, snap cube to the canonical "zero" position
+      function createBoardGrid() {
+        els.boardGrid.innerHTML = "";
+        for (let r = 0; r < 15; r += 1) {
+          for (let c = 0; c < 15; c += 1) {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.r = r;
+            cell.dataset.c = c;
+
+            // Corner base areas (only if NOT a path cell)
+            if (!isPathCell(r, c)) {
+              if (isBaseCell(r, c, "p2")) cell.classList.add("home-blue");
+              if (isBaseCell(r, c, "p1")) cell.classList.add("home-red");
+              if (isBaseCell(r, c, "p3")) cell.classList.add("home-green");
+              if (isBaseCell(r, c, "p4")) cell.classList.add("home-yellow");
+            }
+
+            if (isPathCell(r, c)) cell.classList.add("path");
+
+            // Colored home lane strips (overrides plain path color)
+            if (isHomeLaneCell(r, c, "p1")) cell.classList.add("lane-red");
+            if (isHomeLaneCell(r, c, "p2")) cell.classList.add("lane-blue");
+            if (isHomeLaneCell(r, c, "p3")) cell.classList.add("lane-green");
+            if (isHomeLaneCell(r, c, "p4")) cell.classList.add("lane-yellow");
+
+            // Center 3×3 (overrides everything)
+            if (r === 7 && c === 7) cell.classList.add("center");
+
+            if (starCellAt(r, c)) cell.textContent = "⭐";
+
+            els.boardGrid.appendChild(cell);
+          }
+        }
+      }
+
+      function isHomeLaneCell(r, c, pid) {
+        return PLAYER_PATH_META[pid].homeLane.some(
+          ([lr, lc]) => lr === r && lc === c,
+        );
+      }
+
+      function starCellAt(r, c) {
+        for (const idx of STAR_INDICES) {
+          const p = RING[idx];
+          if (p[0] === r && p[1] === c) return true;
+        }
+        // Corner junction cells are visual safe squares
+        return CORNER_SAFE_CELLS.some(([cr, cc]) => cr === r && cc === c);
+      }
+
+      function isPathCell(r, c) {
+        // Outer ring
+        if (RING.some((p) => p[0] === r && p[1] === c)) return true;
+        // Home lane cells (all four players)
+        if (r === 7 && c >= 1 && c <= 13) return true;
+        if (c === 7 && r >= 1 && r <= 13) return true;
+        // Corner junction cells that connect RING segments (visual only, not in game path)
+        if ((r === 6 || r === 8) && (c === 6 || c === 8)) return true;
+        return false;
+      }
+
+      function isBaseCell(r, c, pid) {
+        // Exclude the path corridor rows/cols: rows 6-8 and cols 6-8 are never base
+        if (r >= 6 && r <= 8) return false;
+        if (c >= 6 && c <= 8) return false;
+        if (pid === "p2") return r <= 5 && c <= 5;
+        if (pid === "p4") return r <= 5 && c >= 9;
+        if (pid === "p3") return r >= 9 && c <= 5;
+        return r >= 9 && c >= 9;
+      }
+
+      function renderBoard() {
+        createBoardGrid();
+        const activeIds = new Set(getActivePlayerMeta().map((p) => p.id));
+        Array.from(els.boardGrid.children).forEach((cell) => {
+          const r = Number(cell.dataset.r);
+          const c = Number(cell.dataset.c);
+          // Dim inactive player home base areas (corner 6×6 areas only)
+          const pidForCell = isBaseCell(r, c, "p1")
+            ? "p1"
+            : isBaseCell(r, c, "p2")
+              ? "p2"
+              : isBaseCell(r, c, "p3")
+                ? "p3"
+                : isBaseCell(r, c, "p4")
+                  ? "p4"
+                  : null;
+          if (pidForCell && !activeIds.has(pidForCell)) {
+            cell.classList.add("inactive-base");
+          }
+        });
+        renderTokens();
+      }
+
+      function renderTokens() {
+        els.tokenLayer.innerHTML = "";
+        if (!STATE.game) return;
+        const boardWidth = els.board ? els.board.clientWidth : 0;
+        if (!boardWidth) {
+          requestAnimationFrame(renderTokens);
+          return;
+        }
+        const byCell = new Map();
+
+        getActivePlayerMeta().forEach((player) => {
+          const tokenPositions = STATE.game.tokens[player.id];
+          tokenPositions.forEach((pos, idx) => {
+            const coord = getCellFromPos(player.id, pos, idx);
+            const key = `${coord[0]}-${coord[1]}`;
+            if (!byCell.has(key)) byCell.set(key, []);
+            byCell
+              .get(key)
+              .push({ playerId: player.id, tokenIndex: idx, coord });
+          });
+        });
+
+        const size = boardWidth / 15;
+        byCell.forEach((items) => {
+          items.forEach((item, stackIdx) => {
+            const token = document.createElement("button");
+            token.className = `token ${getPlayerById(item.playerId).color}`;
+            token.textContent = String(item.tokenIndex + 1);
+            const [r, c] = item.coord;
+            const offsetPattern = [
+              [0, 0],
+              [-0.18, -0.18],
+              [0.18, -0.18],
+              [-0.18, 0.18],
+              [0.18, 0.18],
+            ];
+            const [or, oc] = offsetPattern[stackIdx % offsetPattern.length];
+            token.style.left = `${((c + 0.5 + oc) * size).toFixed(2)}px`;
+            token.style.top = `${((r + 0.5 + or) * size).toFixed(2)}px`;
+            token.dataset.player = item.playerId;
+            token.dataset.token = item.tokenIndex;
+            if (isSelectableToken(item.playerId, item.tokenIndex))
+              token.classList.add("selectable");
+            token.onclick = () => onTokenClick(item.playerId, item.tokenIndex);
+            els.tokenLayer.appendChild(token);
+          });
+        });
+      }
+
+      function renderGameUI() {
+        if (!STATE.game) return;
+        const currentId = getCurrentPlayerId();
+        els.playerPills.innerHTML = "";
+        getActivePlayerMeta().forEach((p) => {
+          const meta = PLAYER_META.find((m) => m.id === p.id);
+          const label = meta ? meta.label : p.id;
+          const pill = document.createElement("div");
+          pill.className = `pill ${currentId === p.id ? "active" : ""}`;
+          pill.innerHTML = `<span class="dot" style="background:var(--${p.color});"></span><span>${label}</span><span style="opacity:0.7;font-size:0.8rem;">${p.name}</span>`;
+          els.playerPills.appendChild(pill);
+        });
+        const current = getPlayerById(currentId);
+        els.turnNote.textContent = current
+          ? `Your turn, ${current.name}!`
+          : "Game finished";
+        renderDice(STATE.game.lastDice);
+        updateDiceInteractivity();
+        renderTokens();
+        els.rerollBadge.classList.toggle("show", !!STATE.game.isRollAgain);
+      }
+
+      function updateDiceInteractivity() {
+        const canRoll =
+          STATE.screen === "game" &&
+          !STATE.popupOpen &&
+          !STATE.isAnimating &&
+          !STATE.pendingRoll &&
+          STATE.selectableTokens.length === 0 &&
+          !!STATE.game &&
+          !STATE.game.winner;
+        els.diceBtn.disabled = !canRoll;
+      }
+
+      /* Cube face target rotations — bring each face toward the viewer with a
+       slight tilt so the edges stay visible for 3-D depth. */
+      const DICE_FACE_ROTATIONS = {
+        1: "rotateX(-15deg) rotateY(-15deg)", // front
+        2: "rotateX(-80deg) rotateY(-15deg)", // top
+        3: "rotateX(-15deg) rotateY(-80deg)", // right
+        4: "rotateX(-15deg) rotateY(80deg)", // left
+        5: "rotateX(80deg)  rotateY(-15deg)", // bottom
+        6: "rotateX(-15deg) rotateY(165deg)", // back
+      };
+
+      /* Pip grid index patterns for faces 1-6 (9-cell row-major grid) */
+      const DICE_PIP_PATTERNS = {
+        1: [4],
+        2: [2, 6],
+        3: [2, 4, 6],
+        4: [0, 2, 6, 8],
+        5: [0, 2, 4, 6, 8],
+        6: [0, 2, 3, 5, 6, 8],
+      };
+
+      function buildFacePips(faceEl, value) {
+        faceEl.innerHTML = "";
+        const active = DICE_PIP_PATTERNS[value] || [];
+        for (let i = 0; i < 9; i++) {
+          const s = document.createElement("span");
+          s.className = "dpip" + (active.includes(i) ? " on" : "");
+          faceEl.appendChild(s);
+        }
+      }
+
+      /* Populate all 6 cube faces once on page load */
+      function initDiceFaces() {
+        for (let v = 1; v <= 6; v++) {
+          const el = document.getElementById("dface" + v);
+          if (el) buildFacePips(el, v);
+        }
+      }
+
+      function renderDice(value) {
+        if (!els.diceCube) return;
+        els.diceCube.style.transform =
+          DICE_FACE_ROTATIONS[value] || DICE_FACE_ROTATIONS[1];
+      }
+
+      function legalTokensForRoll(playerId, dice) {
+        const positions = STATE.game.tokens[playerId];
+        const legal = [];
+        positions.forEach((pos, idx) => {
+          // Already home — skip
+          if (pos === 56) return;
+          // At base — only a 6 lets you enter
+          if (pos === -1) {
+            if (dice === 6) legal.push(idx);
+            return;
+          }
+          // On board — can move if it doesn't overshoot home (pos 56)
+          // Tokens in home lane (pos 51-55) can only advance if the exact move ≤ 56
+          if (pos + dice <= 56) legal.push(idx);
+        });
+        return legal;
+      }
+
+      function isSelectableToken(playerId, tokenIndex) {
+        return STATE.selectableTokens.some(
+          (t) => t.playerId === playerId && t.tokenIndex === tokenIndex,
+        );
+      }
+
+      function currentPlayerCanAct(playerId) {
+        return playerId === getCurrentPlayerId();
+      }
+
+      function maybeSkipBlockedPlayer() {
+        const pid = getCurrentPlayerId();
+        if (!pid) return;
+        if ((STATE.skipTurns[pid] || 0) > 0) {
+          STATE.skipTurns[pid] -= 1;
+          showToast(`${getPlayerById(pid).name} skips this turn`);
+          advanceTurnAfterCurrent(false);
+          saveJson(STORAGE.GAME, STATE.game, true);
+          renderGameUI();
+        }
+      }
+
+      function rollDice() {
+        if (els.diceBtn.disabled) return;
+        const playerId = getCurrentPlayerId();
+        if (!playerId) return;
+
+        STATE.pendingRoll = true;
+        STATE.selectableTokens = [];
+        updateDiceInteractivity();
+        renderTokens();
+
+        const cube = els.diceCube;
+
+        /* 1. Play the CSS tumbling animation */
+        cube.classList.add("rolling");
+
+        /* 2. Pick the final value partway through so it's ready when animation ends */
+        const value = 1 + Math.floor(Math.random() * 6);
+
+        setTimeout(() => {
+          /* 3. Stop the animation, snap cube to the canonical "zero" position
               (which is where the keyframe @100% visually ends), then
               immediately transition to the face-showing rotation. */
-        cube.classList.remove("rolling");
-        cube.style.transition = "none";
-        cube.style.transform   = "rotateX(-720deg) rotateY(-720deg)"; /* equals 0,0 visually */
-        void cube.offsetWidth; /* force reflow to commit the snap */
-        cube.style.transition = "transform 380ms cubic-bezier(0.34, 1.4, 0.64, 1)";
-        cube.style.transform   = DICE_FACE_ROTATIONS[value];
+          cube.classList.remove("rolling");
+          cube.style.transition = "none";
+          cube.style.transform =
+            "rotateX(-720deg) rotateY(-720deg)"; /* equals 0,0 visually */
+          void cube.offsetWidth; /* force reflow to commit the snap */
+          cube.style.transition =
+            "transform 380ms cubic-bezier(0.34, 1.4, 0.64, 1)";
+          cube.style.transform = DICE_FACE_ROTATIONS[value];
 
-        STATE.pendingRoll = false;
-        STATE.game.lastDice = value;
-        showDiceResult(value);
+          STATE.pendingRoll = false;
+          STATE.game.lastDice = value;
+          showDiceResult(value);
 
-        const legalTokens = legalTokensForRoll(playerId, value);
-        if (!legalTokens.length) {
-          showToast("No moves available, turn skipped");
-          saveJson(STORAGE.GAME, STATE.game, true);
-          setTimeout(() => {
-            advanceTurnAfterCurrent(false);
-            renderGameUI();
-            maybeSkipBlockedPlayer();
-          }, 1500);
-        } else {
-          STATE.selectableTokens = legalTokens.map((idx) => ({ playerId, tokenIndex: idx }));
-          renderTokens();
-          updateDiceInteractivity();
-        }
-      }, 560); /* slightly longer than the 0.55s CSS animation */
-    }
-
-    function showDiceResult(value) {
-      els.diceResult.textContent = String(value);
-      if (STATE.resultTimer) clearTimeout(STATE.resultTimer);
-      STATE.resultTimer = setTimeout(() => {
-        els.diceResult.textContent = "";
-      }, 1500);
-    }
-
-    async function onTokenClick(playerId, tokenIndex) {
-      if (!isSelectableToken(playerId, tokenIndex)) return;
-      if (!currentPlayerCanAct(playerId)) return;
-      if (STATE.isAnimating || STATE.popupOpen || STATE.pendingRoll) return;
-
-      STATE.selectableTokens = [];
-      renderTokens();
-      const dice = STATE.game.lastDice;
-      const tokens = STATE.game.tokens[playerId];
-      const oldPos = tokens[tokenIndex];
-      const leavingHome = oldPos === -1 && dice === 6;
-      const newPos = oldPos === -1 ? 0 : Math.min(oldPos + dice, 56);
-      const rollAgain = dice === 6;
-
-      STATE.isAnimating = true;
-      updateDiceInteractivity();
-      await animateTokenMove(playerId, tokenIndex, oldPos, newPos);
-      tokens[tokenIndex] = newPos;
-      STATE.game.moveCount += 1;
-
-      const moveOutcome = applyCapture(playerId, tokenIndex, newPos);
-      const homeArrival = newPos === 56;
-      if (homeArrival) maybeMarkFinished(playerId);
-
-      const trigger = decideTrigger({
-        cut: moveOutcome.captured,
-        star: landedOnStar(playerId, newPos),
-        leavingHome,
-        homeArrival,
-      });
-
-      saveJson(STORAGE.GAME, STATE.game, true);
-
-      STATE.isAnimating = false;
-      updateDiceInteractivity();
-      renderGameUI();
-
-      if (STATE.config.mode === "activity" && trigger) {
-        openActivityPopup(trigger, playerId, rollAgain);
-      } else {
-        finishTurnFlow(playerId, rollAgain);
-      }
-    }
-
-    function landedOnStar(playerId, pos) {
-      if (pos < 0 || pos > 50) return false;
-      const idx = ringIndexFor(playerId, pos);
-      return STAR_INDICES.has(idx);
-    }
-
-    function decideTrigger(flags) {
-      const t = STATE.config.triggers;
-      if (flags.cut && t.cut) return "cut";
-      if (flags.star && t.star) return "star";
-      if (flags.leavingHome && t.leavingHome) return "leavingHome";
-      if (flags.homeArrival && t.homeArrival) return "homeArrival";
-      return null;
-    }
-
-    function applyCapture(playerId, movedToken, newPos) {
-      if (newPos < 0 || newPos > 50) return { captured: false };
-      if (isSafePosition(playerId, newPos)) return { captured: false };
-
-      const target = getCellFromPos(playerId, newPos, movedToken);
-      let captured = false;
-      getActivePlayerMeta().forEach((p) => {
-        if (p.id === playerId) return;
-        const arr = STATE.game.tokens[p.id];
-        arr.forEach((pos, idx) => {
-          if (pos < 0 || pos > 50) return;
-          const opCell = getCellFromPos(p.id, pos, idx);
-          if (opCell[0] === target[0] && opCell[1] === target[1]) {
-            arr[idx] = -1;
-            captured = true;
+          const legalTokens = legalTokensForRoll(playerId, value);
+          if (!legalTokens.length) {
+            showToast("No moves available, turn skipped");
+            saveJson(STORAGE.GAME, STATE.game, true);
+            setTimeout(() => {
+              advanceTurnAfterCurrent(false);
+              renderGameUI();
+              maybeSkipBlockedPlayer();
+            }, 1500);
+          } else {
+            STATE.selectableTokens = legalTokens.map((idx) => ({
+              playerId,
+              tokenIndex: idx,
+            }));
+            renderTokens();
+            updateDiceInteractivity();
           }
-        });
-      });
-      if (captured) {
-        STATE.game.cutCount += 1;
-        showToast("⚔️ Capture! Opponent token sent back to base");
+        }, 560); /* slightly longer than the 0.55s CSS animation */
       }
-      return { captured };
-    }
 
-    function maybeMarkFinished(playerId) {
-      const allHome = STATE.game.tokens[playerId].every((v) => v === 56);
-      if (!allHome) return;
-      if (STATE.game.finishedPlayers.some((f) => f.id === playerId)) return;
-
-      const position = STATE.game.finishedPlayers.length + 1;
-      STATE.game.finishedPlayers.push({ id: playerId, position });
-      STATE.game.activePlayers = STATE.game.activePlayers.filter((id) => id !== playerId);
-      if (STATE.game.currentTurnIndex >= STATE.game.activePlayers.length) {
-        STATE.game.currentTurnIndex = 0;
+      function showDiceResult(value) {
+        els.diceResult.textContent = String(value);
+        if (STATE.resultTimer) clearTimeout(STATE.resultTimer);
+        STATE.resultTimer = setTimeout(() => {
+          els.diceResult.textContent = "";
+        }, 1500);
       }
-      showToast(`🎉 ${getPlayerById(playerId).name} finished - ${getOrdinal(position)} place!`);
 
-      if (STATE.game.activePlayers.length <= 1) {
-        // Game over — add any remaining active players as last place
-        STATE.game.activePlayers.forEach((remainId) => {
-          if (!STATE.game.finishedPlayers.some((f) => f.id === remainId)) {
-            STATE.game.finishedPlayers.push({
-              id: remainId,
-              position: STATE.game.finishedPlayers.length + 1,
-            });
-          }
-        });
-        STATE.game.activePlayers = [];
-        STATE.game.winner = STATE.game.finishedPlayers[0]?.id || playerId;
-      }
-    }
+      async function onTokenClick(playerId, tokenIndex) {
+        if (!isSelectableToken(playerId, tokenIndex)) return;
+        if (!currentPlayerCanAct(playerId)) return;
+        if (STATE.isAnimating || STATE.popupOpen || STATE.pendingRoll) return;
 
-    async function animateTokenMove(playerId, tokenIndex, from, to) {
-      if (from === -1) {
-        // Animate from base to starting ring cell
-        STATE.game.tokens[playerId][tokenIndex] = 0;
+        STATE.selectableTokens = [];
         renderTokens();
-        await sleep(200);
-        return;
-      }
-      for (let step = from + 1; step <= to; step += 1) {
-        STATE.game.tokens[playerId][tokenIndex] = step;
-        renderTokens();
-        await sleep(150);
-      }
-    }
+        const dice = STATE.game.lastDice;
+        const tokens = STATE.game.tokens[playerId];
+        const oldPos = tokens[tokenIndex];
+        const leavingHome = oldPos === -1 && dice === 6;
+        const newPos = oldPos === -1 ? 0 : Math.min(oldPos + dice, 56);
+        const rollAgain = dice === 6;
 
-    function finishTurnFlow(playerId, rollAgain) {
-      if (STATE.game.winner || STATE.game.activePlayers.length === 0) {
-        STATE.game.winner = STATE.game.winner || (STATE.game.finishedPlayers[0]?.id || null);
+        STATE.isAnimating = true;
+        updateDiceInteractivity();
+        await animateTokenMove(playerId, tokenIndex, oldPos, newPos);
+        tokens[tokenIndex] = newPos;
+        STATE.game.moveCount += 1;
+
+        const moveOutcome = applyCapture(playerId, tokenIndex, newPos);
+        const homeArrival = newPos === 56;
+        if (homeArrival) maybeMarkFinished(playerId);
+
+        const trigger = decideTrigger({
+          cut: moveOutcome.captured,
+          star: landedOnStar(playerId, newPos),
+          leavingHome,
+          homeArrival,
+        });
+
         saveJson(STORAGE.GAME, STATE.game, true);
-        setTimeout(() => showResults(), 900);
-        return;
+
+        STATE.isAnimating = false;
+        updateDiceInteractivity();
+        renderGameUI();
+
+        if (STATE.config.mode === "activity" && trigger) {
+          openActivityPopup(trigger, playerId, rollAgain);
+        } else {
+          finishTurnFlow(playerId, rollAgain);
+        }
       }
-      const stillActive = STATE.game.activePlayers.includes(playerId);
-      advanceTurnAfterCurrent(rollAgain && stillActive, playerId);
-      saveJson(STORAGE.GAME, STATE.game, true);
-      renderGameUI();
-      maybeSkipBlockedPlayer();
-    }
 
-    function advanceTurnAfterCurrent(rollAgain, currentId = getCurrentPlayerId()) {
-      if (!STATE.game.activePlayers.length) return;
-      if (rollAgain && currentId && STATE.game.activePlayers.includes(currentId)) {
-        STATE.game.currentTurnIndex = STATE.game.activePlayers.indexOf(currentId);
-        STATE.game.isRollAgain = true;
-        return;
+      function landedOnStar(playerId, pos) {
+        if (pos < 0 || pos > 50) return false;
+        const idx = ringIndexFor(playerId, pos);
+        return STAR_INDICES.has(idx);
       }
-      STATE.game.isRollAgain = false;
-      if (!currentId) {
-        STATE.game.currentTurnIndex = (STATE.game.currentTurnIndex + 1) % STATE.game.activePlayers.length;
-        return;
+
+      function decideTrigger(flags) {
+        const t = STATE.config.triggers;
+        if (flags.cut && t.cut) return "cut";
+        if (flags.star && t.star) return "star";
+        if (flags.leavingHome && t.leavingHome) return "leavingHome";
+        if (flags.homeArrival && t.homeArrival) return "homeArrival";
+        return null;
       }
-      const idx = STATE.game.activePlayers.indexOf(currentId);
-      if (idx === -1) {
-        STATE.game.currentTurnIndex %= STATE.game.activePlayers.length;
-      } else {
-        STATE.game.currentTurnIndex = (idx + 1) % STATE.game.activePlayers.length;
+
+      function applyCapture(playerId, movedToken, newPos) {
+        if (newPos < 0 || newPos > 50) return { captured: false };
+        if (isSafePosition(playerId, newPos)) return { captured: false };
+
+        const target = getCellFromPos(playerId, newPos, movedToken);
+        let captured = false;
+        getActivePlayerMeta().forEach((p) => {
+          if (p.id === playerId) return;
+          const arr = STATE.game.tokens[p.id];
+          arr.forEach((pos, idx) => {
+            if (pos < 0 || pos > 50) return;
+            const opCell = getCellFromPos(p.id, pos, idx);
+            if (opCell[0] === target[0] && opCell[1] === target[1]) {
+              arr[idx] = -1;
+              captured = true;
+            }
+          });
+        });
+        if (captured) {
+          STATE.game.cutCount += 1;
+          showToast("⚔️ Capture! Opponent token sent back to base");
+        }
+        return { captured };
       }
-    }
 
-    function triggerLabel(trigger) {
-      if (trigger === "star") return "⭐ Star landed!";
-      if (trigger === "homeArrival") return "🏠 Made it home!";
-      if (trigger === "leavingHome") return "🚪 Out of the gate!";
-      return "⚔️ Got cut!";
-    }
+      function maybeMarkFinished(playerId) {
+        const allHome = STATE.game.tokens[playerId].every((v) => v === 56);
+        if (!allHome) return;
+        if (STATE.game.finishedPlayers.some((f) => f.id === playerId)) return;
 
-    function pickActivity(exclude = []) {
-      const source = STATE.config.activities.filter((a) => !exclude.includes(a) && !STATE.recentActivities.includes(a));
-      const fallback = STATE.config.activities.filter((a) => !exclude.includes(a));
-      const pool = source.length ? source : fallback;
-      if (!pool.length) return null;
-      return pool[Math.floor(Math.random() * pool.length)];
-    }
+        const position = STATE.game.finishedPlayers.length + 1;
+        STATE.game.finishedPlayers.push({ id: playerId, position });
+        STATE.game.activePlayers = STATE.game.activePlayers.filter(
+          (id) => id !== playerId,
+        );
+        if (STATE.game.currentTurnIndex >= STATE.game.activePlayers.length) {
+          STATE.game.currentTurnIndex = 0;
+        }
+        showToast(
+          `🎉 ${getPlayerById(playerId).name} finished - ${getOrdinal(position)} place!`,
+        );
 
-    function openActivityPopup(trigger, playerId, rollAgain) {
-      const activity = pickActivity();
-      if (!activity) {
-        finishTurnFlow(playerId, rollAgain);
-        return;
+        if (STATE.game.activePlayers.length <= 1) {
+          // Game over — add any remaining active players as last place
+          STATE.game.activePlayers.forEach((remainId) => {
+            if (!STATE.game.finishedPlayers.some((f) => f.id === remainId)) {
+              STATE.game.finishedPlayers.push({
+                id: remainId,
+                position: STATE.game.finishedPlayers.length + 1,
+              });
+            }
+          });
+          STATE.game.activePlayers = [];
+          STATE.game.winner = STATE.game.finishedPlayers[0]?.id || playerId;
+        }
       }
-      STATE.popupOpen = true;
-      STATE.popupRerolled = false;
-      STATE.currentPopup = { trigger, playerId, activity };
-      STATE.pendingTurnAction = { playerId, rollAgain };
 
-      els.triggerBadge.textContent = triggerLabel(trigger);
-      const p = getPlayerById(playerId);
-      els.challengePlayer.textContent = `${p.name}'s challenge`;
-      els.challengePlayer.style.color = `var(--${p.color})`;
-      els.challengeText.textContent = activity;
-      els.tryAnotherBtn.disabled = false;
-      els.activityOverlay.classList.add("show");
+      async function animateTokenMove(playerId, tokenIndex, from, to) {
+        if (from === -1) {
+          // Animate from base to starting ring cell
+          STATE.game.tokens[playerId][tokenIndex] = 0;
+          renderTokens();
+          await sleep(200);
+          return;
+        }
+        for (let step = from + 1; step <= to; step += 1) {
+          STATE.game.tokens[playerId][tokenIndex] = step;
+          renderTokens();
+          await sleep(150);
+        }
+      }
 
-      logActivity(trigger, activity, p.name);
-      updateDiceInteractivity();
-    }
+      function finishTurnFlow(playerId, rollAgain) {
+        if (STATE.game.winner || STATE.game.activePlayers.length === 0) {
+          STATE.game.winner =
+            STATE.game.winner || STATE.game.finishedPlayers[0]?.id || null;
+          saveJson(STORAGE.GAME, STATE.game, true);
+          setTimeout(() => showResults(), 900);
+          return;
+        }
+        const stillActive = STATE.game.activePlayers.includes(playerId);
+        advanceTurnAfterCurrent(rollAgain && stillActive, playerId);
+        saveJson(STORAGE.GAME, STATE.game, true);
+        renderGameUI();
+        maybeSkipBlockedPlayer();
+      }
 
-    function logActivity(trigger, activity, playerName) {
-      const log = getJson(STORAGE.ACTIVITY_LOG, []);
-      log.push({
-        trigger,
-        activity,
-        player: playerName,
-        timestamp: Date.now(),
-      });
-      saveJson(STORAGE.ACTIVITY_LOG, log);
-      STATE.recentActivities.unshift(activity);
-      STATE.recentActivities = STATE.recentActivities.slice(0, 3);
-    }
+      function advanceTurnAfterCurrent(
+        rollAgain,
+        currentId = getCurrentPlayerId(),
+      ) {
+        if (!STATE.game.activePlayers.length) return;
+        if (
+          rollAgain &&
+          currentId &&
+          STATE.game.activePlayers.includes(currentId)
+        ) {
+          STATE.game.currentTurnIndex =
+            STATE.game.activePlayers.indexOf(currentId);
+          STATE.game.isRollAgain = true;
+          return;
+        }
+        STATE.game.isRollAgain = false;
+        if (!currentId) {
+          STATE.game.currentTurnIndex =
+            (STATE.game.currentTurnIndex + 1) % STATE.game.activePlayers.length;
+          return;
+        }
+        const idx = STATE.game.activePlayers.indexOf(currentId);
+        if (idx === -1) {
+          STATE.game.currentTurnIndex %= STATE.game.activePlayers.length;
+        } else {
+          STATE.game.currentTurnIndex =
+            (idx + 1) % STATE.game.activePlayers.length;
+        }
+      }
 
-    function onTryAnother() {
-      if (!STATE.popupOpen || STATE.popupRerolled) return;
-      const current = STATE.currentPopup;
-      const next = pickActivity([current.activity]);
-      if (!next) return;
-      STATE.popupRerolled = true;
-      current.activity = next;
-      els.challengeText.textContent = next;
-      els.tryAnotherBtn.disabled = true;
-      logActivity(current.trigger, next, getPlayerById(current.playerId).name);
-    }
+      function triggerLabel(trigger) {
+        if (trigger === "star") return "⭐ Star landed!";
+        if (trigger === "homeArrival") return "🏠 Made it home!";
+        if (trigger === "leavingHome") return "🚪 Out of the gate!";
+        return "⚔️ Got cut!";
+      }
 
-    function closeActivityPopup() {
-      if (!STATE.popupOpen) return;
-      els.activityOverlay.classList.remove("show");
-      STATE.popupOpen = false;
-      const pending = STATE.pendingTurnAction;
-      STATE.currentPopup = null;
-      STATE.pendingTurnAction = null;
-      if (pending) finishTurnFlow(pending.playerId, pending.rollAgain);
-      updateDiceInteractivity();
-    }
+      function pickActivity(exclude = []) {
+        const source = STATE.config.activities.filter(
+          (a) => !exclude.includes(a) && !STATE.recentActivities.includes(a),
+        );
+        const fallback = STATE.config.activities.filter(
+          (a) => !exclude.includes(a),
+        );
+        const pool = source.length ? source : fallback;
+        if (!pool.length) return null;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
 
-    function openSettingsOverlay() {
-      const box = document.createElement("div");
-      box.className = "panel";
-      box.style.maxHeight = "96vh";
-      box.innerHTML = `
+      function openActivityPopup(trigger, playerId, rollAgain) {
+        const activity = pickActivity();
+        if (!activity) {
+          finishTurnFlow(playerId, rollAgain);
+          return;
+        }
+        STATE.popupOpen = true;
+        STATE.popupRerolled = false;
+        STATE.currentPopup = { trigger, playerId, activity };
+        STATE.pendingTurnAction = { playerId, rollAgain };
+
+        els.triggerBadge.textContent = triggerLabel(trigger);
+        const p = getPlayerById(playerId);
+        els.challengePlayer.textContent = `${p.name}'s challenge`;
+        els.challengePlayer.style.color = `var(--${p.color})`;
+        els.challengeText.textContent = activity;
+        els.tryAnotherBtn.disabled = false;
+        els.activityOverlay.classList.add("show");
+
+        logActivity(trigger, activity, p.name);
+        updateDiceInteractivity();
+      }
+
+      function logActivity(trigger, activity, playerName) {
+        const log = getJson(STORAGE.ACTIVITY_LOG, []);
+        log.push({
+          trigger,
+          activity,
+          player: playerName,
+          timestamp: Date.now(),
+        });
+        saveJson(STORAGE.ACTIVITY_LOG, log);
+        STATE.recentActivities.unshift(activity);
+        STATE.recentActivities = STATE.recentActivities.slice(0, 3);
+      }
+
+      function onTryAnother() {
+        if (!STATE.popupOpen || STATE.popupRerolled) return;
+        const current = STATE.currentPopup;
+        const next = pickActivity([current.activity]);
+        if (!next) return;
+        STATE.popupRerolled = true;
+        current.activity = next;
+        els.challengeText.textContent = next;
+        els.tryAnotherBtn.disabled = true;
+        logActivity(
+          current.trigger,
+          next,
+          getPlayerById(current.playerId).name,
+        );
+      }
+
+      function closeActivityPopup() {
+        if (!STATE.popupOpen) return;
+        els.activityOverlay.classList.remove("show");
+        STATE.popupOpen = false;
+        const pending = STATE.pendingTurnAction;
+        STATE.currentPopup = null;
+        STATE.pendingTurnAction = null;
+        if (pending) finishTurnFlow(pending.playerId, pending.rollAgain);
+        updateDiceInteractivity();
+      }
+
+      function openSettingsOverlay() {
+        const box = document.createElement("div");
+        box.className = "panel";
+        box.style.maxHeight = "96vh";
+        box.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
           <h1 class="title" style="margin:0;">Configure Game</h1>
           <button id="closeSettingsBtn" style="background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;padding:4px 8px;line-height:1;">✕</button>
@@ -2021,161 +2410,164 @@
         </div>
         <button id="startGameBtn" class="btn full-cta">🎲 Start New Game</button>
       `;
-      els.settingsOverlay.innerHTML = "";
-      els.settingsOverlay.appendChild(box);
-      els.settingsOverlay.classList.add("show");
-      renderConfig(box);
-      box.querySelector("#closeSettingsBtn").onclick = closeSettingsOverlay;
-    }
-
-    function closeSettingsOverlay() {
-      els.settingsOverlay.classList.remove("show");
-      els.settingsOverlay.innerHTML = "";
-      renderGameUI();
-    }
-
-    function openHowToOverlay() {
-      els.howToOverlay.classList.add("show");
-    }
-
-    function closeHowToOverlay() {
-      els.howToOverlay.classList.remove("show");
-    }
-
-    function showResults() {
-      setScreen("results");
-      const rank = STATE.game.finishedPlayers
-        .slice()
-        .sort((a, b) => a.position - b.position)
-        .map((f) => ({ ...f, name: getPlayerById(f.id).name }));
-      els.rankingList.innerHTML = "";
-      rank.forEach((r, i) => {
-        const icon = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
-        const item = document.createElement("div");
-        item.className = "rank-item";
-        const meta = PLAYER_META.find((m) => m.id === r.id);
-        const colorLabel = meta ? meta.label : r.id;
-        const color = meta ? meta.color : "text";
-        item.innerHTML = `<span>${icon} ${getOrdinal(r.position)} — ${r.name}</span><span style="color:var(--${color})">${colorLabel}</span>`;
-        els.rankingList.appendChild(item);
-      });
-
-      const log = getJson(STORAGE.ACTIVITY_LOG, []);
-      els.statActivities.textContent = String(log.length);
-      els.statMoves.textContent = String(STATE.game.moveCount);
-      els.statCuts.textContent = String(STATE.game.cutCount);
-      burstConfetti();
-    }
-
-    function burstConfetti() {
-      const opts = { particleCount: 80, spread: 68, startVelocity: 44 };
-      confetti({ ...opts, origin: { x: 0.08, y: 0.55 }, angle: 52 });
-      confetti({ ...opts, origin: { x: 0.92, y: 0.55 }, angle: 128 });
-      confetti({ ...opts, origin: { x: 0.08, y: 0.35 }, angle: 45 });
-    }
-
-    function playAgain() {
-      startNewGameFromConfig();
-    }
-
-    function resetToNewGameConfig() {
-      // Start a blank game first so the board is visible behind the overlay
-      clearLudoSession();
-      STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
-      if (!STATE.config.activities?.length) STATE.config.activities = [...DEFAULT_ACTIVITIES];
-      STATE.game = initialGameState();
-      setScreen("game");
-      renderBoard();
-      renderGameUI();
-      openSettingsOverlay();
-    }
-
-    function maybeResumePrompt() {
-      const gs = getJson(STORAGE.GAME, null);
-      if (gs && gs.winner === null) {
-        els.resumeOverlay.classList.add("show");
+        els.settingsOverlay.innerHTML = "";
+        els.settingsOverlay.appendChild(box);
+        els.settingsOverlay.classList.add("show");
+        renderConfig(box);
+        box.querySelector("#closeSettingsBtn").onclick = closeSettingsOverlay;
       }
-    }
 
-    function resumeGame() {
-      const cfg = getJson(STORAGE.CONFIG, null);
-      const gs = getJson(STORAGE.GAME, null);
-      if (!cfg || !gs) {
-        els.resumeOverlay.classList.remove("show");
-        return;
+      function closeSettingsOverlay() {
+        els.settingsOverlay.classList.remove("show");
+        els.settingsOverlay.innerHTML = "";
+        renderGameUI();
       }
-      STATE.config = cfg;
-      STATE.game = gs;
-      els.resumeOverlay.classList.remove("show");
-      setScreen("game");
-      renderBoard();
-      renderGameUI();
-    }
 
-    function startFreshFromPrompt() {
-      clearLudoSession();
-      STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
-      if (!STATE.config.activities?.length) STATE.config.activities = [...DEFAULT_ACTIVITIES];
-      els.resumeOverlay.classList.remove("show");
-      startNewGameFromConfig();
-    }
+      function openHowToOverlay() {
+        els.howToOverlay.classList.add("show");
+      }
 
-    function sleep(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
+      function closeHowToOverlay() {
+        els.howToOverlay.classList.remove("show");
+      }
 
-    function attachEvents() {
-      els.addActivityBtn.onclick = () => {};
-      els.previewActivityBtn.onclick = () => {};
-      els.startGameBtn.onclick = () => {};
-      els.diceBtn.onclick = rollDice;
-      els.settingsBtn.onclick = openSettingsOverlay;
-      els.howToBtn.onclick = openHowToOverlay;
-      els.tryAnotherBtn.onclick = onTryAnother;
-      els.doneActivityBtn.onclick = closeActivityPopup;
-      els.closeHowToBtn.onclick = closeHowToOverlay;
-      els.resumeBtn.onclick = resumeGame;
-      els.freshBtn.onclick = startFreshFromPrompt;
-      els.playAgainBtn.onclick = playAgain;
-      els.newGameBtn.onclick = resetToNewGameConfig;
-      window.addEventListener("resize", renderTokens);
-    }
+      function showResults() {
+        setScreen("results");
+        const rank = STATE.game.finishedPlayers
+          .slice()
+          .sort((a, b) => a.position - b.position)
+          .map((f) => ({ ...f, name: getPlayerById(f.id).name }));
+        els.rankingList.innerHTML = "";
+        rank.forEach((r, i) => {
+          const icon = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+          const item = document.createElement("div");
+          item.className = "rank-item";
+          const meta = PLAYER_META.find((m) => m.id === r.id);
+          const colorLabel = meta ? meta.label : r.id;
+          const color = meta ? meta.color : "text";
+          item.innerHTML = `<span>${icon} ${getOrdinal(r.position)} — ${r.name}</span><span style="color:var(--${color})">${colorLabel}</span>`;
+          els.rankingList.appendChild(item);
+        });
 
-    function bootstrap() {
-      initEls();
-      initDiceFaces();   /* populate pip dots on all 6 cube faces */
-      attachEvents();
+        const log = getJson(STORAGE.ACTIVITY_LOG, []);
+        els.statActivities.textContent = String(log.length);
+        els.statMoves.textContent = String(STATE.game.moveCount);
+        els.statCuts.textContent = String(STATE.game.cutCount);
+        burstConfetti();
+      }
 
-      // Load or create config
-      STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
-      if (!STATE.config.activities?.length) STATE.config.activities = [...DEFAULT_ACTIVITIES];
-      saveJson(STORAGE.CONFIG, STATE.config);
+      function burstConfetti() {
+        const opts = { particleCount: 80, spread: 68, startVelocity: 44 };
+        confetti({ ...opts, origin: { x: 0.08, y: 0.55 }, angle: 52 });
+        confetti({ ...opts, origin: { x: 0.92, y: 0.55 }, angle: 128 });
+        confetti({ ...opts, origin: { x: 0.08, y: 0.35 }, angle: 45 });
+      }
 
-      const gs = getJson(STORAGE.GAME, null);
+      function playAgain() {
+        startNewGameFromConfig();
+      }
 
-      // Unfinished game → show resume prompt over the board
-      if (gs && gs.winner === null) {
-        STATE.game = gs;
+      function resetToNewGameConfig() {
+        // Start a blank game first so the board is visible behind the overlay
+        clearLudoSession();
+        STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
+        if (!STATE.config.activities?.length)
+          STATE.config.activities = [...DEFAULT_ACTIVITIES];
+        STATE.game = initialGameState();
         setScreen("game");
         renderBoard();
         renderGameUI();
-        maybeResumePrompt();
-        return;
+        openSettingsOverlay();
       }
 
-      // Finished game → show results
-      if (gs && gs.winner) {
-        STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
+      function maybeResumePrompt() {
+        const gs = getJson(STORAGE.GAME, null);
+        if (gs && gs.winner === null) {
+          els.resumeOverlay.classList.add("show");
+        }
+      }
+
+      function resumeGame() {
+        const cfg = getJson(STORAGE.CONFIG, null);
+        const gs = getJson(STORAGE.GAME, null);
+        if (!cfg || !gs) {
+          els.resumeOverlay.classList.remove("show");
+          return;
+        }
+        STATE.config = cfg;
         STATE.game = gs;
-        showResults();
-        return;
+        els.resumeOverlay.classList.remove("show");
+        setScreen("game");
+        renderBoard();
+        renderGameUI();
       }
 
-      // No game at all → auto-start immediately with current config
-      startNewGameFromConfig();
-    }
+      function startFreshFromPrompt() {
+        clearLudoSession();
+        STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
+        if (!STATE.config.activities?.length)
+          STATE.config.activities = [...DEFAULT_ACTIVITIES];
+        els.resumeOverlay.classList.remove("show");
+        startNewGameFromConfig();
+      }
 
-    bootstrap();
-  </script>
-</body>
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function attachEvents() {
+        els.addActivityBtn.onclick = () => {};
+        els.previewActivityBtn.onclick = () => {};
+        els.startGameBtn.onclick = () => {};
+        els.diceBtn.onclick = rollDice;
+        els.settingsBtn.onclick = openSettingsOverlay;
+        els.howToBtn.onclick = openHowToOverlay;
+        els.tryAnotherBtn.onclick = onTryAnother;
+        els.doneActivityBtn.onclick = closeActivityPopup;
+        els.closeHowToBtn.onclick = closeHowToOverlay;
+        els.resumeBtn.onclick = resumeGame;
+        els.freshBtn.onclick = startFreshFromPrompt;
+        els.playAgainBtn.onclick = playAgain;
+        els.newGameBtn.onclick = resetToNewGameConfig;
+        window.addEventListener("resize", renderTokens);
+      }
+
+      function bootstrap() {
+        initEls();
+        initDiceFaces(); /* populate pip dots on all 6 cube faces */
+        attachEvents();
+
+        // Load or create config
+        STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
+        if (!STATE.config.activities?.length)
+          STATE.config.activities = [...DEFAULT_ACTIVITIES];
+        saveJson(STORAGE.CONFIG, STATE.config);
+
+        const gs = getJson(STORAGE.GAME, null);
+
+        // Unfinished game → show resume prompt over the board
+        if (gs && gs.winner === null) {
+          STATE.game = gs;
+          setScreen("game");
+          renderBoard();
+          renderGameUI();
+          maybeResumePrompt();
+          return;
+        }
+
+        // Finished game → show results
+        if (gs && gs.winner) {
+          STATE.config = getJson(STORAGE.CONFIG, deepClone(DEFAULT_CONFIG));
+          STATE.game = gs;
+          showResults();
+          return;
+        }
+
+        // No game at all → auto-start immediately with current config
+        startNewGameFromConfig();
+      }
+
+      bootstrap();
+    </script>
+  </body>
 </html>

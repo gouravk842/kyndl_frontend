@@ -10,10 +10,10 @@ type KyndlButtonProps = ComponentProps<typeof Link> & {
 
 const variants = {
   primary:
-    "bg-[#B11226] text-[#F5E9E2] border border-[#C21830]/30 kyndl-glow-red hover:bg-[#C21830] hover:shadow-[0_0_32px_oklch(0.45_0.18_25_/_45%)]",
+    "bg-gradient-to-r from-[#FF7A59] to-[#F2596F] text-white kyndl-glow-warm hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-14px_rgba(242,89,111,0.6)]",
   secondary:
-    "bg-transparent text-[#F5E9E2] border border-[#B3B3B3]/25 hover:border-[#C21830]/40 hover:bg-[#151515]/80",
-  ghost: "bg-transparent text-[#B3B3B3] hover:text-[#F5E9E2]",
+    "bg-white/70 text-[#3A2A25] border border-[#F2DACE] hover:border-[#FF7A59]/50 hover:bg-white",
+  ghost: "bg-transparent text-[#92786C] hover:text-[#3A2A25]",
 };
 
 const sizes = {
@@ -31,7 +31,7 @@ export function KyndlButton({
     <Link
       className={cn(
         "inline-flex items-center justify-center rounded-full font-medium transition-all duration-500 ease-out",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C21830]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090909]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2596F]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFF7F1]",
         variants[variant],
         sizes[size],
         className,

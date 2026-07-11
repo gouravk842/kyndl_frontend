@@ -1,16 +1,17 @@
-import type { Role } from "@/constants/roles";
-
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  name: string;
-  avatarUrl?: string | null;
-  role: Role;
-  createdAt: string;
-  updatedAt: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  is_email_verified: boolean;
+  linked_providers: string[];
+  /** True when the user owns an active vendor shop (gifts marketplace). */
+  is_vendor: boolean;
+  date_joined: string;
 }
 
 export interface UpdateUserPayload {
-  name?: string;
-  avatarUrl?: string | null;
+  first_name?: string;
+  last_name?: string;
 }

@@ -1,5 +1,6 @@
 export { AmbientBackground } from "./ambient-background";
 export { EmotionalShowcase } from "./emotional-showcase";
+export { ExperienceGallery } from "./experience-gallery";
 export { ExperienceStrip } from "./experience-strip";
 export { FinalCta } from "./final-cta";
 export { GiftCatalog } from "./gift-catalog";

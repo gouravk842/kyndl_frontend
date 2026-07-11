@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Gift, HeartHandshake, Sparkles } from "lucide-react";
+import { ArrowRight, Heart, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 
 import { AmbientBackground } from "@/components/landing/ambient-background";
@@ -16,10 +16,12 @@ const EmotionalShowcase = dynamic(
     ),
   {
     loading: () => (
-      <div className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-[#151515]" />
+      <div className="aspect-square w-full animate-pulse rounded-[2rem] bg-[#FCEEE3]" />
     ),
   },
 );
+
+const ease = [0.22, 1, 0.36, 1] as const;
 
 export function HeroSection() {
   return (
@@ -27,58 +29,88 @@ export function HeroSection() {
       <AmbientBackground />
       <PageContainer
         size="xl"
-        className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center py-20 lg:py-28"
+        className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center py-16 lg:py-24"
       >
-        <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-12">
+        <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
           <motion.div
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+            transition={{ duration: 0.8, ease, delay: 0.1 }}
           >
-            <p className="mb-6 text-sm font-medium tracking-[0.2em] text-[#D4A373] uppercase">
-              Digital gifting for heartfelt moments
-            </p>
-            <h1 className="font-display text-4xl leading-[1.08] tracking-tight text-[#F5E9E2] md:text-5xl lg:text-6xl xl:text-7xl kyndl-text-glow">
-              Send love that feels
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#F2DACE] bg-white/70 px-4 py-1.5 text-xs font-medium tracking-wide text-[#C75B39] backdrop-blur-sm">
+              <Sparkles className="size-3.5" />
+              Gifts that feel like a hug
+            </span>
+
+            <h1 className="mt-6 font-display text-[2.6rem] leading-[1.04] tracking-tight text-[#3A2A25] sm:text-5xl lg:text-6xl xl:text-[4.4rem]">
+              Some moments
               <br />
-              <span className="text-[#C21830]">deeper than a message.</span>
+              deserve more than a{" "}
+              <span className="relative whitespace-nowrap font-cursive text-[#C75B39]">
+                text.
+                <svg
+                  className="absolute -bottom-3 left-0 w-full"
+                  viewBox="0 0 200 12"
+                  fill="none"
+                  preserveAspectRatio="none"
+                  aria-hidden
+                >
+                  <motion.path
+                    d="M2 8C40 3 80 3 120 6c30 2 60 1 78-3"
+                    stroke="#FF7A59"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 1.1, ease, delay: 0.7 }}
+                  />
+                </svg>
+              </span>
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-[#B3B3B3]">
-              Build customized digital gifts for your loved ones: emotional
-              cards, surprise games, memory capsules, and hidden messages that
-              reveal at the perfect moment.
+
+            <p className="mt-8 max-w-lg text-lg leading-relaxed text-[#7A6258]">
+              Kyndl turns what you feel into something they can{" "}
+              <span className="text-[#3A2A25]">hold</span> — a scrapbook they
+              turn page by page, a night sky of your moments, a jar of little
+              notes. Keepsakes, not just messages.
             </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <KyndlButton size="lg" href={ROUTES.register}>
-                Create a Custom Gift
+
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              <KyndlButton size="lg" href={ROUTES.register} className="group">
+                Create a keepsake
+                <ArrowRight className="ml-2 size-4 transition-transform duration-300 group-hover:translate-x-1" />
               </KyndlButton>
-              <KyndlButton size="lg" variant="secondary" href={ROUTES.games}>
-                Browse Couple Games
-              </KyndlButton>
-              <KyndlButton size="lg" variant="secondary" href="#gift-catalog">
-                Explore Gift Types
+              <KyndlButton size="lg" variant="secondary" href="#experiences">
+                Explore experiences
               </KyndlButton>
             </div>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {[
-                { icon: HeartHandshake, text: "Made for couples" },
-                { icon: Gift, text: "Digital cards + games" },
-                { icon: Sparkles, text: "Personalized in minutes" },
-              ].map((item) => (
-                <span
-                  key={item.text}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#101010]/80 px-3 py-1.5 text-xs text-[#F5E9E2]"
-                >
-                  <item.icon className="size-3.5 text-[#D4A373]" />
-                  {item.text}
+
+            <div className="mt-10 flex items-center gap-4">
+              <div className="flex -space-x-2.5">
+                {["#FF7A59", "#F2596F", "#F0A13D", "#FF9A7B"].map((c, i) => (
+                  <span
+                    key={c}
+                    className="flex size-9 items-center justify-center rounded-full border-2 border-[#FFF7F1] text-white shadow-sm"
+                    style={{ background: c, zIndex: 4 - i }}
+                  >
+                    <Heart className="size-3.5 fill-white" aria-hidden />
+                  </span>
+                ))}
+              </div>
+              <p className="text-sm leading-snug text-[#7A6258]">
+                <span className="font-semibold text-[#3A2A25]">
+                  Made for the people you love
                 </span>
-              ))}
+                <br />
+                personalized in minutes — no design skills needed.
+              </p>
             </div>
           </motion.div>
+
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
+            initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
+            transition={{ duration: 0.9, ease, delay: 0.35 }}
           >
             <EmotionalShowcase />
           </motion.div>

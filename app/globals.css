@@ -11,6 +11,9 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-heading:
     var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-hand: var(--font-hand);
+  --font-cursive: var(--font-cursive);
+  --font-serif: var(--font-serif);
   --color-kyndl-red: var(--kyndl-red);
   --color-kyndl-red-bright: var(--kyndl-red-bright);
   --color-kyndl-red-deep: var(--kyndl-red-deep);
@@ -18,6 +21,14 @@
   --color-kyndl-ivory: var(--kyndl-ivory);
   --color-kyndl-gold: var(--kyndl-gold);
   --color-kyndl-gray: var(--kyndl-gray);
+  --color-kyndl-cream: var(--kyndl-cream);
+  --color-kyndl-cream-deep: var(--kyndl-cream-deep);
+  --color-kyndl-cocoa: var(--kyndl-cocoa);
+  --color-kyndl-taupe: var(--kyndl-taupe);
+  --color-kyndl-coral: var(--kyndl-coral);
+  --color-kyndl-rose: var(--kyndl-rose);
+  --color-kyndl-amber: var(--kyndl-amber);
+  --color-kyndl-blush: var(--kyndl-blush);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -67,72 +78,81 @@
   --kyndl-ivory: #f5e9e2;
   --kyndl-gold: #d4a373;
   --kyndl-gray: #b3b3b3;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Warm & light gifting palette */
+  --kyndl-cream: #fff7f1;
+  --kyndl-cream-deep: #fceee3;
+  --kyndl-cocoa: #3a2a25;
+  --kyndl-taupe: #92786c;
+  --kyndl-coral: #ff7a59;
+  --kyndl-rose: #f2596f;
+  --kyndl-amber: #f0a13d;
+  --kyndl-blush: #fbd9ce;
+  --background: #fff7f1;
+  --foreground: #3a2a25;
+  --card: #ffffff;
+  --card-foreground: #3a2a25;
+  --popover: #ffffff;
+  --popover-foreground: #3a2a25;
+  --primary: #f2596f;
+  --primary-foreground: #ffffff;
+  --secondary: #fceee3;
+  --secondary-foreground: #3a2a25;
+  --muted: #fbeee6;
+  --muted-foreground: #92786c;
+  --accent: #fff1e9;
+  --accent-foreground: #c75b39;
+  --destructive: #d7263d;
+  --border: #f2dace;
+  --input: #f2dace;
+  --ring: #ff7a59;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #fdf3ec;
+  --sidebar-foreground: #3a2a25;
+  --sidebar-primary: #f2596f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #fff1e9;
+  --sidebar-accent-foreground: #c75b39;
+  --sidebar-border: #f2dace;
+  --sidebar-ring: #ff7a59;
 }
 
 .dark {
-  --background: #090909;
-  --foreground: #f5e9e2;
-  --card: #111111;
-  --card-foreground: #f5e9e2;
-  --popover: #151515;
-  --popover-foreground: #f5e9e2;
-  --primary: #b11226;
-  --primary-foreground: #f5e9e2;
-  --secondary: #151515;
-  --secondary-foreground: #f5e9e2;
-  --muted: #151515;
-  --muted-foreground: #b3b3b3;
-  --accent: #151515;
-  --accent-foreground: #f5e9e2;
-  --destructive: #d7263d;
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: #c21830;
+  --background: #1a1413;
+  --foreground: #f7ece6;
+  --card: #221b19;
+  --card-foreground: #f7ece6;
+  --popover: #221b19;
+  --popover-foreground: #f7ece6;
+  --primary: #ff7a59;
+  --primary-foreground: #2a1410;
+  --secondary: #2a201d;
+  --secondary-foreground: #f7ece6;
+  --muted: #2a201d;
+  --muted-foreground: #c4a99b;
+  --accent: #2a201d;
+  --accent-foreground: #ffb59a;
+  --destructive: #f2596f;
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: #ff7a59;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar: #221b19;
+  --sidebar-foreground: #f7ece6;
+  --sidebar-primary: #ff7a59;
+  --sidebar-primary-foreground: #2a1410;
+  --sidebar-accent: #2a201d;
+  --sidebar-accent-foreground: #ffb59a;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #ff7a59;
 }
 
 @layer base {
@@ -154,6 +174,15 @@
       sans-serif;
   }
 
+  /* Static logo wordmark defaults to cocoa so it reads on warm light surfaces.
+     The animated loader logo keeps its own ivory fill (it sits on dark). */
+  .kyndl-logo--static text {
+    fill: var(--kyndl-cocoa);
+  }
+  .dark .kyndl-logo--static text {
+    fill: var(--kyndl-ivory);
+  }
+
   .kyndl-grain {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   }
@@ -168,6 +197,32 @@
     text-shadow: 0 0 40px oklch(0.45 0.2 25 / 40%);
   }
 
+  /* Warm gifting accent: coral → rose gradient text */
+  .kyndl-text-warm {
+    background-image: linear-gradient(
+      105deg,
+      #ff7a59 0%,
+      #f2596f 55%,
+      #e8536b 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Soft warm lift used on the primary CTA and feature cards */
+  .kyndl-glow-warm {
+    box-shadow:
+      0 18px 44px -16px rgba(242, 89, 111, 0.5),
+      0 8px 22px -10px rgba(255, 122, 89, 0.4);
+  }
+
+  .kyndl-card-soft {
+    box-shadow:
+      0 1px 2px rgba(58, 42, 37, 0.04),
+      0 12px 32px -18px rgba(58, 42, 37, 0.18);
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -175,6 +230,212 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* ── Scrapbook: handwriting voices ───────────────────────────── */
+  .font-hand {
+    font-family: var(--font-hand), "Segoe Script", cursive;
+  }
+  .font-cursive {
+    font-family: var(--font-cursive), "Brush Script MT", cursive;
+  }
+
+  /* ── Constellation: classical serif starlight ────────────────── */
+  .font-serif {
+    font-family: var(--font-serif), ui-serif, Georgia, "Times New Roman", serif;
+  }
+
+  /* ── Scrapbook: thick aged paper page surface ────────────────── */
+  .kyndl-paper {
+    background-color: #fffdf6;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 0%, #fffef9 0%, transparent 60%),
+      linear-gradient(180deg, #fffdf6 0%, #f4e7d2 100%);
+  }
+
+  /* Ludo board felt — a warm wooden frame around a soft playing surface so the
+     board reads like a physical game on a table. */
+  .kyndl-ludo-board {
+    background: radial-gradient(
+      ellipse 70% 70% at 50% 38%,
+      #fffaf4 0%,
+      #fbeede 55%,
+      #f4e0cb 100%
+    );
+    border: 10px solid #c98a5a;
+    box-shadow:
+      0 0 0 2px #a96b3d,
+      inset 0 2px 8px rgba(255, 255, 255, 0.5),
+      inset 0 -6px 16px rgba(120, 70, 40, 0.25),
+      0 30px 60px -28px rgba(80, 45, 25, 0.55),
+      0 16px 32px -20px rgba(80, 45, 25, 0.4);
+  }
+
+  /* Dark album mat the book rests on — makes the cream pages pop against the
+     warm marketing background so the book reads as a physical object. */
+  .kyndl-book-stage {
+    background: radial-gradient(
+      ellipse 75% 80% at 50% 35%,
+      #5b4138 0%,
+      #3c2a24 70%,
+      #2e201b 100%
+    );
+  }
+
+  /* Lifts the whole book off the mat. */
+  .kyndl-book-shadow {
+    box-shadow:
+      0 2px 0 rgba(255, 255, 255, 0.06) inset,
+      0 45px 90px -25px rgba(0, 0, 0, 0.6),
+      0 22px 48px -22px rgba(0, 0, 0, 0.5);
+  }
+  /* Subtle fibre grain layered over a paper surface (use on a child ::before). */
+  .kyndl-paper-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  /* Inner-spine vignette: darkens the gutter edge so pages feel bound. */
+  .kyndl-page-gutter-left {
+    box-shadow: inset 18px 0 36px -22px rgba(58, 42, 37, 0.55);
+  }
+  .kyndl-page-gutter-right {
+    box-shadow: inset -18px 0 36px -22px rgba(58, 42, 37, 0.55);
+  }
+
+  /* Stacked page-edge thickness drawn down the outer side of a page. */
+  .kyndl-page-edges {
+    background: repeating-linear-gradient(
+      90deg,
+      #f3e7d6 0px,
+      #f3e7d6 1px,
+      #e8dac4 1px,
+      #e8dac4 2px
+    );
+  }
+
+  /* Hardbound cover board with embossed depth. */
+  .kyndl-cover-board {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 -2px 6px rgba(0, 0, 0, 0.35) inset,
+      0 30px 60px -20px rgba(58, 42, 37, 0.65),
+      0 12px 24px -12px rgba(58, 42, 37, 0.5);
+  }
+  .kyndl-emboss {
+    text-shadow:
+      0 1px 0 rgba(0, 0, 0, 0.45),
+      0 -1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  /* Translucent washi tape strip. */
+  .kyndl-tape {
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.18) 0px,
+      rgba(255, 255, 255, 0.18) 6px,
+      rgba(255, 255, 255, 0) 6px,
+      rgba(255, 255, 255, 0) 12px
+    );
+    box-shadow: 0 4px 10px -6px rgba(58, 42, 37, 0.5);
+  }
+
+  /* Photo / keepsake lift off the page. */
+  .kyndl-pinned {
+    box-shadow:
+      0 1px 2px rgba(58, 42, 37, 0.12),
+      0 14px 28px -14px rgba(58, 42, 37, 0.45);
+  }
+
+  /* ── Auth: pressed-ink letterpress for dark type on cream paper ──── */
+  .kyndl-letterpress {
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  /* ── Auth: a single letter sheet with two more peeking out behind ── */
+  .kyndl-letter-stack {
+    position: relative;
+  }
+  .kyndl-letter-stack::before,
+  .kyndl-letter-stack::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: #f4e9d6;
+    box-shadow: 0 22px 46px -26px rgba(58, 42, 37, 0.5);
+    z-index: -1;
+  }
+  .kyndl-letter-stack::before {
+    transform: rotate(-2.4deg) translate(-7px, 7px);
+  }
+  .kyndl-letter-stack::after {
+    background: #efe2cc;
+    transform: rotate(1.8deg) translate(9px, 11px);
+  }
+
+  /* ── Auth: underline-only field that grows a warm ink line on focus ─ */
+  .kyndl-input-underline {
+    border: 0;
+    border-radius: 0;
+    border-bottom: 1.5px solid rgba(58, 42, 37, 0.28);
+    background: transparent;
+    box-shadow: 0 1px 0 rgba(58, 42, 37, 0.28);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .kyndl-input-underline:focus,
+  .kyndl-input-underline:focus-visible {
+    outline: none;
+    border-bottom-color: #c75b39;
+    box-shadow: 0 1.5px 0 #c75b39;
+  }
+  .kyndl-input-underline[aria-invalid="true"] {
+    border-bottom-color: #c0392b;
+    box-shadow: 0 1.5px 0 #c0392b;
+  }
+
+  /* ── Auth: engraved bronze CTA — a pressed metal plate on the sheet ─ */
+  .kyndl-btn-metal {
+    background: linear-gradient(180deg, #5b4840 0%, #4a3931 50%, #3a2b25 100%);
+    border: 1px solid #2c1f1a;
+    box-shadow:
+      0 0 0 1.5px #b57d4e,
+      0 0 0 2.5px rgba(120, 74, 44, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -2px 6px rgba(0, 0, 0, 0.38),
+      0 12px 24px -12px rgba(58, 42, 37, 0.6);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    transition:
+      filter 0.18s ease,
+      transform 0.06s ease;
+  }
+  .kyndl-btn-metal:hover:not(:disabled) {
+    filter: brightness(1.07);
+  }
+  .kyndl-btn-metal:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow:
+      0 0 0 1.5px #b57d4e,
+      0 0 0 2.5px rgba(120, 74, 44, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 5px rgba(0, 0, 0, 0.45),
+      0 6px 14px -10px rgba(58, 42, 37, 0.6);
+  }
+
+  /* ── Auth: worn leather review tag stamped at the foot of the page ── */
+  .kyndl-leather-tag {
+    background: linear-gradient(180deg, #b57446 0%, #9c5f38 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -3px 8px rgba(70, 40, 20, 0.4),
+      0 10px 22px -12px rgba(58, 42, 37, 0.55);
+  }
+}
+
+@keyframes kyndl-vinyl-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -223,4 +484,208 @@
     opacity: 1;
     filter: drop-shadow(0 0 28px #c21830);
   }
+}
+
+/* ── Memory Pages ────────────────────────────────────────────────
+   Unlayered so they're always emitted (see Tailwind v4 tree-shaking note). */
+
+/* The warm caramel table the album rests on (the viewer stage backdrop).
+   Kept light + warm to sit inside Kyndl's cream/tan/coral palette. */
+.kyndl-mp-leather {
+  background-color: #d6b386;
+  background-image:
+    radial-gradient(
+      ellipse 72% 72% at 50% 26%,
+      rgba(255, 251, 242, 0.55) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 16% 84%,
+      rgba(150, 108, 66, 0.25) 0%,
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 86% 88%,
+      rgba(150, 108, 66, 0.22) 0%,
+      transparent 48%
+    ),
+    linear-gradient(155deg, #eccfa6 0%, #d8b489 52%, #c39c6c 100%);
+  box-shadow: inset 0 0 130px -18px rgba(120, 82, 46, 0.4);
+}
+
+/* The bound cover board — a deeper caramel than the pages, still warm + on-theme. */
+.kyndl-mp-cover {
+  background-color: #b1804f;
+  background-image:
+    radial-gradient(
+      ellipse 75% 75% at 50% 22%,
+      rgba(255, 238, 210, 0.25) 0%,
+      transparent 58%
+    ),
+    linear-gradient(155deg, #c39463 0%, #ab7848 55%, #946132 100%);
+  box-shadow: inset 0 0 90px -16px rgba(90, 60, 30, 0.35);
+}
+
+/* Elegant cream album leaf — warmer and flatter than the scrapbook paper. */
+.kyndl-mp-leaf {
+  background-color: #f7f0e1;
+  background-image:
+    radial-gradient(ellipse 90% 70% at 50% 0%, #fdf9f0 0%, transparent 55%),
+    linear-gradient(180deg, #f8f1e3 0%, #efe4cf 100%);
+}
+
+/* Faint old-map watermark wash for a leaf corner. */
+.kyndl-mp-map {
+  background-image: radial-gradient(
+    circle at 78% 22%,
+    rgba(120, 92, 58, 0.1) 0%,
+    rgba(120, 92, 58, 0.05) 22%,
+    transparent 42%
+  );
+}
+
+/* Wooden-desk leaf surface (the alternate, non-default theme). */
+.kyndl-mp-desk {
+  background-color: #4a342a;
+  background-image:
+    radial-gradient(
+      ellipse 90% 70% at 50% 0%,
+      rgba(255, 240, 214, 0.16) 0%,
+      transparent 55%
+    ),
+    repeating-linear-gradient(
+      92deg,
+      #4a342a 0px,
+      #453026 5px,
+      #4d382d 9px,
+      #432f25 14px
+    ),
+    linear-gradient(180deg, #4f382d 0%, #3a2a22 100%);
+  box-shadow: inset 0 0 80px -10px rgba(0, 0, 0, 0.45);
+}
+
+/* The single, consistent warm backdrop for the whole public keepsake page —
+   header, album and doodles all sit on this one soft cream wash so the book
+   floats on the page rather than on its own caramel desk. */
+.kyndl-mp-ambient {
+  background-color: #f7ecdd;
+  background-image:
+    radial-gradient(
+      ellipse 60% 48% at 50% 34%,
+      rgba(255, 252, 245, 0.92) 0%,
+      transparent 64%
+    ),
+    radial-gradient(circle at 10% 92%, rgba(255, 168, 138, 0.16) 0%, transparent 40%),
+    radial-gradient(circle at 92% 12%, rgba(212, 163, 115, 0.2) 0%, transparent 42%),
+    linear-gradient(165deg, #fdf3e6 0%, #f6e6cf 60%, #f0dcc0 100%);
+}
+
+/* Gentle drifting for the scattered background doodles. */
+@keyframes kyndl-drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(calc(var(--r, 0deg) + 3deg));
+  }
+}
+.kyndl-drift {
+  animation: kyndl-drift 7s ease-in-out infinite;
+}
+
+/* ── Scrapbook: page ruling overlays ─────────────────────────────
+   Drawn on a child layer over the paper surface so the lines sit beneath
+   placed elements but above the background tint. Kept unlayered (outside
+   @layer utilities) so they're always emitted, not tree-shaken. */
+.kyndl-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 27px,
+    rgba(91, 130, 173, 0.45) 27px,
+    rgba(91, 130, 173, 0.45) 28px
+  );
+}
+.kyndl-dotted {
+  background-image: radial-gradient(
+    rgba(58, 42, 37, 0.4) 1.3px,
+    transparent 1.6px
+  );
+  background-size: 22px 22px;
+}
+.kyndl-grid {
+  background-image:
+    linear-gradient(to right, rgba(58, 42, 37, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(58, 42, 37, 0.22) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Scrapbook: notebook writing surface (TipTap editor + static render) ──
+   The 28px line rhythm matches the .kyndl-ruled overlay so text tracks the
+   lines. Shared by the builder editor and the read-only viewer. Unlayered so
+   it's always emitted. */
+.kyndl-page-prose {
+  position: relative;
+  height: 100%;
+  font-family: var(--font-hand), "Segoe Script", cursive;
+  font-size: 16px;
+  line-height: 28px;
+  color: #3a2a25;
+  caret-color: #c75b39;
+  word-break: break-word;
+}
+.kyndl-page-prose:focus,
+.kyndl-page-prose:focus-visible {
+  outline: none;
+}
+.kyndl-page-prose > * {
+  margin: 0;
+}
+.kyndl-page-prose p {
+  min-height: 28px;
+}
+.kyndl-page-prose h1 {
+  font-family: var(--font-display, inherit);
+  font-size: 26px;
+  line-height: 56px;
+  font-weight: 600;
+}
+.kyndl-page-prose h2 {
+  font-size: 21px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.kyndl-page-prose h3 {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.kyndl-page-prose ul,
+.kyndl-page-prose ol {
+  padding-left: 1.5em;
+}
+.kyndl-page-prose ul {
+  list-style: disc;
+}
+.kyndl-page-prose ol {
+  list-style: decimal;
+}
+.kyndl-page-prose blockquote {
+  border-left: 3px solid #e6c9b3;
+  padding-left: 0.75em;
+  color: #6b5248;
+  font-style: italic;
+}
+.kyndl-page-prose a {
+  color: #c75b39;
+  text-decoration: underline;
+}
+/* Placeholder (TipTap) for the empty first line. */
+.kyndl-page-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #b29a89;
+  float: left;
+  height: 0;
+  pointer-events: none;
 }

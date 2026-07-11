@@ -1,7 +1,14 @@
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Plus_Jakarta_Sans, Syne } from "next/font/google";
+import {
+  Caveat,
+  Dancing_Script,
+  EB_Garamond,
+  Geist_Mono,
+  Plus_Jakarta_Sans,
+  Syne,
+} from "next/font/google";
 
 import { createMetadata } from "@/lib/seo";
 import { AppProviders } from "@/providers";
@@ -24,11 +31,34 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+// Scrapbook handwriting voices: Caveat for casual notes, Dancing Script for
+// flowing cursive love-letter passages.
+const caveat = Caveat({
+  variable: "--font-hand",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const dancingScript = Dancing_Script({
+  variable: "--font-cursive",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// Constellation: a classical serif for star labels and memory text — starlight
+// in type. Loaded with its italic so the constellation name can whisper.
+const ebGaramond = EB_Garamond({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
 export const metadata: Metadata = createMetadata();
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#090909" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#090909" },
   ],
   width: "device-width",
@@ -44,7 +74,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakarta.variable} ${syne.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${plusJakarta.variable} ${syne.variable} ${geistMono.variable} ${caveat.variable} ${dancingScript.variable} ${ebGaramond.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
         <AppProviders>{children}</AppProviders>

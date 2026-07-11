@@ -10,7 +10,7 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="dark min-h-full bg-[#090909] text-[#F5E9E2]">
+    <div className="min-h-full bg-[#FFF7F1] text-[#3A2A25]">
       <PageLoader intro={<KyndlLogo size="loader" animated />} />
       <MarketingHeader />
       <main className="flex-1">

@@ -49,7 +49,7 @@ export function PageLoader({ intro }: PageLoaderProps) {
             className="pointer-events-none absolute left-1/2 top-1/2 size-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30"
             style={{
               background:
-                "radial-gradient(circle, #D85A30 0%, #B11226 35%, transparent 70%)",
+                "radial-gradient(circle, #F0A13D 0%, #FF7A59 35%, transparent 70%)",
             }}
             aria-hidden
           />

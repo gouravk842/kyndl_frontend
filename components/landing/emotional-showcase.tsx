@@ -1,121 +1,109 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Gift, Heart, Lock, Sparkles } from "lucide-react";
+import { Heart, Sparkles } from "lucide-react";
+
+// Tiny deterministic starfield for the constellation keepsake — no Math.random
+// so server and client render identically.
+const stars = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  left: `${(i * 37 + 8) % 92}%`,
+  top: `${(i * 53 + 11) % 80}%`,
+  size: 1 + (i % 3),
+  delay: (i % 5) * 0.4,
+}));
 
 export function EmotionalShowcase() {
   return (
-    <div
-      className="relative aspect-[4/5] w-full max-w-md mx-auto lg:max-w-none"
-      style={{ perspective: "1400px" }}
-    >
+    <div className="relative mx-auto aspect-square w-full max-w-md lg:max-w-none">
+      {/* warm halo */}
       <div
-        className="absolute inset-0 rounded-3xl opacity-60"
+        className="absolute inset-4 rounded-[3rem] blur-3xl"
         style={{
           background:
-            "radial-gradient(ellipse at center, #8E1020 0%, transparent 65%)",
+            "radial-gradient(ellipse at 50% 40%, rgba(255,160,120,0.55) 0%, rgba(242,89,111,0.28) 45%, transparent 72%)",
         }}
+        aria-hidden
       />
+
+      {/* ── Scrapbook page (the anchor keepsake) ───────────────────── */}
       <motion.div
-        className="relative h-full rounded-3xl border border-white/[0.06] bg-[#111111]/80 p-6 backdrop-blur-xl"
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-        style={{ transformStyle: "preserve-3d" }}
+        className="kyndl-card-soft absolute left-1/2 top-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-[1.75rem] border border-[#F0DAC9] bg-[#FFFDF6] p-5 shadow-[0_30px_70px_-30px_rgba(58,42,37,0.5)]"
+        initial={{ rotate: -4 }}
+        animate={{ y: [0, -10, 0], rotate: [-4, -3, -4] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       >
-        <motion.div
-          className="absolute left-5 top-6 rounded-full border border-white/[0.1] bg-[#0E0E0E]/90 px-3 py-1 text-[11px] text-[#F5E9E2]"
-          style={{ transform: "translateZ(30px)" }}
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
-        >
-          3D gifting preview
-        </motion.div>
+        <span className="kyndl-tape absolute -top-3 left-1/2 h-6 w-20 -translate-x-1/2 rounded-[3px] bg-white/40" />
+        {/* polaroid */}
+        <div className="mx-auto w-[82%] rounded-[6px] bg-white p-2 pb-7 shadow-[0_8px_20px_-12px_rgba(58,42,37,0.5)]">
+          <div
+            className="aspect-[4/3] w-full rounded-[3px]"
+            style={{
+              background:
+                "linear-gradient(135deg, #ffd9b0 0%, #fbd9ce 45%, #f7c9c0 100%)",
+            }}
+          />
+        </div>
+        <p className="mt-3 text-center font-hand text-2xl leading-tight text-[#5b4138]">
+          the day everything
+          <br />
+          felt easy ♡
+        </p>
+      </motion.div>
 
-        <motion.div
-          className="absolute -right-4 top-8 w-[72%] rounded-2xl border border-[#C21830]/20 bg-gradient-to-br from-[#151515] to-[#111111] p-5 shadow-2xl"
-          style={{
-            transform: "translateZ(96px) rotateY(-12deg) rotateX(7deg)",
-          }}
-          animate={{ y: [0, -8, 0], rotateZ: [0, -0.8, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <div className="mb-3 flex items-center gap-2 text-[#D4A373]">
-            <Sparkles className="size-3.5" />
-            <span className="text-xs font-medium tracking-wide uppercase">
-              Love card
-            </span>
-          </div>
-          <p className="font-display text-lg leading-snug text-[#F5E9E2]">
-            For the moment words
-            <br />
-            <span className="text-[#C21830]">couldn&apos;t hold.</span>
-          </p>
-          <div className="mt-4 h-px bg-gradient-to-r from-[#B11226]/50 to-transparent" />
-          <p className="mt-3 text-xs text-[#B3B3B3]">Opens at midnight</p>
-        </motion.div>
+      {/* ── Constellation keepsake (cool contrast, top-right) ───────── */}
+      <motion.div
+        className="absolute -right-2 top-4 w-40 overflow-hidden rounded-2xl border border-white/10 p-4 shadow-[0_24px_50px_-22px_rgba(20,16,40,0.7)] sm:-right-4"
+        style={{
+          background:
+            "radial-gradient(ellipse at 70% 20%, #2a2350 0%, #161033 60%, #0d0a22 100%)",
+        }}
+        animate={{ y: [0, -12, 0], rotate: [3, 5, 3] }}
+        transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+      >
+        {stars.map((s) => (
+          <motion.span
+            key={s.id}
+            className="absolute rounded-full bg-white"
+            style={{ left: s.left, top: s.top, width: s.size, height: s.size }}
+            animate={{ opacity: [0.25, 1, 0.25] }}
+            transition={{
+              duration: 2.4,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: s.delay,
+            }}
+          />
+        ))}
+        <p className="relative font-serif text-sm italic text-[#dcd6ff]">
+          us, in stars
+        </p>
+        <p className="relative mt-1 text-[10px] tracking-wide text-[#9b93d6]">
+          tap a moment to open it
+        </p>
+      </motion.div>
 
-        <motion.div
-          className="absolute bottom-12 left-0 w-[65%] rounded-2xl border border-white/[0.04] bg-[#151515]/90 p-4 backdrop-blur-md"
-          style={{ transform: "translateZ(56px) rotateY(10deg)" }}
-          animate={{ y: [0, 9, 0] }}
-          transition={{
-            duration: 7,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-        >
-          <div className="flex items-center gap-2 text-[#B3B3B3]">
-            <Lock className="size-3" />
-            <span className="text-xs">Hidden message</span>
-          </div>
-          <p className="mt-2 blur-[3px] text-sm text-[#F5E9E2]/80 select-none">
-            I still think about that night...
-          </p>
-        </motion.div>
+      {/* ── Memory-jar note (warm, bottom-left) ────────────────────── */}
+      <motion.div
+        className="kyndl-card-soft absolute -left-3 bottom-6 w-44 rounded-2xl border border-[#F0DAC9] bg-white/95 p-4 sm:-left-5"
+        animate={{ y: [0, 11, 0], rotate: [-2, -4, -2] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
+      >
+        <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#C75B39]">
+          <Sparkles className="size-3" /> Memory jar
+        </p>
+        <p className="mt-1.5 font-hand text-xl leading-snug text-[#3A2A25]">
+          &ldquo;still my favorite person.&rdquo;
+        </p>
+      </motion.div>
 
-        <motion.div
-          className="absolute left-[28%] top-[46%] w-[48%] rounded-2xl border border-[#D4A373]/25 bg-[#0F0F0F]/95 p-4"
-          style={{
-            transform: "translateZ(132px) rotateX(-3deg) rotateY(-8deg)",
-          }}
-          animate={{ y: [0, -6, 0] }}
-          transition={{
-            duration: 6.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5,
-          }}
-        >
-          <p className="flex items-center gap-2 text-[11px] tracking-wider text-[#D4A373] uppercase">
-            <Gift className="size-3.5" />
-            Custom surprise box
-          </p>
-          <p className="mt-2 text-xs text-[#F5E9E2]">
-            Card + game + secret note for your partner.
-          </p>
-        </motion.div>
-
-        <motion.div
-          className="absolute bottom-4 right-8 flex size-12 items-center justify-center rounded-full bg-[#B11226]/20"
-          style={{ transform: "translateZ(142px)" }}
-          animate={{ scale: [1, 1.08, 1], y: [0, -2, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <Heart className="size-5 fill-[#B11226] text-[#C21830]" aria-hidden />
-        </motion.div>
-
-        <motion.div
-          className="absolute left-6 top-1/2 size-2 rounded-full bg-[#D7263D]"
-          animate={{ opacity: [0.3, 0.8, 0.3], scale: [1, 1.2, 1] }}
-          transition={{ duration: 3, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute right-12 top-1/4 size-1.5 rounded-full bg-[#D4A373]"
-          animate={{ opacity: [0.2, 0.6, 0.2] }}
-          transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-        />
+      {/* heartbeat accent */}
+      <motion.div
+        className="kyndl-glow-warm absolute right-6 bottom-2 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7A59] to-[#F2596F]"
+        animate={{ scale: [1, 1.12, 1], rotate: [0, -5, 0] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Heart className="size-5 fill-white text-white" aria-hidden />
       </motion.div>
     </div>
   );

@@ -1,0 +1,70 @@
+import {
+  BookHeart,
+  Building2,
+  Calendar,
+  Camera,
+  Dice5,
+  Dices,
+  Disc3,
+  Flame,
+  Footprints,
+  Gamepad2,
+  Gift,
+  Heart,
+  HeartHandshake,
+  Hourglass,
+  Image,
+  Images,
+  Lock,
+  type LucideIcon,
+  MapPin,
+  Mic,
+  Moon,
+  Music,
+  Navigation,
+  PenLine,
+  SlidersHorizontal,
+  Sparkles,
+  Stars,
+  Ticket,
+  Users,
+} from "lucide-react";
+
+/**
+ * Maps the string `icon` names stored in `lib/experiences` to lucide
+ * components, so the data layer stays serializable and framework-agnostic.
+ */
+const registry: Record<string, LucideIcon> = {
+  BookHeart,
+  Building2,
+  Calendar,
+  Camera,
+  Dice5,
+  Dices,
+  Disc3,
+  Flame,
+  Footprints,
+  Gamepad2,
+  Gift,
+  Heart,
+  HeartHandshake,
+  Hourglass,
+  Image,
+  Images,
+  Lock,
+  MapPin,
+  Mic,
+  Moon,
+  Music,
+  Navigation,
+  PenLine,
+  SlidersHorizontal,
+  Sparkles,
+  Stars,
+  Ticket,
+  Users,
+};
+
+export function iconFor(name: string): LucideIcon {
+  return registry[name] ?? Sparkles;
+}

@@ -1,9 +1,10 @@
+/**
+ * Auth cookie names. The tokens are set as `httpOnly; Secure; SameSite=Lax`
+ * cookies by the Next BFF (`app/api/auth/*`) on login/verify/refresh and cleared
+ * on logout — the frontend never reads or writes their values, it only
+ * references these names in proxy.ts for presence checks.
+ */
 export const COOKIE_NAMES = {
   ACCESS_TOKEN: "kyndl_access_token",
   REFRESH_TOKEN: "kyndl_refresh_token",
-} as const;
-
-export const COOKIE_MAX_AGE = {
-  ACCESS: 60 * 15, // 15 minutes
-  REFRESH: 60 * 60 * 24 * 7, // 7 days
 } as const;

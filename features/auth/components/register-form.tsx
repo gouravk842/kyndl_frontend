@@ -2,28 +2,23 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ROUTES } from "@/constants/routes";
+import { AuthField } from "@/features/auth/components/auth-field";
+import { AuthSheet } from "@/features/auth/components/auth-sheet";
+import { MetalButton } from "@/features/auth/components/metal-button";
 import {
   type RegisterFormValues,
   registerSchema,
-} from "@/features/auth/schemas/login.schema";
+} from "@/features/auth/schemas/auth.schema";
 import { useAuth } from "@/hooks/use-auth";
+import { withCallbackUrl } from "@/lib/navigation";
 
 export function RegisterForm() {
-  const { register: registerUser, isRegistering } = useAuth();
+  const { signup, isSigningUp } = useAuth();
+  const callbackUrl = useSearchParams().get("callbackUrl");
   const {
     register,
     handleSubmit,
@@ -31,88 +26,76 @@ export function RegisterForm() {
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
+      first_name: "",
+      last_name: "",
       email: "",
       password: "",
-      confirmPassword: "",
+      password_confirm: "",
     },
   });
 
-  const onSubmit = ({ name, email, password }: RegisterFormValues) => {
-    registerUser({ name, email, password });
-  };
-
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>Start building with Kyndl today</CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full name</Label>
-            <Input id="name" autoComplete="name" {...register("name")} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              {...register("confirmPassword")}
-            />
-            {errors.confirmPassword && (
-              <p className="text-sm text-destructive">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isRegistering}>
-            {isRegistering ? "Creating account..." : "Create account"}
-          </Button>
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              href={ROUTES.login}
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
+    <AuthSheet
+      title="Create account"
+      description="Start turning thoughts into heartfelt gifts."
+    >
+      <form
+        onSubmit={handleSubmit((data) => signup(data))}
+        className="space-y-6"
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <AuthField
+            id="first_name"
+            label="First name"
+            autoComplete="given-name"
+            error={errors.first_name?.message}
+            {...register("first_name")}
+          />
+          <AuthField
+            id="last_name"
+            label="Last name"
+            autoComplete="family-name"
+            error={errors.last_name?.message}
+            {...register("last_name")}
+          />
+        </div>
+        <AuthField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+        <AuthField
+          id="password"
+          label="Password"
+          type="password"
+          autoComplete="new-password"
+          error={errors.password?.message}
+          {...register("password")}
+        />
+        <AuthField
+          id="password_confirm"
+          label="Confirm password"
+          type="password"
+          autoComplete="new-password"
+          error={errors.password_confirm?.message}
+          {...register("password_confirm")}
+        />
+        <MetalButton type="submit" disabled={isSigningUp} className="mt-2">
+          {isSigningUp ? "Creating account…" : "Create account"}
+        </MetalButton>
+        <p className="text-center font-cursive text-[19px] text-[#7A6258]">
+          Already a member?{" "}
+          <Link
+            href={withCallbackUrl(ROUTES.login, callbackUrl)}
+            className="text-[#C75B39] underline underline-offset-2"
+          >
+            Sign in
+          </Link>
+        </p>
       </form>
-    </Card>
+    </AuthSheet>
   );
 }

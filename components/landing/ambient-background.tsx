@@ -2,13 +2,13 @@
 
 import { motion } from "framer-motion";
 
-const particles = Array.from({ length: 18 }, (_, i) => ({
+const motes = Array.from({ length: 8 }, (_, i) => ({
   id: i,
-  left: `${(i * 17 + 7) % 100}%`,
-  top: `${(i * 23 + 11) % 100}%`,
-  size: 2 + (i % 3),
-  delay: i * 0.4,
-  duration: 8 + (i % 5) * 2,
+  left: `${(i * 23 + 9) % 96}%`,
+  top: `${(i * 31 + 13) % 90}%`,
+  size: 4 + (i % 3) * 2,
+  delay: i * 0.6,
+  duration: 9 + (i % 4) * 2,
 }));
 
 export function AmbientBackground({ className }: { className?: string }) {
@@ -17,31 +17,32 @@ export function AmbientBackground({ className }: { className?: string }) {
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className ?? ""}`}
       aria-hidden
     >
+      {/* Soft warm light blooms — like sunlight through a wrapped gift */}
       <div
-        className="absolute inset-0 opacity-60"
+        className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 70% 40%, #8E1020 0%, transparent 55%), radial-gradient(ellipse 60% 40% at 20% 80%, #B11226 0%, transparent 50%), radial-gradient(ellipse 50% 30% at 50% 0%, #151515 0%, transparent 70%)",
-          animation: "kyndl-ambient-drift 20s ease-in-out infinite",
+            "radial-gradient(ellipse 70% 55% at 78% 20%, rgba(255,160,120,0.45) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 12% 78%, rgba(242,89,111,0.28) 0%, transparent 58%), radial-gradient(ellipse 55% 45% at 50% 110%, rgba(240,161,61,0.22) 0%, transparent 60%)",
+          animation: "kyndl-ambient-drift 22s ease-in-out infinite",
         }}
       />
-      <div className="absolute inset-0 kyndl-grain opacity-30 mix-blend-overlay" />
-      {particles.map((p) => (
+      {/* Floating heart-warm motes */}
+      {motes.map((p) => (
         <motion.span
           key={p.id}
-          className="absolute rounded-full bg-[#C21830]"
+          className="absolute rounded-full"
           style={{
             left: p.left,
             top: p.top,
             width: p.size,
             height: p.size,
-            filter: "blur(1px)",
-            opacity: 0.25 + (p.id % 3) * 0.1,
+            background:
+              "radial-gradient(circle, rgba(255,122,89,0.7) 0%, rgba(242,89,111,0) 75%)",
           }}
           animate={{
-            y: [0, -20, 0],
-            x: [0, 8, 0],
-            opacity: [0.2, 0.5, 0.2],
+            y: [0, -26, 0],
+            x: [0, 10, 0],
+            opacity: [0.15, 0.5, 0.15],
           }}
           transition={{
             duration: p.duration,
