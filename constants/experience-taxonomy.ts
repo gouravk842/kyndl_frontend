@@ -59,13 +59,22 @@ export const SLUG_CATEGORY: Record<string, CategoryId> = {
   "string-frame": "keepsake",
   "spotify-plaque": "keepsake",
   "timeless-treasure": "keepsake",
+  "twenty-four-reasons": "keepsake",
+  "relationship-calendar": "keepsake",
   // Big moments — paced, lived once
   proposal: "moment",
   "date-ask": "moment",
+  "mirror-match": "moment",
   countdown: "moment",
   "time-capsule": "moment",
   // Play together
   ludo: "play",
+  "whack-a-mole": "play",
+  flames: "play",
+  "love-calculator": "play",
+  "folded-note": "play",
+  "this-or-that": "play",
+  "delulu-meter": "play",
 };
 
 export const DEFAULT_CATEGORY: CategoryId = "keepsake";

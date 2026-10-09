@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { queryKeys } from "@/constants/query-keys";
 import { ROUTES } from "@/constants/routes";
+import { resetClientSession } from "@/lib/auth-session";
 import { postAuthDestination, withCallbackUrl } from "@/lib/navigation";
 import { authService } from "@/services/auth/auth.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -29,14 +30,18 @@ export function useAuth() {
   // Preserved through the whole auth flow so login/verify returns them there.
   const callbackUrl = searchParams.get("callbackUrl");
   const queryClient = useQueryClient();
-  const { user, isAuthenticated, isHydrated, setUser, clearAuth } =
-    useAuthStore();
+  const { user, isAuthenticated, isHydrated, setUser } = useAuthStore();
 
   const profileQuery = useQuery({
     queryKey: queryKeys.auth.profile(),
     queryFn: async () => {
+      const version = useAuthStore.getState().sessionVersion;
       const res = await authService.getProfile();
-      setUser(res.user);
+      // Sign-out (or a newer sign-in) won the race — keep the store as-is.
+      if (useAuthStore.getState().sessionVersion !== version || !res.user) {
+        return useAuthStore.getState().user;
+      }
+      useAuthStore.getState().commitUser(res.user, version);
       return res.user;
     },
     enabled: isAuthenticated && isHydrated,
@@ -124,9 +129,9 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: () => authService.logout(),
     onSettled: () => {
-      // The BFF clears the httpOnly cookies; we just reset client state.
-      clearAuth();
-      queryClient.clear();
+      // The BFF clears the httpOnly cookies; drop the client snapshot too,
+      // before any in-flight profile response can write the name back.
+      resetClientSession(queryClient);
       router.push(ROUTES.login);
       toast.success("Signed out");
     },

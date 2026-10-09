@@ -15,7 +15,7 @@ const stars = Array.from({ length: 14 }, (_, i) => ({
 
 export function EmotionalShowcase() {
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-md lg:max-w-none">
+    <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden lg:max-w-none lg:overflow-visible">
       {/* warm halo */}
       <div
         className="absolute inset-4 rounded-[3rem] blur-3xl"
@@ -36,13 +36,15 @@ export function EmotionalShowcase() {
         <span className="kyndl-tape absolute -top-3 left-1/2 h-6 w-20 -translate-x-1/2 rounded-[3px] bg-white/40" />
         {/* polaroid */}
         <div className="mx-auto w-[82%] rounded-[6px] bg-white p-2 pb-7 shadow-[0_8px_20px_-12px_rgba(58,42,37,0.5)]">
-          <div
-            className="aspect-[4/3] w-full rounded-[3px]"
-            style={{
-              background:
-                "linear-gradient(135deg, #ffd9b0 0%, #fbd9ce 45%, #f7c9c0 100%)",
-            }}
-          />
+          <div className="aspect-[4/3] w-full overflow-hidden rounded-[3px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/scrapbook.png"
+              alt=""
+              className="size-full object-cover"
+              draggable={false}
+            />
+          </div>
         </div>
         <p className="mt-3 text-center font-hand text-2xl leading-tight text-[#5b4138]">
           the day everything
@@ -53,13 +55,18 @@ export function EmotionalShowcase() {
 
       {/* ── Constellation keepsake (cool contrast, top-right) ───────── */}
       <motion.div
-        className="absolute -right-2 top-4 w-40 overflow-hidden rounded-2xl border border-white/10 p-4 shadow-[0_24px_50px_-22px_rgba(20,16,40,0.7)] sm:-right-4"
+        className="absolute top-4 right-1 w-[min(10rem,38%)] overflow-hidden rounded-2xl border border-white/10 p-3 shadow-[0_24px_50px_-22px_rgba(20,16,40,0.7)] sm:right-0 sm:w-40 sm:p-4 lg:-right-4"
         style={{
           background:
             "radial-gradient(ellipse at 70% 20%, #2a2350 0%, #161033 60%, #0d0a22 100%)",
         }}
         animate={{ y: [0, -12, 0], rotate: [3, 5, 3] }}
-        transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+        transition={{
+          duration: 6.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.4,
+        }}
       >
         {stars.map((s) => (
           <motion.span
@@ -85,9 +92,14 @@ export function EmotionalShowcase() {
 
       {/* ── Memory-jar note (warm, bottom-left) ────────────────────── */}
       <motion.div
-        className="kyndl-card-soft absolute -left-3 bottom-6 w-44 rounded-2xl border border-[#F0DAC9] bg-white/95 p-4 sm:-left-5"
+        className="kyndl-card-soft absolute bottom-6 left-1 w-[min(11rem,42%)] rounded-2xl border border-[#F0DAC9] bg-white/95 p-3 sm:left-0 sm:w-44 sm:p-4 lg:-left-5"
         animate={{ y: [0, 11, 0], rotate: [-2, -4, -2] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
+        transition={{
+          duration: 7,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.9,
+        }}
       >
         <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#C75B39]">
           <Sparkles className="size-3" /> Memory jar

@@ -7,14 +7,11 @@ import {
 } from "lucide-react";
 
 import { nodeTitle } from "../../lib/node-visuals";
-import { isNodeLocked, useMemoryCityStore } from "../../store";
+import { isNodeLocked, missingRequires, useMemoryCityStore } from "../../store";
 import type { CityConfig } from "../../types";
 
 /**
- * Bottom navigator. In revolve mode: previous / next along the tour, plus
- * "recall" (open the memory) and "step into the district" (free-roam) once the
- * camera has arrived. In roam mode: a control hint and a "rejoin the tour"
- * button. Hidden while a reward panel is open.
+ * Bottom navigator for revolve / roam, with prerequisite lock hints.
  */
 export function TourControls({ city }: { city: CityConfig }) {
   const started = useMemoryCityStore((s) => s.started);
@@ -27,6 +24,8 @@ export function TourControls({ city }: { city: CityConfig }) {
   const exitRoam = useMemoryCityStore((s) => s.exitRoam);
   const activate = useMemoryCityStore((s) => s.activate);
   const solved = useMemoryCityStore((s) => s.solved);
+  const recalled = useMemoryCityStore((s) => s.recalled);
+  const roamAllowed = useMemoryCityStore((s) => s.roamAllowed);
 
   if (!started || activeNodeId) return null;
 
@@ -34,6 +33,14 @@ export function TourControls({ city }: { city: CityConfig }) {
   const node = city.nodes[currentIndex];
   const title = node ? nodeTitle(node) : "";
   const locked = node ? isNodeLocked(node, solved) : false;
+  const missing = node ? missingRequires(node, recalled) : [];
+  const prereqBlocked = missing.length > 0;
+  const missingTitles = missing
+    .map((id) => {
+      const n = city.nodes.find((x) => x.id === id);
+      return n ? nodeTitle(n) : id;
+    })
+    .filter(Boolean);
 
   if (mode === "roam") {
     return (
@@ -59,6 +66,11 @@ export function TourControls({ city }: { city: CityConfig }) {
           {title}
         </p>
       )}
+      {prereqBlocked && arrived && (
+        <p className="max-w-sm rounded-full bg-black/50 px-4 py-1.5 text-center text-xs text-amber-200/90 backdrop-blur-sm">
+          Locked until you recall: {missingTitles.join(", ")}
+        </p>
+      )}
 
       <div className="pointer-events-auto flex items-center gap-2">
         <button
@@ -74,10 +86,10 @@ export function TourControls({ city }: { city: CityConfig }) {
         <button
           type="button"
           onClick={() => node && activate(node)}
-          disabled={!arrived}
+          disabled={!arrived || prereqBlocked}
           className="inline-flex h-11 items-center gap-2 rounded-full bg-[#7fd9ff] px-5 text-sm font-semibold text-[#0b0a1a] shadow-[0_0_24px_rgba(127,217,255,0.45)] transition-all hover:scale-105 disabled:scale-100 disabled:opacity-40"
         >
-          {locked ? (
+          {locked || prereqBlocked ? (
             <>
               <Lock className="h-4 w-4" />
               Unlock
@@ -90,16 +102,18 @@ export function TourControls({ city }: { city: CityConfig }) {
           )}
         </button>
 
-        <button
-          type="button"
-          onClick={enterRoam}
-          disabled={!arrived}
-          aria-label="Step into the district"
-          className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-black/40 px-4 text-sm text-white/85 backdrop-blur-sm transition-colors hover:bg-black/60 disabled:opacity-30"
-        >
-          <Footprints className="h-4 w-4" />
-          Step off
-        </button>
+        {roamAllowed && (
+          <button
+            type="button"
+            onClick={enterRoam}
+            disabled={!arrived}
+            aria-label="Step into the district"
+            className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 bg-black/40 px-4 text-sm text-white/85 backdrop-blur-sm transition-colors hover:bg-black/60 disabled:opacity-30"
+          >
+            <Footprints className="h-4 w-4" />
+            Step off
+          </button>
+        )}
 
         <button
           type="button"

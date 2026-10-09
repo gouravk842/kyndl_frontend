@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AgeConsentDialog } from "@/components/red-zone/age-consent-dialog";
+import { ExperienceCardMedia } from "@/components/shared/experience-card-media";
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import { ROUTES } from "@/constants/routes";
 import { useMounted } from "@/hooks/use-mounted";
+import { experienceHref } from "@/lib/experiences";
 import { hasRedZoneConsent, setRedZoneConsent } from "@/lib/red-zone-consent";
 import type { ExperienceView } from "@/lib/server/experiences";
 
@@ -73,9 +75,10 @@ export function RedZoneSection({
                 key={exp.slug}
                 className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] transition-all duration-500 hover:-translate-y-1 hover:border-[#ff4d6d]/45"
               >
-                <div
-                  className="relative h-32 w-full"
-                  style={{ background: exp.previewGradient }}
+                <ExperienceCardMedia
+                  slug={exp.slug}
+                  media={exp}
+                  className="h-36 rounded-none aspect-auto"
                 >
                   <span className="absolute left-5 top-5 flex size-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-[#ff8fae] backdrop-blur-sm">
                     <ExperienceIcon name={exp.icon} className="size-6" />
@@ -83,17 +86,19 @@ export function RedZoneSection({
                   <span className="absolute right-5 top-5 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-3 py-1 text-[11px] font-medium tracking-wider text-[#ff8fae] uppercase backdrop-blur-sm">
                     {exp.eyebrow}
                   </span>
-                </div>
+                </ExperienceCardMedia>
 
                 <div className="flex flex-1 flex-col p-6">
-                  <h2 className="font-display text-xl text-white">{exp.name}</h2>
+                  <h2 className="font-display text-xl text-white">
+                    {exp.name}
+                  </h2>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-white/55">
                     {exp.tagline}
                   </p>
 
                   <div className="mt-6 flex items-center gap-3">
                     <Link
-                      href={exp.liveHref ?? ROUTES.home}
+                      href={experienceHref(exp.slug)}
                       className="inline-flex h-11 items-center rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-5 text-sm font-medium text-white transition-transform hover:-translate-y-0.5"
                     >
                       Open

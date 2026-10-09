@@ -17,8 +17,10 @@ export function useSkyAudio(
   config: SoundConfig,
   openedCount: number,
   total: number,
+  songUrl?: string,
 ) {
   const audioRef = useRef<SkyAudio | null>(null);
+  const songRef = useRef<HTMLAudioElement | null>(null);
   const [muted, setMutedState] = useState(config.startMuted);
   const prevOpened = useRef(0);
 
@@ -31,8 +33,25 @@ export function useSkyAudio(
     return () => {
       audioRef.current?.dispose();
       audioRef.current = null;
+      songRef.current?.pause();
+      songRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    songRef.current?.pause();
+    songRef.current = null;
+    if (!songUrl || muted || !config.enabled) return;
+    const song = new Audio(songUrl);
+    song.loop = true;
+    song.volume = 0.22;
+    songRef.current = song;
+    void song.play().catch(() => {});
+    return () => {
+      song.pause();
+      if (songRef.current === song) songRef.current = null;
+    };
+  }, [songUrl, muted, config.enabled]);
 
   /** Resume the context + set initial mute — call from a user gesture. */
   const unlock = useCallback(() => {
@@ -57,6 +76,13 @@ export function useSkyAudio(
     const audio = audioRef.current;
     if (!audio) return;
     if (openedCount > prevOpened.current) {
+      const song = songRef.current;
+      if (song) {
+        song.volume = 0.08;
+        window.setTimeout(() => {
+          if (songRef.current === song) song.volume = 0.22;
+        }, 700);
+      }
       audio.chime(openedCount - 1);
       if (openedCount === total && total > 0) audio.finale();
     }

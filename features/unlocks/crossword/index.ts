@@ -9,16 +9,27 @@ import { z } from "zod";
 import { registerModule } from "../registry";
 import type { MemoryModule } from "../types";
 
-export const crosswordEntrySchema = z.object({
-  /** The solution word (letters only; matched case-insensitively). */
-  answer: z.string().min(1),
-  /** The clue shown in the across/down list. */
-  clue: z.string().min(1),
-  /** Zero-based start cell. */
-  row: z.number().int().min(0),
-  col: z.number().int().min(0),
-  dir: z.enum(["across", "down"]),
-});
+export const crosswordEntrySchema = z
+  .object({
+    /** The solution word. Present for the owner; stripped on the public page. */
+    answer: z.string().min(1).optional(),
+    /** SHA-256 hex of the normalised word. All the public page receives. */
+    answerHash: z.string().min(16).optional(),
+    /** Letter count, so the public grid still has cells after the word is stripped. */
+    letters: z.number().int().min(1).max(20).optional(),
+    /** The clue shown in the across/down list. */
+    clue: z.string().min(1),
+    /** Zero-based start cell. */
+    row: z.number().int().min(0),
+    col: z.number().int().min(0),
+    dir: z.enum(["across", "down"]),
+  })
+  .refine(
+    (entry) =>
+      (typeof entry.answer === "string" && entry.answer.length > 0) ||
+      (typeof entry.answerHash === "string" && (entry.letters ?? 0) > 0),
+    { message: "A crossword entry needs its word or a hash and length." },
+  );
 
 export const crosswordConfigSchema = z.object({
   /** Grid dimension (size×size). */

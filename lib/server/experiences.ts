@@ -81,11 +81,11 @@ async function buildViews(): Promise<ExperienceView[]> {
     .map(({ __order: _drop, ...view }) => view);
 }
 
-/** All visible experiences (live + coming soon), in backend display order.
- *  Adults-only (Red Zone) experiences are excluded — they live in their own
- *  18+ section, not the general catalog. */
+/** Visible, live experiences in backend display order.
+ *  Coming-soon products stay off the catalog. Adults-only (Red Zone)
+ *  experiences are excluded — they live in their own 18+ section. */
 export async function getExperiencesView(): Promise<ExperienceView[]> {
-  return (await buildViews()).filter((v) => !v.adult);
+  return (await buildViews()).filter((v) => v.status === "live" && !v.adult);
 }
 
 /** Visible, live experiences for the landing gallery, in backend display order.

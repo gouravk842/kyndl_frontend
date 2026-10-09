@@ -1,11 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { clientEnv } from "@/config/env";
-import {
-  experienceHref,
-  experiences,
-  getLiveExperienceSlugs,
-} from "@/lib/experiences";
+import { experienceHref, getLiveExperienceSlugs } from "@/lib/experiences";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = clientEnv.NEXT_PUBLIC_APP_URL;
@@ -13,22 +9,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const marketing = [
     "",
+    "/memory-bank",
+    "/kynd",
     "/experiences",
     "/games",
+    "/ideas",
     "/pricing",
     "/about",
     "/blog",
+    "/terms",
+    "/privacy",
+    "/refund",
   ];
 
-  // Each experience's product page plus its live experience route.
   const productPages = getLiveExperienceSlugs().map(experienceHref);
-  const liveRoutes = experiences
-    .map((e) => e.liveHref)
-    .filter((href): href is string => Boolean(href));
 
-  const routes = Array.from(
-    new Set([...marketing, ...productPages, ...liveRoutes]),
-  );
+  const routes = Array.from(new Set([...marketing, ...productPages]));
 
   return routes.map((route) => ({
     url: `${baseUrl}${route}`,

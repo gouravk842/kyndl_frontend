@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ROUTES } from "@/constants/routes";
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, lineText } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
 import {
   BuilderShell,
   type BuilderTab,
@@ -36,6 +39,8 @@ export function BuilderPanel({
   const setOwnerAnswer = useBuilderStore((s) => s.setOwnerAnswer);
 
   const [form, setForm] = useState<{ item: MatcherItem | null } | null>(null);
+  const [bankOpen, setBankOpen] = useState(false);
+  const addItem = useBuilderStore((s) => s.addItem);
   const items = doc.items;
 
   const tabs: BuilderTab[] = [
@@ -99,13 +104,22 @@ export function BuilderPanel({
           <Section
             title={`Items (${items.length})`}
             action={
-              <button
-                type="button"
-                onClick={() => setForm({ item: null })}
-                className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.04]"
-              >
-                <Plus className="size-3.5" /> Add item
-              </button>
+              <span className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setBankOpen(true)}
+                  className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+                >
+                  From the bank
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ item: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.04]"
+                >
+                  <Plus className="size-3.5" /> Add item
+                </button>
+              </span>
             }
           >
             <p className="-mt-1 mb-2 text-xs text-white/40">
@@ -151,6 +165,23 @@ export function BuilderPanel({
         className={className}
       />
       {form && <ItemFormModal item={form.item} onClose={() => setForm(null)} />}
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          for (const item of picked) {
+            const image = fileRef(item);
+            const label = lineText(item).slice(0, 400);
+            addItem({
+              label,
+              heat: heatForType(item.type.slug),
+              ...(image ? { image } : {}),
+            });
+          }
+        }}
+      />
     </>
   );
 }
@@ -233,8 +264,15 @@ function ItemRow({
               className="rounded-full border px-2.5 py-0.5 text-[0.7rem] font-semibold transition-colors"
               style={
                 active
-                  ? { background: meta.color, borderColor: meta.color, color: "#1a0710" }
-                  : { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)" }
+                  ? {
+                      background: meta.color,
+                      borderColor: meta.color,
+                      color: "#1a0710",
+                    }
+                  : {
+                      borderColor: "rgba(255,255,255,0.15)",
+                      color: "rgba(255,255,255,0.5)",
+                    }
               }
             >
               {meta.label}

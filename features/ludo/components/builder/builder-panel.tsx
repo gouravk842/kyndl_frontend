@@ -1,7 +1,10 @@
 "use client";
 
 import { Eye } from "lucide-react";
+import { useState } from "react";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { lineText, ludoDeckForType } from "@/features/activity-bank/map";
 import {
   BuilderShell,
   type BuilderTab,
@@ -35,6 +38,7 @@ export function BuilderPanel({
   const setIntensity = useBuilderStore((s) => s.setIntensity);
   const toggleTrigger = useBuilderStore((s) => s.toggleTrigger);
   const setDeck = useBuilderStore((s) => s.setDeck);
+  const [bankOpen, setBankOpen] = useState(false);
 
   const players = doc.players;
   const count = players.length;
@@ -114,7 +118,9 @@ export function BuilderPanel({
                     />
                     <input
                       value={p.name}
-                      onChange={(e) => updatePlayer(i, { name: e.target.value })}
+                      onChange={(e) =>
+                        updatePlayer(i, { name: e.target.value })
+                      }
                       maxLength={14}
                       className="min-w-0 flex-1 rounded-lg border border-[#f1e0d2] bg-[#fffdfb] px-3 py-1.5 text-sm text-[#3a2a25] outline-none focus:border-[#ff7a59]"
                       placeholder={`Player ${i + 1}`}
@@ -132,7 +138,9 @@ export function BuilderPanel({
                             className="h-6 w-6 rounded-full transition-transform hover:scale-110"
                             style={{
                               background: c.base,
-                              outline: selected ? `2px solid ${c.shade}` : "none",
+                              outline: selected
+                                ? `2px solid ${c.shade}`
+                                : "none",
                               outlineOffset: 2,
                             }}
                           />
@@ -212,24 +220,26 @@ export function BuilderPanel({
                     Card mood
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {(["sweet", "fun", "spicy", "mixed"] as const).map((key) => {
-                      const meta = INTENSITY_LABELS[key];
-                      const active = activities.intensity === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setIntensity(key)}
-                          className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                            active
-                              ? "border-transparent bg-gradient-to-r from-[#ff7a59] to-[#f2596f] font-medium text-white"
-                              : "border-[#f2dace] bg-white text-[#7a6258] hover:border-[#ff7a59]/50"
-                          }`}
-                        >
-                          {meta.emoji} {meta.label}
-                        </button>
-                      );
-                    })}
+                    {(["sweet", "fun", "spicy", "mixed"] as const).map(
+                      (key) => {
+                        const meta = INTENSITY_LABELS[key];
+                        const active = activities.intensity === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setIntensity(key)}
+                            className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                              active
+                                ? "border-transparent bg-gradient-to-r from-[#ff7a59] to-[#f2596f] font-medium text-white"
+                                : "border-[#f2dace] bg-white text-[#7a6258] hover:border-[#ff7a59]/50"
+                            }`}
+                          >
+                            {meta.emoji} {meta.label}
+                          </button>
+                        );
+                      },
+                    )}
                   </div>
                 </div>
 
@@ -237,8 +247,17 @@ export function BuilderPanel({
                 <div className="space-y-3 rounded-2xl border border-[#f0e2d5] bg-[#fffdfb] p-3">
                   <p className="text-sm font-medium text-[#3a2a25]">
                     ✏️ Edit the cards{" "}
-                    <span className="text-xs text-[#92786c]">(one per line)</span>
+                    <span className="text-xs text-[#92786c]">
+                      (one per line)
+                    </span>
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setBankOpen(true)}
+                    className="rounded-full border border-[#f2dace] bg-white px-3 py-1.5 text-xs font-semibold text-[#7a6258] hover:border-[#ff7a59]/50"
+                  >
+                    Add from the bank
+                  </button>
                   {(["sweet", "fun", "spicy"] as ActivityIntensity[]).map(
                     (key) => (
                       <div key={key}>
@@ -254,7 +273,8 @@ export function BuilderPanel({
                           rows={4}
                           className="w-full resize-y rounded-xl border border-[#f1e0d2] bg-white px-3 py-2 text-sm text-[#3a2a25] outline-none focus:border-[#ff7a59]"
                           placeholder={
-                            DEFAULT_ACTIVITIES.decks[key][0] ?? "One card per line…"
+                            DEFAULT_ACTIVITIES.decks[key][0] ??
+                            "One card per line…"
                           }
                         />
                       </div>
@@ -270,12 +290,32 @@ export function BuilderPanel({
   ];
 
   return (
-    <BuilderShell
-      title="Build your Ludo"
-      sync={sync}
-      tabs={tabs}
-      className={className}
-    />
+    <>
+      <BuilderShell
+        title="Build your Ludo"
+        sync={sync}
+        tabs={tabs}
+        className={className}
+      />
+      <ActivityBankPicker
+        open={bankOpen}
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const next = {
+            sweet: [...activities.decks.sweet],
+            fun: [...activities.decks.fun],
+            spicy: [...activities.decks.spicy],
+          };
+          for (const item of picked) {
+            const key = ludoDeckForType(item.type.slug);
+            next[key] = [...next[key], lineText(item)];
+          }
+          (["sweet", "fun", "spicy"] as const).forEach((key) => {
+            setDeck(key, next[key].map((line) => line.trim()).filter(Boolean));
+          });
+        }}
+      />
+    </>
   );
 }
 

@@ -5,15 +5,9 @@ import { cn } from "@/lib/utils";
 interface AuthFieldProps extends React.ComponentProps<"input"> {
   label: string;
   error?: string;
-  /** Optional element rendered on the label row's right side (e.g. a link). */
   action?: React.ReactNode;
 }
 
-/**
- * Underline-only field for the letter-sheet auth forms — a warm ink line that
- * deepens on focus, matching the vintage-stationery look. Works with
- * react-hook-form via `{...register(name)}` (ref + name flow through).
- */
 export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
   function AuthField({ label, error, action, className, id, ...props }, ref) {
     return (
@@ -21,7 +15,7 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
         <div className="flex items-baseline justify-between gap-3">
           <label
             htmlFor={id}
-            className="text-[13px] font-medium tracking-wide text-[#6f5c51]"
+            className="text-[13px] font-medium text-[#7A6258]"
           >
             {label}
           </label>
@@ -32,14 +26,16 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
           ref={ref}
           aria-invalid={error ? true : undefined}
           className={cn(
-            "kyndl-input-underline mt-1.5 w-full pb-1.5 text-[15px] text-[#3A2A25] placeholder:text-[#bcab99]",
+            "mt-1 h-10 w-full rounded-2xl border border-[#F2DACE] bg-[#FFF7F1] px-3.5 text-[15px] text-[#3A2A25] placeholder:text-[#bcab99] transition-colors",
+            "outline-none focus-visible:border-[#FF7A59]/50 focus-visible:ring-2 focus-visible:ring-[#F2596F]/25",
+            "aria-invalid:border-[#d7263d] aria-invalid:ring-2 aria-invalid:ring-[#d7263d]/15",
             className,
           )}
           {...props}
         />
-        {error && (
-          <p className="mt-1.5 text-[12.5px] text-[#c0392b]">{error}</p>
-        )}
+        {error ? (
+          <p className="mt-1.5 text-[12.5px] text-[#d7263d]">{error}</p>
+        ) : null}
       </div>
     );
   },

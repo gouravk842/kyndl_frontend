@@ -6,6 +6,7 @@ import type {
   Creation,
   MatcherAnswersPayload,
   MatcherRespondResult,
+  MirrorMatchRespondResult,
   MomentResponse,
   MomentResponsePayload,
   OwnedResponse,
@@ -112,8 +113,26 @@ export const creationService = {
     });
   },
 
+  // Same respond endpoint as submitMatch; typed for Mirror Match's softMatches reveal.
+  submitMirrorMatch(token: string, payload: MatcherAnswersPayload) {
+    return apiRequest<MirrorMatchRespondResult>({
+      method: "POST",
+      url: `/public/creations/${token}/respond`,
+      data: payload,
+    });
+  },
+
   // Redeem a Love Coupon (records a response + pings the owner). Returns the
   // generic structured-response result; coupons have no reveal.
+  // Leave one line in a shared Constellation. The author sees it as a faint star.
+  leaveStar(token: string, payload: { line: string; responderName?: string }) {
+    return apiRequest<{ id: string }>({
+      method: "POST",
+      url: `/public/creations/${token}/respond`,
+      data: payload,
+    });
+  },
+
   redeemCoupon(token: string, payload: CouponRedeemPayload) {
     return apiRequest<{ id: string }>({
       method: "POST",

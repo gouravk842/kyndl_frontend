@@ -26,7 +26,7 @@ const ROLE_OPTIONS: { value: CollaborationRole; label: string }[] = [
 ];
 
 const ROLE_HINT: Record<CollaborationRole, string> = {
-  contributor: "Can add their own memories.",
+  contributor: "Can add their own memories (and calendar days, when invited).",
   admin: "Full access, including inviting others.",
 };
 
@@ -44,7 +44,11 @@ interface CollaboratorsPanelProps {
  * its own data. The roster endpoint is manage-only, so a non-manager just sees a
  * short note rather than the controls.
  */
-export function CollaboratorsPanel({ targetType, refId, className }: CollaboratorsPanelProps) {
+export function CollaboratorsPanel({
+  targetType,
+  refId,
+  className,
+}: CollaboratorsPanelProps) {
   const roster = useRoster(targetType, refId);
 
   if (!refId) {
@@ -125,14 +129,14 @@ function InviteForm({
     e.preventDefault();
     const trimmed = email.trim();
     if (!trimmed) return;
-    invite.mutate(
-      { email: trimmed, role },
-      { onSuccess: () => setEmail("") },
-    );
+    invite.mutate({ email: trimmed, role }, { onSuccess: () => setEmail("") });
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-2 rounded-xl border border-border bg-card p-3">
+    <form
+      onSubmit={onSubmit}
+      className="space-y-2 rounded-xl border border-border bg-card p-3"
+    >
       <div className="flex items-center gap-2">
         <Mail className="size-4 shrink-0 text-muted-foreground" />
         <input
@@ -189,7 +193,9 @@ function CollaboratorRow({
             <span className="ml-1.5 text-xs text-muted-foreground">(you)</span>
           )}
         </p>
-        <p className="truncate text-xs text-muted-foreground">{collaborator.user_email}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {collaborator.user_email}
+        </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {canManage && !collaborator.is_me ? (
@@ -197,7 +203,9 @@ function CollaboratorRow({
             <RoleSelect
               value={collaborator.role}
               disabled={busy}
-              onChange={(role) => changeRole.mutate({ seatId: collaborator.id, role })}
+              onChange={(role) =>
+                changeRole.mutate({ seatId: collaborator.id, role })
+              }
             />
             <IconButton
               label="Remove collaborator"

@@ -18,14 +18,22 @@ export async function getGiftCatalog(): Promise<GiftProduct[]> {
       headers: { Accept: "application/json" },
       cache: "no-store",
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(
+        `[gifts] catalog fetch failed: ${res.status} ${res.statusText}`,
+      );
+      return [];
+    }
     return (await res.json()) as GiftProduct[];
-  } catch {
+  } catch (err) {
+    console.error("[gifts] catalog fetch error:", err);
     return [];
   }
 }
 
-export async function getGiftProduct(slug: string): Promise<GiftProduct | null> {
+export async function getGiftProduct(
+  slug: string,
+): Promise<GiftProduct | null> {
   try {
     const res = await fetch(`${DJANGO_BASE}/gifts/catalog/${slug}/`, {
       headers: { Accept: "application/json" },

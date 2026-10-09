@@ -48,9 +48,9 @@ export function starImageUrl(
  * back to a direct `imageUrl` and then the star's own photo. Gating *decisions*
  * (is this locked?) call this without `assets` — they don't touch the image.
  *
- * Resilient by design: an unknown module type or a config that fails the
- * module's schema resolves to `null` (no gate) rather than throwing — a bad
- * block can never lock a memory shut or crash the sky.
+ * An unknown module or a config that fails its schema resolves to `null`.
+ * Callers must treat a star that *has* an unlock but fails to resolve as
+ * shut (`isGateBroken`), so a bad gate never opens the memory.
  */
 export function resolveGate(
   star: Star,
@@ -91,8 +91,15 @@ export function isAutoUnlocked(gate: ResolvedGate): boolean {
   return gate.mod.isUnlocked?.(gate.config) === true;
 }
 
+/** True when the star declares a gate the client cannot parse. It stays shut. */
+export function isGateBroken(star: Star): boolean {
+  if (!star.unlock?.type) return false;
+  return resolveGate(star) === null;
+}
+
 /** True if `star` has an interactive gate the viewer must still solve to open. */
 export function hasPendingChallenge(star: Star): boolean {
+  if (isGateBroken(star)) return true;
   const gate = resolveGate(star);
   return gate !== null && !isAutoUnlocked(gate);
 }

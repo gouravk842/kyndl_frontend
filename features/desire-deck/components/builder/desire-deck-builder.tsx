@@ -31,15 +31,20 @@ export function DesireDeckBuilder() {
         className="h-1/2 w-full shrink-0 border-t sm:h-full sm:w-[380px] sm:border-t-0 sm:border-r"
       />
 
-      {/* Live preview — the real experience, fed the draft. */}
-      <div className="relative flex h-1/2 flex-1 items-center justify-center overflow-y-auto sm:h-full">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{ background: RED_SURFACE }}
-        />
-        <div className="relative flex w-full max-w-2xl justify-center px-4 py-8 sm:px-6">
-          <DesireDeckExperience key={doc.cards.length} config={doc} skipGate />
+      {/* Live preview. Center inside a min-h-full wrapper so a tall deck
+          scrolls from the top instead of clipping the heat filters. */}
+      <div
+        className="relative h-1/2 min-h-0 flex-1 overflow-y-auto sm:h-full"
+        style={{ background: RED_SURFACE }}
+      >
+        <div className="relative flex min-h-full w-full items-center justify-center px-4 py-8 sm:px-6">
+          <div className="flex w-full max-w-2xl justify-center">
+            <DesireDeckExperience
+              key={doc.cards.length}
+              config={doc}
+              skipGate
+            />
+          </div>
         </div>
       </div>
 

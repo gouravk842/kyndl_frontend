@@ -31,6 +31,14 @@ export interface VendorProfileUpdate {
   free_shipping_threshold?: number;
 }
 
+export interface VendorProductImage {
+  file_id: string;
+  url: string;
+  thumb_url: string;
+  position: number;
+  is_thumbnail: boolean;
+}
+
 export interface VendorProduct {
   slug: string;
   name: string;
@@ -40,9 +48,14 @@ export interface VendorProduct {
   currency: string;
   price_display: string;
   image_url: string;
-  image_file_id: string | null;
   gallery: string[];
+  images: VendorProductImage[];
+  image_file_ids: string[];
+  thumbnail_file_id: string | null;
+  /** Master category name (empty when uncategorised). */
   category: string;
+  /** Subcategory name (empty when none). */
+  subcategory: string;
   stock: number;
   in_stock: boolean;
   is_active: boolean;
@@ -59,9 +72,15 @@ export interface VendorProductInput {
   description?: string;
   price: number;
   stock: number;
+  /** Master category name — resolved/created server-side. */
   category?: string;
+  /** Subcategory name under that category — resolved/created server-side. */
+  subcategory?: string;
   is_active?: boolean;
-  image_file_id?: string | null;
+  /** Ordered uploaded file ids (max 5). */
+  image_file_ids?: string[];
+  /** Must be one of ``image_file_ids`` — becomes the catalog card thumbnail. */
+  thumbnail_file_id?: string | null;
 }
 
 export interface VendorOrderItem {
@@ -129,6 +148,8 @@ export interface VendorFinance {
   net_earnings: number;
   paid_out: number;
   payable_balance: number;
+  total_expenses: number;
+  profit: number;
   orders_count: number;
   to_fulfill: number;
   orders_by_status: Record<string, number>;

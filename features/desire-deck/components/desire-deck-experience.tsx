@@ -10,6 +10,9 @@ import {
 import { Flame, Hand, Lock, RotateCcw, Shuffle } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 
+import { CatalogImage } from "@/features/activity-bank/components/catalog-image";
+import { applyDesireDeck } from "@/features/activity-bank/demo-content";
+import { DemoGate } from "@/features/activity-bank/demo-gate";
 import {
   DECK_CONFIG,
   type DeckCard,
@@ -35,6 +38,8 @@ type DesireDeckExperienceProps = {
   config?: DeckConfig;
   /** Skip the 18+ gate (used inside the authenticated builder preview). */
   skipGate?: boolean;
+  /** fileId → URL for catalog images copied onto cards. */
+  assets?: Record<string, string>;
 };
 
 type HeatFilter = Heat | "all";
@@ -42,10 +47,24 @@ type HeatFilter = Heat | "all";
 /** How many face-down cards to draw in the visible stack, for depth. */
 const STACK_DEPTH = 6;
 
-export function DesireDeckExperience({
-  config = DECK_CONFIG,
+export function DesireDeckExperience(props: DesireDeckExperienceProps) {
+  return (
+    <DemoGate
+      authored={props.config}
+      fallback={DECK_CONFIG}
+      includeAdult
+      apply={applyDesireDeck}
+    >
+      {(config) => <DesireDeckPlay {...props} config={config} />}
+    </DemoGate>
+  );
+}
+
+function DesireDeckPlay({
+  config,
   skipGate = false,
-}: DesireDeckExperienceProps) {
+  assets,
+}: DesireDeckExperienceProps & { config: DeckConfig }) {
   const reduceMotion = useReducedMotion();
 
   const [entered, setEntered] = useState(skipGate);
@@ -59,8 +78,7 @@ export function DesireDeckExperience({
 
   // The deck for the current heat filter, in order.
   const pool = useMemo(
-    () =>
-      config.cards.filter((c) => filter === "all" || c.heat === filter),
+    () => config.cards.filter((c) => filter === "all" || c.heat === filter),
     [config.cards, filter],
   );
 
@@ -223,6 +241,7 @@ export function DesireDeckExperience({
                 <PromptCard
                   key={current.id}
                   card={current}
+                  assets={assets}
                   reduceMotion={!!reduceMotion}
                   draggable={remainingCount > 0}
                   onDragEnd={onDragEnd}
@@ -285,9 +304,7 @@ export function DesireDeckExperience({
           </div>
 
           <p className="flex items-center gap-1.5 text-xs font-medium tracking-[0.18em] text-white/45 uppercase">
-            {current && remainingCount > 0 && (
-              <Hand className="size-3" />
-            )}
+            {current && remainingCount > 0 && <Hand className="size-3" />}
             {pool.length === 0
               ? "Add some cards to begin"
               : current && remainingCount > 0
@@ -369,12 +386,14 @@ function PromptCard({
   draggable,
   onDragEnd,
   exitDir,
+  assets,
 }: {
   card: DeckCard;
   reduceMotion: boolean;
   draggable: boolean;
   onDragEnd: (e: unknown, info: PanInfo) => void;
   exitDir: number;
+  assets?: Record<string, string>;
 }) {
   const meta = HEAT_META[card.heat];
   const variants: Variants = {
@@ -426,7 +445,8 @@ function PromptCard({
           {meta.label}
         </span>
       </div>
-      <div className="relative flex flex-1 items-center justify-center">
+      <div className="relative flex flex-1 flex-col items-center justify-center">
+        <CatalogImage fileId={card.image?.fileId} assets={assets} />
         <p className="text-center font-display text-xl leading-relaxed text-white">
           {card.prompt}
         </p>
@@ -451,12 +471,16 @@ function OutroCard({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
       className={`${CARD_FRAME} relative flex flex-col px-7 py-8`}
-      style={{ background: "linear-gradient(155deg, #3a1430 0%, #531a3c 100%)" }}
+      style={{
+        background: "linear-gradient(155deg, #3a1430 0%, #531a3c 100%)",
+      }}
     >
       <CardTexture />
       <div className="relative flex flex-1 flex-col items-center justify-center text-center">
         <Flame className="mb-4 size-7 text-[#ff8fae]" />
-        <h2 className="font-display text-2xl text-white">That{"'"}s the deck</h2>
+        <h2 className="font-display text-2xl text-white">
+          That{"'"}s the deck
+        </h2>
         {config.outro && (
           <p className="mt-4 text-sm leading-relaxed text-white/65">
             {config.outro}

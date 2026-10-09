@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
+import { ExperienceCardMedia } from "@/components/shared/experience-card-media";
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,8 +58,7 @@ export function CreationCard({ creation }: { creation: Creation }) {
   const duplicate = useDuplicateCreation();
   const [accessOpen, setAccessOpen] = useState(false);
 
-  const busy =
-    publish.isPending || unpublish.isPending || duplicate.isPending;
+  const busy = publish.isPending || unpublish.isPending || duplicate.isPending;
 
   function handleDelete() {
     if (
@@ -66,38 +66,46 @@ export function CreationCard({ creation }: { creation: Creation }) {
         `Delete "${creation.title || "Untitled"}"? This can't be undone.`,
       )
     ) {
-      deleteCreation.mutate({ id: creation.id, title: creation.title || "Untitled" });
+      deleteCreation.mutate({
+        id: creation.id,
+        title: creation.title || "Untitled",
+      });
     }
   }
 
   return (
     <div className="group/card relative flex flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-0.5 hover:ring-foreground/20">
-      {/* Cover — borrows the experience's preview gradient. */}
-      <Link href={href} className="relative block h-28 w-full" aria-label={`Open ${creation.title}`}>
-        <span
-          className="absolute inset-0"
-          style={{ background: meta.previewGradient }}
-          aria-hidden
-        />
-        <span className="absolute left-4 top-4 flex size-10 items-center justify-center rounded-xl border border-white/60 bg-white/80 text-[#FF7A59] backdrop-blur-sm">
-          <ExperienceIcon name={meta.icon} className="size-5" />
-        </span>
-        <span
-          className={cn(
-            "absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium tracking-wide backdrop-blur-sm",
-            published
-              ? "border border-[#2fb672]/30 bg-white/85 text-[#1f8a55]"
-              : "border border-foreground/10 bg-white/80 text-[#92786C]",
-          )}
+      {/* Cover — same preview image as every other experience card. */}
+      <Link
+        href={href}
+        className="relative block w-full"
+        aria-label={`Open ${creation.title}`}
+      >
+        <ExperienceCardMedia
+          slug={creation.type}
+          media={meta}
+          className="h-28 rounded-none aspect-auto"
         >
+          <span className="absolute left-4 top-4 flex size-10 items-center justify-center rounded-xl border border-white/60 bg-white/80 text-[#FF7A59] backdrop-blur-sm">
+            <ExperienceIcon name={meta.icon} className="size-5" />
+          </span>
           <span
             className={cn(
-              "size-1.5 rounded-full",
-              published ? "bg-[#2fb672]" : "bg-[#d4a373]",
+              "absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium tracking-wide backdrop-blur-sm",
+              published
+                ? "border border-[#2fb672]/30 bg-white/85 text-[#1f8a55]"
+                : "border border-foreground/10 bg-white/80 text-[#92786C]",
             )}
-          />
-          {published ? "Published" : "Draft"}
-        </span>
+          >
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                published ? "bg-[#2fb672]" : "bg-[#d4a373]",
+              )}
+            />
+            {published ? "Published" : "Draft"}
+          </span>
+        </ExperienceCardMedia>
       </Link>
 
       <div className="flex flex-1 flex-col gap-1 p-4">

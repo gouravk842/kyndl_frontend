@@ -5,6 +5,7 @@ import { type ReactNode, useState } from "react";
 
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Conversation } from "@/features/comments/components/conversation";
+import { RecipientSheetFooter } from "@/features/recipient-aftermath/components/recipient-aftermath";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
 
 type Panel = "review" | "comments" | "chat" | null;
@@ -12,18 +13,20 @@ type Panel = "review" | "comments" | "chat" | null;
 /**
  * Public layout for a shared Our Places map. The read-only map (with its guided
  * tour) fills the screen; the audience-interaction surfaces the owner switched on
- * float on top — "Review" / "Comments" pills top-right and a chat bubble bottom-
- * left — each opening an on-theme side sheet. Mirrors the memory-pages public
- * layout so feedback is reachable without scrolling a full-screen map off-view.
+ * float on top — "How was it?" / "Comments" pills top-right and a chat bubble
+ * bottom-left — each opening an on-theme side sheet. Mirrors the memory-pages
+ * public layout so feedback is reachable without scrolling a full-screen map.
  */
 export function OurPlacesPublicView({
   token,
+  experienceType = "our-places",
   commentsEnabled,
   reviewsEnabled,
   chatEnabled,
   children,
 }: {
   token: string;
+  experienceType?: string;
   commentsEnabled: boolean;
   reviewsEnabled: boolean;
   chatEnabled: boolean;
@@ -35,7 +38,7 @@ export function OurPlacesPublicView({
   return (
     // `isolate` scopes the map's Leaflet-era z-[600..700] overlays to their own
     // stacking context so the body-level sheet portal (z-50) still lands on top.
-    <div className="relative isolate h-dvh w-full overflow-hidden bg-[#fdf3ec]">
+    <div className="relative isolate h-full min-h-0 w-full overflow-hidden bg-[#fdf3ec]">
       <div className="absolute inset-0">{children}</div>
 
       {/* Review / Comments pills — top-right, clear of the map's title (top-left). */}
@@ -43,11 +46,14 @@ export function OurPlacesPublicView({
         <div className="absolute top-5 right-5 z-[700] flex items-center gap-2">
           {reviewsEnabled && (
             <PillButton icon={Star} onClick={() => setPanel("review")}>
-              Review
+              How was it?
             </PillButton>
           )}
           {commentsEnabled && (
-            <PillButton icon={MessageCircle} onClick={() => setPanel("comments")}>
+            <PillButton
+              icon={MessageCircle}
+              onClick={() => setPanel("comments")}
+            >
               <span className="hidden sm:inline">Comments</span>
               <span className="sm:hidden">Notes</span>
             </PillButton>
@@ -82,17 +88,35 @@ export function OurPlacesPublicView({
               dialog labelled for screen readers. */}
           <SheetTitle className="sr-only">
             {panel === "review"
-              ? "Rate this map"
+              ? "How did this feel?"
               : panel === "comments"
                 ? "Comments"
                 : "Chat with the creator"}
           </SheetTitle>
 
           {panel === "review" && (
-            <ReviewsSection type="experience" refId={token} title="Rate this map" />
+            <>
+              <ReviewsSection
+                type="experience"
+                refId={token}
+                title=""
+                tone="keepsake"
+                experienceType={experienceType}
+              />
+              <RecipientSheetFooter
+                token={token}
+                experienceType={experienceType}
+              />
+            </>
           )}
           {panel === "comments" && (
-            <Conversation surface="experience" refId={token} />
+            <>
+              <Conversation surface="experience" refId={token} />
+              <RecipientSheetFooter
+                token={token}
+                experienceType={experienceType}
+              />
+            </>
           )}
           {panel === "chat" && (
             <Conversation

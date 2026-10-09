@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  ImagePlus,
-  Loader2,
-  Music,
-  Plus,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ImagePlus, Loader2, Music, Plus, Trash2, X } from "lucide-react";
 import { type ChangeEvent, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -42,108 +35,100 @@ export function BuilderPanel({
         <div className="space-y-7">
           {/* The plaque */}
           <Section title="The plaque">
-          <Field label="Title (script, top of frame)">
-            <input
-              className={inputCls}
-              value={doc.title}
-              onChange={(e) => setMeta({ title: e.target.value })}
-              placeholder="Solamente tú"
-            />
-          </Field>
-          <Field label="Caption (under the photo)">
-            <input
-              className={inputCls}
-              value={doc.caption}
-              onChange={(e) => setMeta({ caption: e.target.value })}
-              placeholder="Te amo"
-            />
-          </Field>
-          <Field label="Date / occasion">
-            <input
-              className={inputCls}
-              value={doc.date}
-              onChange={(e) => setMeta({ date: e.target.value })}
-              placeholder="14 Feb. 2024"
-            />
-          </Field>
-          <Field label="Theme">
-            <div className="flex flex-wrap gap-2">
-              {THEME_ORDER.map((key) => {
-                const t = THEMES[key];
-                const active = doc.theme === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-label={`${t.name} theme`}
-                    aria-pressed={active}
-                    onClick={() => setTheme(key)}
-                    className={[
-                      "h-12 w-16 overflow-hidden rounded-lg border-2 transition-transform",
-                      active
-                        ? "border-[#ff7a59] ring-2 ring-[#ff7a59]/30"
-                        : "border-black/10 hover:scale-105",
-                    ].join(" ")}
-                    style={{ background: t.background }}
-                    title={t.name}
-                  />
-                );
-              })}
-            </div>
-          </Field>
-        </Section>
+            <Field label="Message (under the photo)">
+              <input
+                className={inputCls}
+                value={doc.title}
+                onChange={(e) => setMeta({ title: e.target.value })}
+                placeholder="Happy birthday"
+              />
+            </Field>
+            <Field label="Date / occasion (optional)">
+              <input
+                className={inputCls}
+                value={doc.date}
+                onChange={(e) => setMeta({ date: e.target.value })}
+                placeholder="14 Feb. 2024"
+              />
+            </Field>
+            <Field label="Theme">
+              <div className="flex flex-wrap gap-2">
+                {THEME_ORDER.map((key) => {
+                  const t = THEMES[key];
+                  const active = doc.theme === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-label={`${t.name} theme`}
+                      aria-pressed={active}
+                      onClick={() => setTheme(key)}
+                      className={[
+                        "h-12 w-16 overflow-hidden rounded-lg border-2 transition-transform",
+                        active
+                          ? "border-[#ff7a59] ring-2 ring-[#ff7a59]/30"
+                          : "border-black/10 hover:scale-105",
+                      ].join(" ")}
+                      style={{ background: t.background }}
+                      title={t.name}
+                    />
+                  );
+                })}
+              </div>
+            </Field>
+          </Section>
 
-        {/* Photos */}
-        <Section title={`Photos (${doc.photos.length})`}>
-          <PhotosPicker canUpload={sync.enabled} />
-        </Section>
+          {/* Photos */}
+          <Section title={`Photos (${doc.photos.length})`}>
+            <PhotosPicker canUpload={sync.enabled} />
+          </Section>
 
-        {/* The song */}
-        <Section title="The song">
-          <Field label="Song title (shown by the scan strip)">
-            <input
-              className={inputCls}
-              value={doc.songLabel}
-              onChange={(e) => setMeta({ songLabel: e.target.value })}
-              placeholder="Our song"
-            />
-          </Field>
-          <Field label="Artist (optional)">
-            <input
-              className={inputCls}
-              value={doc.artist}
-              onChange={(e) => setMeta({ artist: e.target.value })}
-              placeholder="The band"
-            />
-          </Field>
-          <Field label="Track (plays behind the plaque)">
-            <MusicPicker canUpload={sync.enabled} />
-          </Field>
-        </Section>
+          {/* The song */}
+          <Section title="The song">
+            <Field label="Song title">
+              <input
+                className={inputCls}
+                value={doc.songLabel}
+                onChange={(e) => setMeta({ songLabel: e.target.value })}
+                placeholder="Tum Se Hi"
+              />
+            </Field>
+            <Field label="Artist">
+              <input
+                className={inputCls}
+                value={doc.artist}
+                onChange={(e) => setMeta({ artist: e.target.value })}
+                placeholder="Mohit Chauhan"
+              />
+            </Field>
+            <Field label="Track (plays when they press play)">
+              <MusicPicker canUpload={sync.enabled} />
+            </Field>
+          </Section>
 
-        {/* The hidden letter */}
-        <Section title="The hidden letter">
-          <p className="-mt-1 text-xs text-[#92786c]">
-            Sealed in the envelope, stamped with the Kyndl mark. They unwrap it
-            to read this.
-          </p>
-          <Field label="Message heading">
-            <input
-              className={inputCls}
-              value={doc.hidden.heading}
-              onChange={(e) => setHidden({ heading: e.target.value })}
-              placeholder="Happy Anniversary"
-            />
-          </Field>
-          <Field label="Message">
-            <textarea
-              className={`${inputCls} min-h-[120px] resize-y`}
-              value={doc.hidden.body}
-              onChange={(e) => setHidden({ body: e.target.value })}
-              placeholder="The note they read when they unwrap the envelope…"
-            />
-          </Field>
-        </Section>
+          {/* The hidden letter */}
+          <Section title="The sealed note">
+            <p className="-mt-1 text-xs text-[#92786c]">
+              Tied with a ribbon on the glass whisper beside the plaque. They
+              untie it to read this.
+            </p>
+            <Field label="Message heading">
+              <input
+                className={inputCls}
+                value={doc.hidden.heading}
+                onChange={(e) => setHidden({ heading: e.target.value })}
+                placeholder="Happy Anniversary"
+              />
+            </Field>
+            <Field label="Message">
+              <textarea
+                className={`${inputCls} min-h-[120px] resize-y`}
+                value={doc.hidden.body}
+                onChange={(e) => setHidden({ body: e.target.value })}
+                placeholder="The note they read when they untie the ribbon…"
+              />
+            </Field>
+          </Section>
         </div>
       ),
     },
@@ -214,7 +199,11 @@ function PhotosPicker({ canUpload }: { canUpload: boolean }) {
               >
                 {url ? (
                   // eslint-disable-next-line @next/next/no-img-element -- transient/presigned URL
-                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <div className="grid h-full place-items-center text-[#c9b4a5]">
                     <ImagePlus className="size-5" />
@@ -277,7 +266,8 @@ function PhotosPicker({ canUpload }: { canUpload: boolean }) {
       </button>
       {photos.length > 1 && (
         <p className="text-xs text-[#92786c]">
-          They cross-fade in this order as a slideshow.
+          Covers cross-fade in this order. Prev / next on the plaque steps
+          through them.
         </p>
       )}
     </div>

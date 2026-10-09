@@ -9,7 +9,10 @@ import {
   BuilderShell,
   type BuilderTab,
 } from "@/features/dashboard/components/builder-shell";
-import { DEFAULT_MATERIAL, DEFAULT_MOTION } from "@/features/memory-lantern/config";
+import {
+  DEFAULT_MATERIAL,
+  dwellSeconds,
+} from "@/features/memory-lantern/config";
 import { sampleGlowColor } from "@/features/memory-lantern/lib/sample-color";
 import type { MemoryLanternSync } from "@/hooks/use-memory-lantern-sync";
 import { fileService } from "@/services/files/file.service";
@@ -31,7 +34,6 @@ export function BuilderPanel({
   const setFinale = useBuilderStore((s) => s.setFinale);
 
   const material = doc.material ?? DEFAULT_MATERIAL;
-  const motion = doc.motion ?? DEFAULT_MOTION;
 
   const tabs: BuilderTab[] = [
     {
@@ -40,14 +42,14 @@ export function BuilderPanel({
       badge: doc.panes.length,
       content: (
         <div className="space-y-7">
-          <Section title="The lantern">
-            <Field label="Title (shown above it)">
+          <Section title="The evening">
+            <Field label="Title (shown above the stage)">
               <input
                 className={inputCls}
                 value={doc.title}
                 maxLength={120}
                 onChange={(e) => setMeta({ title: e.target.value })}
-                placeholder="The two of us"
+                placeholder="In this light"
               />
             </Field>
             <Field label="Subtitle (a small line under the title)">
@@ -56,10 +58,10 @@ export function BuilderPanel({
                 value={doc.subtitle}
                 maxLength={200}
                 onChange={(e) => setMeta({ subtitle: e.target.value })}
-                placeholder="watch it turn — each side wakes a memory"
+                placeholder="one memory takes the stage"
               />
             </Field>
-            <Field label="For (name, optional)">
+            <Field label="For (name, spoken before the first memory)">
               <input
                 className={inputCls}
                 value={doc.recipientName}
@@ -70,33 +72,31 @@ export function BuilderPanel({
             </Field>
           </Section>
 
-          <Section title={`Facets (${doc.panes.length})`}>
-            <FacetsPicker canUpload={sync.enabled} />
+          <Section title={`Moments (${doc.panes.length})`}>
+            <MomentsPicker canUpload={sync.enabled} />
           </Section>
 
-          <Section title="Glow & motion">
-            <Field label="Inner glow colour">
+          <Section title="The light">
+            <Field label="Stage light">
               <ColorRow
                 value={material.coreColor}
                 onChange={(coreColor) => setMaterial({ coreColor })}
               />
             </Field>
-            <RangeField
-              label="Frostiness of the resting sides"
-              min={0}
-              max={1}
-              step={0.05}
-              value={material.frost}
-              onChange={(frost) => setMaterial({ frost })}
-            />
-            <RangeField
-              label="Turning speed"
-              min={0}
-              max={1}
-              step={0.02}
-              value={motion.autoSpin}
-              onChange={(autoSpin) => setMotion({ autoSpin })}
-            />
+            <Field label="Autoplay">
+              <select
+                className={inputCls}
+                value={String(dwellSeconds(doc.motion?.autoSpin))}
+                onChange={(e) =>
+                  setMotion({ autoSpin: Number(e.target.value) })
+                }
+              >
+                <option value="0">Stay until they step forward</option>
+                <option value="5">Every 5 seconds</option>
+                <option value="8">Every 8 seconds</option>
+                <option value="12">Every 12 seconds</option>
+              </select>
+            </Field>
           </Section>
 
           <Section title="Ambience">
@@ -122,21 +122,22 @@ export function BuilderPanel({
           </Section>
 
           <Section title="Finale">
-            <Field label="Heading (once every side is seen)">
+            <Field label="Heading (spoken over the last memory)">
               <input
                 className={inputCls}
                 value={doc.finale?.heading ?? ""}
                 maxLength={200}
                 onChange={(e) => setFinale({ heading: e.target.value })}
-                placeholder="You saw every side"
+                placeholder="The lights stay with you"
               />
             </Field>
-            <Field label="Message">
+            <Field label="Message (a longer note can scroll on the stage)">
               <textarea
                 className={`${inputCls} min-h-[90px] resize-y`}
                 value={doc.finale?.body ?? ""}
+                maxLength={800}
                 onChange={(e) => setFinale({ body: e.target.value })}
-                placeholder="of the two of us."
+                placeholder="Every one of them."
               />
             </Field>
           </Section>
@@ -155,8 +156,8 @@ export function BuilderPanel({
   );
 }
 
-// ── Facets picker (upload + per-facet caption/date/glow + reorder) ──────
-function FacetsPicker({ canUpload }: { canUpload: boolean }) {
+// ── Moments picker (upload + caption/date/glow + show order) ────────
+function MomentsPicker({ canUpload }: { canUpload: boolean }) {
   const panes = useBuilderStore((s) => s.doc.panes);
   const addPane = useBuilderStore((s) => s.addPane);
   const updatePane = useBuilderStore((s) => s.updatePane);
@@ -229,7 +230,7 @@ function FacetsPicker({ canUpload }: { canUpload: boolean }) {
                   <span
                     className="absolute right-1 bottom-1 size-3 rounded-full ring-1 ring-white/70"
                     style={{ background: p.glowColor || "#f0c48a" }}
-                    title="Room glow colour"
+                    title="Stage light colour"
                   />
                 </div>
 
@@ -241,7 +242,17 @@ function FacetsPicker({ canUpload }: { canUpload: boolean }) {
                     onChange={(e) =>
                       updatePane(p.id, { caption: e.target.value })
                     }
-                    placeholder="Caption — the beach at dawn"
+                    placeholder="Title above the photo"
+                  />
+                  <textarea
+                    className={`${smallInputCls} min-h-14 resize-y`}
+                    value={p.description ?? ""}
+                    maxLength={800}
+                    rows={2}
+                    onChange={(e) =>
+                      updatePane(p.id, { description: e.target.value })
+                    }
+                    placeholder="Description, shown to the right"
                   />
                   <div className="flex items-center gap-1.5">
                     <input
@@ -255,7 +266,7 @@ function FacetsPicker({ canUpload }: { canUpload: boolean }) {
                     />
                     <input
                       type="color"
-                      aria-label="Room glow colour"
+                      aria-label="Stage light colour"
                       value={p.glowColor || "#f0c48a"}
                       onChange={(e) =>
                         updatePane(p.id, { glowColor: e.target.value })
@@ -268,7 +279,7 @@ function FacetsPicker({ canUpload }: { canUpload: boolean }) {
                 <div className="flex flex-col items-center justify-between">
                   <button
                     type="button"
-                    aria-label="Remove facet"
+                    aria-label="Remove moment"
                     onClick={() => removePane(p.id)}
                     className="grid size-6 place-items-center rounded-full text-[#b29a89] hover:bg-[#fbe1d8] hover:text-[#c75b39]"
                   >
@@ -320,7 +331,8 @@ function FacetsPicker({ canUpload }: { canUpload: boolean }) {
       </button>
       {panes.length > 0 && (
         <p className="text-xs text-[#92786c]">
-          Each photo is a facet; they circle the lantern in this order.
+          They take the stage in this order. The title sits above the photo; a
+          description, if you write one, sits to its right.
         </p>
       )}
     </div>
@@ -361,39 +373,6 @@ function ColorRow({
       />
       <span className="text-xs text-[#92786c]">{value}</span>
     </div>
-  );
-}
-
-function RangeField({
-  label,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-}: {
-  label: string;
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium tracking-wide text-[#92786c]">
-        {label}
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-[#ff7a59]"
-      />
-    </label>
   );
 }
 

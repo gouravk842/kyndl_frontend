@@ -10,6 +10,7 @@ import {
   Syne,
 } from "next/font/google";
 
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { createMetadata } from "@/lib/seo";
 import { AppProviders } from "@/providers";
 
@@ -63,6 +64,7 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -77,6 +79,7 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${syne.variable} ${geistMono.variable} ${caveat.variable} ${dancingScript.variable} ${ebGaramond.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <GoogleAnalytics />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

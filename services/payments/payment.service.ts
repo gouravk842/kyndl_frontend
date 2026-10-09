@@ -1,8 +1,5 @@
 import { apiRequest } from "@/services/api/client";
-import type {
-  CheckoutParams,
-  RazorpaySuccess,
-} from "@/types/payment";
+import type { CheckoutParams, Invoice, RazorpaySuccess } from "@/types/payment";
 
 // Hits the same-origin Next BFF, which forwards to Django with the httpOnly
 // access cookie as a bearer token.
@@ -33,5 +30,38 @@ export const paymentService = {
       url: `${BASE}/verify`,
       data: payload,
     });
+  },
+
+  listInvoices() {
+    return apiRequest<Invoice[] | { results: Invoice[] }>({
+      method: "GET",
+      url: `${BASE}/invoices`,
+    }).then((data) => (Array.isArray(data) ? data : (data.results ?? [])));
+  },
+
+  async downloadInvoicePdf(invoiceId: string, filename?: string) {
+    const res = await fetch(`/api/payments/invoices/${invoiceId}/pdf`, {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      let detail = "Could not download invoice.";
+      try {
+        const body = (await res.json()) as { detail?: string };
+        if (body.detail) detail = body.detail;
+      } catch {
+        // keep default
+      }
+      throw new Error(detail);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || `invoice-${invoiceId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   },
 };

@@ -55,13 +55,23 @@ export function generateBackgroundStars(
 ): BgStar[] {
   const stars: BgStar[] = [];
   for (let i = 0; i < count; i++) {
+    // Heavy-tailed sizes: mostly pinpricks, a few soft luminous "near" stars —
+    // matches a photographic night sky rather than a uniform sprinkle.
+    const roll = rng();
+    const radius =
+      roll > 0.97
+        ? 1.8 + rng() * 1.6
+        : roll > 0.85
+          ? 1.0 + rng() * 0.8
+          : 0.35 + rng() * 0.7;
     stars.push({
+      // Bias density into the upper sky so the ground silhouette stays darker.
       x: rng(),
-      y: rng(),
-      radius: 0.4 + rng() * 1.1,
-      baseAlpha: 0.15 + rng() * 0.5,
-      twinkleAmp: 0.1 + rng() * 0.35,
-      twinkleSpeed: 0.4 + rng() * 1.6,
+      y: rng() * 0.78,
+      radius,
+      baseAlpha: 0.12 + rng() * (radius > 1.4 ? 0.55 : 0.4),
+      twinkleAmp: 0.08 + rng() * 0.32,
+      twinkleSpeed: 0.35 + rng() * 1.5,
       phase: rng() * Math.PI * 2,
     });
   }
@@ -103,9 +113,9 @@ export function spawnShootingStar(
 }
 
 const STAR_RADIUS: Record<StarSize, number> = {
-  small: 2.4,
-  medium: 3.4,
-  large: 4.6,
+  small: 1.8,
+  medium: 3.2,
+  large: 5.2,
 };
 
 /** Generous tap target so stars are easy to hit on touch — used by the hit layer. */
@@ -118,11 +128,34 @@ export function starToPixel(star: Star, w: number, h: number): Vec {
   return { x: (star.x / 100) * w, y: (star.y / 100) * h };
 }
 
+/**
+ * A star in the loose field. `camera.x` / `camera.y` are the world point held
+ * at screen centre (x) and at the sky anchor (y). A bare number is the older
+ * horizontal scroll, kept so a one-axis caller still paints.
+ */
+export function starScreen(
+  star: Pick<Star, "x" | "y">,
+  w: number,
+  h: number,
+  camera: number | { x: number; y: number },
+): Vec {
+  if (typeof camera === "number") {
+    return {
+      x: w / 2 + ((star.x - camera) / 100) * w,
+      y: (star.y / 100) * h,
+    };
+  }
+  return {
+    x: w / 2 + ((star.x - camera.x) / 100) * w,
+    y: h * 0.42 + ((star.y - camera.y) / 100) * h,
+  };
+}
+
 /** The drawn shape: explicit edges if given, else a sequential 1→2→3 path. */
 export function edgesOf(config: SkyConfig): [number, number][] {
-  if (config.customEdges && config.customEdges.length > 0) {
-    return config.customEdges;
-  }
+  // An explicit list, even empty, is the author's choice. Only skies that
+  // never stored edges fall back to a path through story order.
+  if (config.customEdges) return config.customEdges;
   const edges: [number, number][] = [];
   for (let i = 0; i < config.stars.length - 1; i++) {
     const a = config.stars[i];
@@ -237,14 +270,17 @@ export type EdgeRender = {
   to: Vec;
   litAmount: number;
   ghostAlpha: number;
+  /** 0–1 brightness. Distant figures in a grouped sky stay visible but dim. */
+  presence?: number;
 };
 
-const GHOST_ALPHA = 0.07;
+const GHOST_ALPHA = 0.11;
 
 /**
  * Draw the lines. The engine decides each edge's lit/ghost state (per the
  * opened set and entrance timing); here we just stroke pixels. `shimmer` (0–1)
- * brightens the lit lines in the finale.
+ * brightens the lit lines in the finale. Soft outer glow + hairline core keep
+ * the asterism elegant against a deep black sky.
  */
 export function paintEdges(
   ctx: CanvasRenderingContext2D,
@@ -255,33 +291,98 @@ export function paintEdges(
   dashOffset: number,
 ): void {
   ctx.save();
-  ctx.lineWidth = 1;
   ctx.lineCap = "round";
-  if (lineStyle === "dashed") ctx.setLineDash([6, 7]);
-  else if (lineStyle === "dotted") ctx.setLineDash([0.5, 7]);
+  ctx.lineJoin = "round";
+  if (lineStyle === "dashed") ctx.setLineDash([5, 9]);
+  else if (lineStyle === "dotted") ctx.setLineDash([0.6, 8]);
   ctx.lineDashOffset = -dashOffset;
 
   const litColor = brightenLine(lineColor, shimmer);
 
   for (const e of edges) {
+    const presence = e.presence ?? 1;
+    if (presence <= 0.01) continue;
     if (e.ghostAlpha > 0) {
-      ctx.strokeStyle = withAlpha(lineColor, GHOST_ALPHA * e.ghostAlpha);
+      ctx.lineWidth = 0.7;
+      ctx.strokeStyle = withAlpha(
+        lineColor,
+        GHOST_ALPHA * e.ghostAlpha * presence,
+      );
       ctx.beginPath();
       ctx.moveTo(e.from.x, e.from.y);
       ctx.lineTo(e.to.x, e.to.y);
       ctx.stroke();
     }
     if (e.litAmount > 0) {
-      ctx.strokeStyle = litColor;
+      const tx = lerp(e.from.x, e.to.x, e.litAmount);
+      const ty = lerp(e.from.y, e.to.y, e.litAmount);
+
+      // soft bloom under the stroke
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = withAlpha(lineColor, (0.18 + shimmer * 0.2) * presence);
       ctx.beginPath();
       ctx.moveTo(e.from.x, e.from.y);
-      ctx.lineTo(
-        lerp(e.from.x, e.to.x, e.litAmount),
-        lerp(e.from.y, e.to.y, e.litAmount),
-      );
+      ctx.lineTo(tx, ty);
       ctx.stroke();
+      ctx.restore();
+
+      ctx.lineWidth = 1.05;
+      ctx.strokeStyle = scaleAlpha(litColor, presence);
+      ctx.beginPath();
+      ctx.moveTo(e.from.x, e.from.y);
+      ctx.lineTo(tx, ty);
+      ctx.stroke();
+
+      // A spark rides the leading end while the line is still growing in.
+      if (e.litAmount > 0.04 && e.litAmount < 0.98) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = withAlpha(litColor, 0.9 * presence);
+        ctx.beginPath();
+        ctx.arc(tx, ty, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
   }
+  ctx.restore();
+}
+
+/**
+ * A breath of light between an open memory and a star it belongs with.
+ * Not a line — a wash that fades when the memory closes.
+ */
+export function paintKinship(
+  ctx: CanvasRenderingContext2D,
+  from: Vec,
+  to: Vec,
+  alpha: number,
+  color: string,
+): void {
+  if (alpha <= 0.01) return;
+  const mx = (from.x + to.x) / 2;
+  const my = (from.y + to.y) / 2;
+  const dist = Math.hypot(to.x - from.x, to.y - from.y);
+  const radius = Math.max(56, dist * 0.62);
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const wash = ctx.createRadialGradient(mx, my, 0, mx, my, radius);
+  wash.addColorStop(0, withAlpha(color, 0.2 * alpha));
+  wash.addColorStop(0.5, withAlpha(color, 0.07 * alpha));
+  wash.addColorStop(1, withAlpha(color, 0));
+  ctx.fillStyle = wash;
+  ctx.beginPath();
+  ctx.arc(mx, my, radius, 0, Math.PI * 2);
+  ctx.fill();
+  const kin = ctx.createRadialGradient(to.x, to.y, 0, to.x, to.y, 42);
+  kin.addColorStop(0, withAlpha(color, 0.38 * alpha));
+  kin.addColorStop(1, withAlpha(color, 0));
+  ctx.fillStyle = kin;
+  ctx.beginPath();
+  ctx.arc(to.x, to.y, 42, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -328,6 +429,16 @@ export type StarPaintState = {
   hovered: boolean;
   active: boolean;
   t: number;
+  /** Screen position. Falls back to treating x/y as viewport percent. */
+  at?: Vec;
+  /** 1 → 0 ring that blooms when the star is opened. */
+  flare?: number;
+  /** A photo, drawn as a small disc when the camera is close. */
+  glint?: CanvasImageSource | null;
+  /** A reply star — quieter than a memory. */
+  reply?: boolean;
+  /** Extra warmth left after the stars have stood in the finale shape. */
+  ember?: number;
 };
 
 export function paintStar(
@@ -338,44 +449,97 @@ export function paintStar(
   state: StarPaintState,
 ): void {
   if (state.appear <= 0) return;
-  const { x, y } = starToPixel(star, w, h);
+  const { x, y } = state.at ?? starToPixel(star, w, h);
   const ease = easeOutCubic(state.appear);
   const base = STAR_RADIUS[star.size];
 
-  // An opened star keeps a warm gold; an untouched one is cool starlight. The
-  // hovered/active star swells and brightens to invite (and confirm) the tap.
+  // Opened memories warm to soft gold; unread ones stay cool silver-white —
+  // high contrast against the deep black sky of the reference.
   const warm = state.opened;
-  const twinkle = 0.85 + Math.sin(state.t * 1.4 + star.id) * 0.15;
-  const emphasis = state.active ? 1.6 : state.hovered ? 1.3 : 1;
-  const radius = base * emphasis * ease;
-  const glowRadius = radius * (warm ? 7 : 5.5) * (state.hovered ? 1.25 : 1);
-  const coreColor = warm ? "255, 226, 168" : "224, 238, 255";
+  const twinkle = 0.82 + Math.sin(state.t * 1.35 + star.id * 1.7) * 0.18;
+  const ember = state.ember ?? 0;
+  const emphasis = state.active ? 1.55 : state.hovered ? 1.28 : 1;
+  const radius = base * emphasis * ease * (1 + ember * 0.18);
+  const glowRadius =
+    radius *
+    (warm ? 8.5 : 6.5) *
+    (state.hovered ? 1.3 : 1) *
+    (1 + ember * 0.45);
+  const coreColor = warm || ember > 0.2 ? "255, 228, 176" : "248, 250, 255";
   const glowAlpha =
-    (warm ? 0.5 : 0.32) * ease * (state.active ? 1.4 : 1) * twinkle;
+    (warm ? 0.55 : 0.38) *
+    (1 + ember * 0.65) *
+    ease *
+    (state.active ? 1.35 : 1) *
+    twinkle *
+    (state.reply ? 0.55 : 1);
 
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
 
   const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
   glow.addColorStop(0, `rgba(${coreColor}, ${clamp01(glowAlpha)})`);
+  glow.addColorStop(0.45, `rgba(${coreColor}, ${clamp01(glowAlpha * 0.22)})`);
   glow.addColorStop(1, `rgba(${coreColor}, 0)`);
   ctx.fillStyle = glow;
   ctx.beginPath();
   ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
   ctx.fill();
 
+  // Diffraction spikes on medium/large stars — the photographic "pointing at
+  // bright stars" look from the reference night sky.
+  if (star.size !== "small") {
+    const spike = radius * (star.size === "large" ? 4.2 : 2.8) * ease;
+    const spikeA = 0.35 * ease * twinkle * (state.hovered ? 1.25 : 1);
+    ctx.strokeStyle = `rgba(${coreColor}, ${spikeA})`;
+    ctx.lineWidth = star.size === "large" ? 1.1 : 0.7;
+    ctx.beginPath();
+    ctx.moveTo(x - spike, y);
+    ctx.lineTo(x + spike, y);
+    ctx.moveTo(x, y - spike);
+    ctx.lineTo(x, y + spike);
+    if (star.size === "large") {
+      const d = spike * 0.55;
+      ctx.moveTo(x - d, y - d);
+      ctx.lineTo(x + d, y + d);
+      ctx.moveTo(x - d, y + d);
+      ctx.lineTo(x + d, y - d);
+    }
+    ctx.stroke();
+  }
+
+  if (state.glint && ease > 0.4 && !state.reply) {
+    const disc = Math.max(radius * 3.2, 7);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, disc, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.globalAlpha = 0.92 * ease;
+    ctx.drawImage(state.glint, x - disc, y - disc, disc * 2, disc * 2);
+    ctx.restore();
+  }
+
   // bright core
-  ctx.fillStyle = `rgba(255, 252, 246, ${clamp01(ease * twinkle)})`;
+  ctx.fillStyle = `rgba(255, 253, 248, ${clamp01(ease * twinkle * (state.glint ? 0.35 : 1))})`;
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.arc(x, y, state.glint ? radius * 0.7 : radius, 0, Math.PI * 2);
   ctx.fill();
 
   // a thin ring on the active star, like the memory is being held open
   if (state.active) {
-    ctx.strokeStyle = `rgba(${coreColor}, ${0.6 * ease})`;
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = `rgba(${coreColor}, ${0.55 * ease})`;
+    ctx.lineWidth = 1.1;
     ctx.beginPath();
-    ctx.arc(x, y, radius + 6, 0, Math.PI * 2);
+    ctx.arc(x, y, radius + 7, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  if (state.flare && state.flare > 0) {
+    const ring = radius + 6 + (1 - state.flare) * 28;
+    ctx.strokeStyle = `rgba(${coreColor}, ${0.65 * state.flare})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(x, y, ring, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();
@@ -426,6 +590,13 @@ function withAlpha(color: string, alpha: number): string {
   const rgb = toRgb(color);
   if (!rgb) return color;
   return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${clamp01(alpha)})`;
+}
+
+/** Multiply a colour's existing alpha. Presence 1 leaves it unchanged. */
+function scaleAlpha(color: string, factor: number): string {
+  const rgba = toRgba(color);
+  if (!rgba) return color;
+  return `rgba(${rgba[0]}, ${rgba[1]}, ${rgba[2]}, ${clamp01(rgba[3] * factor)})`;
 }
 
 /** Lift a line colour's alpha toward 1 by `amount` (0–1) for the finale glow. */

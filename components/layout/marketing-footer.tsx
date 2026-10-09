@@ -16,6 +16,8 @@ const linkColumns = [
   {
     title: "Experiences",
     links: [
+      { href: ROUTES.memoryBankStory, label: "Memory Bank" },
+      { href: ROUTES.kyndStory, label: "Kynd" },
       ...EXPERIENCE_CATEGORIES.map((c) => ({
         href: `${ROUTES.experiences}#${c.id}`,
         label: c.label,
@@ -38,6 +40,16 @@ const linkColumns = [
       { href: ROUTES.pricing, label: "Pricing" },
       { href: ROUTES.about, label: "About" },
       { href: ROUTES.blog, label: "Blog" },
+      { href: ROUTES.feedback, label: "Share feedback" },
+      { href: ROUTES.ideas, label: "Submit an idea" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { href: ROUTES.terms, label: "Terms" },
+      { href: ROUTES.privacy, label: "Privacy" },
+      { href: ROUTES.refund, label: "Refunds" },
     ],
   },
   {
@@ -83,8 +95,8 @@ export function MarketingFooter() {
           <div className="max-w-sm space-y-4">
             <Logo className="[&_text]:fill-[#3A2A25]" />
             <p className="text-sm leading-relaxed text-[#7A6258]">
-              Turn what you feel into something they can hold — personalized in
-              minutes, sent with a single private link.
+              Keep the days in a Memory Bank, then grow them into something they
+              can hold — a scrapbook, a sky, a jar — sent with a private link.
             </p>
             <div className="flex items-center gap-3 pt-1">
               {socialLinks.map((social) => (
@@ -110,7 +122,7 @@ export function MarketingFooter() {
           </div>
 
           {/* Link columns */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
             {linkColumns.map((column) => (
               <nav key={column.title} aria-label={column.title}>
                 <h3 className="text-xs font-semibold tracking-[0.16em] text-[#92786C] uppercase">
@@ -137,13 +149,29 @@ export function MarketingFooter() {
           <p className="text-sm text-[#92786C]">
             © {year} {siteConfig.creator}. All rights reserved.
           </p>
-          <p className="flex items-center gap-1.5 text-sm text-[#92786C]">
-            Made with
-            <span className="text-[#F2596F]" aria-label="love">
-              ♥
-            </span>
-            for the moments that matter.
-          </p>
+          <nav
+            aria-label="Legal"
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-[#92786C]"
+          >
+            <Link
+              href={ROUTES.terms}
+              className="transition-colors duration-300 hover:text-[#3A2A25]"
+            >
+              Terms
+            </Link>
+            <Link
+              href={ROUTES.privacy}
+              className="transition-colors duration-300 hover:text-[#3A2A25]"
+            >
+              Privacy
+            </Link>
+            <Link
+              href={ROUTES.refund}
+              className="transition-colors duration-300 hover:text-[#3A2A25]"
+            >
+              Refunds
+            </Link>
+          </nav>
         </div>
       </PageContainer>
     </footer>

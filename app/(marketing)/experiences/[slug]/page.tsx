@@ -1,15 +1,17 @@
-import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EmbeddedExperience } from "@/components/experiences/embedded-experience";
 import { PageContainer } from "@/components/layout/page-container";
+import { ExperienceCardMedia } from "@/components/shared/experience-card-media";
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import { ExperiencePrice } from "@/components/shared/experience-price";
 import { ROUTES } from "@/constants/routes";
-import { JarPreview } from "@/features/memory-jar/components/jar-preview";
 import { MemoryPagesLanding } from "@/features/memory-pages/components/marketing/memory-pages-landing";
+import { RelatedPairings } from "@/features/recommendations/components/companion-recommendations";
+import { ReferProductButton } from "@/features/referrals/components/refer-product-button";
 import { ScrapbookTemplatesShowcase } from "@/features/scrapbook/components/templates-showcase";
 import { experienceHref, getExperience } from "@/lib/experiences";
 import { createMetadata } from "@/lib/seo";
@@ -49,7 +51,6 @@ export default async function ExperienceProductPage({
   if (!exp || exp.status !== "live") notFound();
 
   const isEmbedded = exp.embedded === true;
-  const launchHref = exp.liveHref ?? ROUTES.home;
   const makeHref = exp.makeHref ?? ROUTES.register;
   const more = all
     .filter((e) => e.status === "live" && e.slug !== exp.slug)
@@ -112,6 +113,16 @@ export default async function ExperienceProductPage({
                     Make your own
                     <ArrowUpRight className="ml-2 size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </Link>
+                  <ReferProductButton kind="experience" slug={exp.slug} />
+                  <Link
+                    href={ROUTES.experiencePreview(exp.slug)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[#F2DACE] bg-white/70 px-8 text-base font-medium text-[#3A2A25] transition-all duration-500 hover:border-[#FF7A59]/50 hover:bg-white"
+                  >
+                    <ExternalLink className="size-4" />
+                    Open public view
+                  </Link>
                   <Link
                     href={ROUTES.experiences}
                     className="inline-flex h-12 items-center justify-center rounded-full border border-[#F2DACE] bg-white/70 px-8 text-base font-medium text-[#3A2A25] transition-all duration-500 hover:border-[#FF7A59]/50 hover:bg-white"
@@ -139,50 +150,55 @@ export default async function ExperienceProductPage({
                 <p className="mt-6 max-w-lg text-lg leading-relaxed text-[#7A6258]">
                   {exp.description}
                 </p>
-                <ExperiencePrice price={exp.price} variant="full" className="mt-8" />
+                <ExperiencePrice
+                  price={exp.price}
+                  variant="full"
+                  className="mt-8"
+                />
                 <div className="mt-9 flex flex-wrap items-center gap-4">
                   <Link
-                    href={launchHref}
+                    href={makeHref}
                     className="group inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#FF7A59] to-[#F2596F] px-8 text-base font-medium text-white kyndl-glow-warm transition-all duration-500 hover:-translate-y-0.5"
                   >
-                    {exp.inlineEmbed ? "Open full screen" : "Launch experience"}
+                    Make your own
                     <ArrowUpRight className="ml-2 size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </Link>
+                  <ReferProductButton kind="experience" slug={exp.slug} />
                   <Link
-                    href={makeHref}
+                    href={ROUTES.experiences}
                     className="inline-flex h-12 items-center justify-center rounded-full border border-[#F2DACE] bg-white/70 px-8 text-base font-medium text-[#3A2A25] transition-all duration-500 hover:border-[#FF7A59]/50 hover:bg-white"
                   >
-                    Make your own
+                    Browse experiences
                   </Link>
                 </div>
               </div>
 
-              {/* preview block — the live experience when it embeds inline,
-                  otherwise a static gradient placeholder. */}
+              {/* Live demo in the right-hand frame */}
               <div className="relative">
-                <div
-                  className="relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] border border-[#F0DAC9] shadow-[0_40px_90px_-40px_rgba(58,42,37,0.55)]"
-                  style={
-                    exp.inlineEmbed ? undefined : { background: exp.previewGradient }
-                  }
-                >
+                <div className="relative h-[min(85vh,720px)] w-full overflow-hidden rounded-[2rem] border border-[#F0DAC9] bg-[#FFF9F4] shadow-[0_40px_90px_-40px_rgba(58,42,37,0.55)]">
                   {exp.inlineEmbed ? (
                     <EmbeddedExperience slug={exp.slug} />
-                  ) : exp.slug === "memory-jar" ? (
-                    // an auto-playing taste of the jar — opens itself so the
-                    // visitor sees the ritual without launching the experience.
-                    <JarPreview />
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-8 text-center">
-                      <span className="flex size-20 items-center justify-center rounded-3xl border border-white/50 bg-white/80 text-[#FF7A59] backdrop-blur-sm">
-                        <ExperienceIcon name={exp.icon} className="size-10" />
-                      </span>
-                      <p className="max-w-xs text-sm font-medium text-[#3A2A25]/80">
-                        {exp.tagline}
-                      </p>
-                    </div>
+                    <ExperienceCardMedia
+                      slug={exp.slug}
+                      media={exp}
+                      className="size-full rounded-none aspect-auto h-full"
+                    />
                   )}
                 </div>
+                {exp.inlineEmbed && (
+                  <div className="mt-3 flex justify-end">
+                    <Link
+                      href={ROUTES.experiencePreview(exp.slug)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[#92786C] transition-colors hover:text-[#C75B39]"
+                    >
+                      <ExternalLink className="size-3.5" />
+                      Open public view
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -311,17 +327,21 @@ export default async function ExperienceProductPage({
                   <Link
                     key={m.slug}
                     href={experienceHref(m.slug)}
-                    className="kyndl-card-soft group flex flex-col rounded-3xl border border-[#F4DDD0] bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-[#FF7A59]/45"
+                    className="kyndl-card-soft group flex flex-col overflow-hidden rounded-3xl border border-[#F4DDD0] bg-white transition-all duration-500 hover:-translate-y-1 hover:border-[#FF7A59]/45"
                   >
-                    <span className="flex size-11 items-center justify-center rounded-2xl border border-[#F4DDD0] bg-[#FFF7F1] text-[#FF7A59] transition-colors group-hover:text-[#F2596F]">
-                      <ExperienceIcon name={m.icon} className="size-5" />
-                    </span>
-                    <h3 className="mt-4 font-display text-lg text-[#3A2A25]">
-                      {m.name}
-                    </h3>
-                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#7A6258]">
-                      {m.tagline}
-                    </p>
+                    <ExperienceCardMedia
+                      slug={m.slug}
+                      media={m}
+                      className="rounded-none"
+                    />
+                    <div className="flex flex-1 flex-col p-6">
+                      <h3 className="font-display text-lg text-[#3A2A25]">
+                        {m.name}
+                      </h3>
+                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#7A6258]">
+                        {m.tagline}
+                      </p>
+                    </div>
                   </Link>
                 );
               })}
@@ -329,6 +349,16 @@ export default async function ExperienceProductPage({
           </PageContainer>
         </section>
       )}
+
+      <section className="relative pb-8 md:pb-12">
+        <PageContainer size="xl">
+          <RelatedPairings
+            kind="digital"
+            id={exp.slug}
+            title="Goes hand in hand"
+          />
+        </PageContainer>
+      </section>
 
       {/* ── CTA ───────────────────────────────────────────────────── */}
       <section className="relative py-16 md:py-24">
@@ -353,11 +383,12 @@ export default async function ExperienceProductPage({
               </p>
               <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
                 <Link
-                  href={isEmbedded ? makeHref : launchHref}
+                  href={makeHref}
                   className="inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#FF7A59] to-[#F2596F] px-8 text-base font-medium text-white kyndl-glow-warm transition-all duration-500 hover:-translate-y-0.5"
                 >
-                  {isEmbedded ? "Make your own" : `Try ${exp.name}`}
+                  Make your own
                 </Link>
+                <ReferProductButton kind="experience" slug={exp.slug} />
                 <Link
                   href={ROUTES.register}
                   className="inline-flex h-12 items-center justify-center rounded-full border border-[#F2DACE] bg-white/70 px-8 text-base font-medium text-[#3A2A25] transition-all duration-500 hover:border-[#FF7A59]/50 hover:bg-white"

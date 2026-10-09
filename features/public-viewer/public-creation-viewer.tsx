@@ -4,24 +4,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Lock, SearchX } from "lucide-react";
 import Link from "next/link";
 
+import { MarketingHeader } from "@/components/layout/marketing-header";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
-import { Conversation } from "@/features/comments/components/conversation";
 import { MemoryJarPublicView } from "@/features/memory-jar/components/viewer/memory-jar-public-view";
 import type { JarConfig } from "@/features/memory-jar/config";
 import { MemoryPublicView } from "@/features/memory-pages/components/viewer/memory-public-view";
 import { OurPlacesPublicView } from "@/features/our-places/components/our-places-public-view";
-import { ReviewsSection } from "@/features/reviews/components/reviews-section";
+import { RecipientAftermath } from "@/features/recipient-aftermath/components/recipient-aftermath";
 import { withCallbackUrl } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
 import { creationService } from "@/services/creations/creation.service";
 import type { ApiError } from "@/types/api";
 import type { Creation } from "@/types/creation";
 
-import {
-  assetUrls,
-  hasPublicViewer,
-  renderPublicExperience,
-} from "./registry";
+import { MakeYourOwnFab } from "./make-your-own-fab";
+import { assetUrls, hasPublicViewer, renderPublicExperience } from "./registry";
 
 export function PublicCreationViewer({ token }: { token: string }) {
   const query = useQuery({
@@ -34,11 +32,13 @@ export function PublicCreationViewer({ token }: { token: string }) {
 
   if (query.isLoading) {
     return (
-      <Centered>
-        <p className="animate-pulse font-display text-xl text-muted-foreground">
-          opening…
-        </p>
-      </Centered>
+      <PublicViewFrame>
+        <Centered>
+          <p className="animate-pulse font-display text-xl text-muted-foreground">
+            opening…
+          </p>
+        </Centered>
+      </PublicViewFrame>
     );
   }
 
@@ -50,25 +50,29 @@ export function PublicCreationViewer({ token }: { token: string }) {
       // invited email — no re-navigation, no lost destination.
       const loginHref = withCallbackUrl(ROUTES.login, `/v/${token}`);
       return (
-        <Centered>
-          <Lock className="size-8 text-muted-foreground" />
-          <h1 className="font-display text-2xl">This one&apos;s private</h1>
-          <p className="max-w-sm text-muted-foreground">
-            You need to be invited to view this. Sign in with the email it was
-            shared to.
-          </p>
-          <Button render={<Link href={loginHref} />}>Sign in</Button>
-        </Centered>
+        <PublicViewFrame>
+          <Centered>
+            <Lock className="size-8 text-muted-foreground" />
+            <h1 className="font-display text-2xl">This one&apos;s private</h1>
+            <p className="max-w-sm text-muted-foreground">
+              You need to be invited to view this. Sign in with the email it was
+              shared to.
+            </p>
+            <Button render={<Link href={loginHref} />}>Sign in</Button>
+          </Centered>
+        </PublicViewFrame>
       );
     }
     return (
-      <Centered>
-        <SearchX className="size-8 text-muted-foreground" />
-        <h1 className="font-display text-2xl">Nothing here</h1>
-        <p className="max-w-sm text-muted-foreground">
-          This link is wrong, or the creation isn&apos;t published.
-        </p>
-      </Centered>
+      <PublicViewFrame>
+        <Centered>
+          <SearchX className="size-8 text-muted-foreground" />
+          <h1 className="font-display text-2xl">Nothing here</h1>
+          <p className="max-w-sm text-muted-foreground">
+            This link is wrong, or the creation isn&apos;t published.
+          </p>
+        </Centered>
+      </PublicViewFrame>
     );
   }
 
@@ -77,13 +81,16 @@ export function PublicCreationViewer({ token }: { token: string }) {
 
   if (!hasPublicViewer(creation.type)) {
     return (
-      <Centered>
-        <h1 className="font-display text-2xl">{creation.title}</h1>
-        <p className="max-w-sm text-muted-foreground">
-          This experience opens best inside the Kyndl app — a shared viewer for
-          it is coming soon.
-        </p>
-      </Centered>
+      <PublicViewFrame>
+        <Centered>
+          <h1 className="font-display text-2xl">{creation.title}</h1>
+          <p className="max-w-sm text-muted-foreground">
+            This experience opens best inside the Kyndl app — a shared viewer
+            for it is coming soon.
+          </p>
+        </Centered>
+        <MakeYourOwnFab experienceType={creation.type} fromToken={token} />
+      </PublicViewFrame>
     );
   }
 
@@ -93,21 +100,39 @@ export function PublicCreationViewer({ token }: { token: string }) {
     assetUrls(creation.assets),
     token,
     creation.authors ?? {},
+    creation.id,
+  );
+
+  // Memory-pages / memory-jar put ChatDock in the same corner — lift the FAB.
+  const offsetForChat =
+    creation.chat_enabled &&
+    (creation.type === "memory-pages" || creation.type === "memory-jar");
+
+  const fab = (
+    <MakeYourOwnFab
+      experienceType={creation.type}
+      fromToken={token}
+      offsetForChat={offsetForChat}
+    />
   );
 
   // Memory-pages get a bespoke keepsake layout: the album takes the full
   // viewport and the feedback surfaces are gathered into an on-theme guestbook.
   if (creation.type === "memory-pages") {
     return (
-      <MemoryPublicView
-        token={token}
-        title={creation.title}
-        commentsEnabled={creation.comments_enabled}
-        chatEnabled={creation.chat_enabled}
-        reviewsEnabled={creation.reviews_enabled}
-      >
-        {experience}
-      </MemoryPublicView>
+      <PublicViewFrame fill>
+        <MemoryPublicView
+          token={token}
+          experienceType={creation.type}
+          title={creation.title}
+          commentsEnabled={creation.comments_enabled}
+          chatEnabled={creation.chat_enabled}
+          reviewsEnabled={creation.reviews_enabled}
+        >
+          {experience}
+        </MemoryPublicView>
+        {fab}
+      </PublicViewFrame>
     );
   }
 
@@ -117,19 +142,23 @@ export function PublicCreationViewer({ token }: { token: string }) {
   if (creation.type === "memory-jar") {
     const music = (creation.content as JarConfig).music;
     const musicUrl = music
-      ? assetUrls(creation.assets)[music.fileId] ?? null
+      ? (assetUrls(creation.assets)[music.fileId] ?? null)
       : null;
     return (
-      <MemoryJarPublicView
-        token={token}
-        title={creation.title}
-        commentsEnabled={creation.comments_enabled}
-        chatEnabled={creation.chat_enabled}
-        reviewsEnabled={creation.reviews_enabled}
-        musicUrl={musicUrl}
-      >
-        {experience}
-      </MemoryJarPublicView>
+      <PublicViewFrame fill>
+        <MemoryJarPublicView
+          token={token}
+          experienceType={creation.type}
+          title={creation.title}
+          commentsEnabled={creation.comments_enabled}
+          chatEnabled={creation.chat_enabled}
+          reviewsEnabled={creation.reviews_enabled}
+          musicUrl={musicUrl}
+        >
+          {experience}
+        </MemoryJarPublicView>
+        {fab}
+      </PublicViewFrame>
     );
   }
 
@@ -137,33 +166,87 @@ export function PublicCreationViewer({ token }: { token: string }) {
   // float on top (pills + chat bubble) rather than sitting below the fold.
   if (creation.type === "our-places") {
     return (
-      <OurPlacesPublicView
-        token={token}
-        commentsEnabled={creation.comments_enabled}
-        reviewsEnabled={creation.reviews_enabled}
-        chatEnabled={creation.chat_enabled}
-      >
-        {experience}
-      </OurPlacesPublicView>
+      <PublicViewFrame fill>
+        <OurPlacesPublicView
+          token={token}
+          experienceType={creation.type}
+          commentsEnabled={creation.comments_enabled}
+          reviewsEnabled={creation.reviews_enabled}
+          chatEnabled={creation.chat_enabled}
+        >
+          {experience}
+        </OurPlacesPublicView>
+        {fab}
+      </PublicViewFrame>
     );
   }
 
   // Immersive canvas experiences (their root is `h-full`) need a definite-height
   // parent or they collapse to nothing. Give them a full-viewport stage, with the
-  // feedback surfaces below the fold on scroll.
+  // recipient aftermath (reaction + make one back) below the fold on scroll.
   if (FULLSCREEN_EXPERIENCES.has(creation.type)) {
     return (
-      <div className="w-full">
-        <div className="h-dvh w-full">{experience}</div>
-        <FeedbackSurfaces creation={creation} token={token} />
-      </div>
+      <PublicViewFrame>
+        <div className="w-full">
+          <div className="h-[calc(100dvh-4rem)] w-full">{experience}</div>
+          <RecipientAftermath
+            token={token}
+            experienceType={creation.type}
+            reviewsEnabled={creation.reviews_enabled}
+            commentsEnabled={creation.comments_enabled}
+            chatEnabled={creation.chat_enabled}
+            published={Boolean(creation.published_at)}
+          />
+        </div>
+        {fab}
+      </PublicViewFrame>
     );
   }
 
   return (
-    <div className="min-h-dvh w-full">
-      {experience}
-      <FeedbackSurfaces creation={creation} token={token} />
+    <PublicViewFrame>
+      <div className="min-h-[calc(100dvh-4rem)] w-full">
+        {experience}
+        <RecipientAftermath
+          token={token}
+          experienceType={creation.type}
+          reviewsEnabled={creation.reviews_enabled}
+          commentsEnabled={creation.comments_enabled}
+          chatEnabled={creation.chat_enabled}
+          published={Boolean(creation.published_at)}
+        />
+      </div>
+      {fab}
+    </PublicViewFrame>
+  );
+}
+
+/**
+ * Site header on every public keepsake. `fill` locks the page to the viewport
+ * so full-screen experiences (album, jar, map) sit under the header instead of
+ * painting over it.
+ */
+function PublicViewFrame({
+  fill = false,
+  children,
+}: {
+  fill?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn("flex flex-col bg-[#FFF7F1]", fill ? "h-dvh" : "min-h-dvh")}
+    >
+      <div className="shrink-0">
+        <MarketingHeader />
+      </div>
+      {fill ? (
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="absolute inset-0">{children}</div>
+        </div>
+      ) : (
+        children
+      )}
     </div>
   );
 }
@@ -176,52 +259,9 @@ const FULLSCREEN_EXPERIENCES = new Set([
   "chocolate-bouquet",
 ]);
 
-/**
- * Let the people this was shared with rate the experience, talk about it, and
- * (if the owner enabled it) chat privately with the creator.
- */
-function FeedbackSurfaces({
-  creation,
-  token,
-}: {
-  creation: Creation;
-  token: string;
-}) {
-  if (
-    !creation.reviews_enabled &&
-    !creation.comments_enabled &&
-    !creation.chat_enabled
-  ) {
-    return null;
-  }
-  return (
-    <div className="mx-auto w-full max-w-2xl space-y-14 px-6 py-14">
-      {creation.reviews_enabled && (
-        <ReviewsSection
-          type="experience"
-          refId={token}
-          title="Rate this experience"
-        />
-      )}
-
-      {creation.comments_enabled && (
-        <Conversation surface="experience" refId={token} title="Comments" />
-      )}
-
-      {creation.chat_enabled && (
-        <Conversation
-          surface="experience-chat"
-          refId={token}
-          title="Chat with the creator"
-        />
-      )}
-    </div>
-  );
-}
-
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
+    <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center gap-3 px-6 text-center">
       {children}
     </div>
   );

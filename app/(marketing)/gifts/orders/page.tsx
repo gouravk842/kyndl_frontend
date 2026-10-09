@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import { ROUTES } from "@/constants/routes";
 import { OrdersView } from "@/features/gifts/components/orders-view";
 import { createMetadata } from "@/lib/seo";
@@ -9,5 +11,9 @@ export const metadata = createMetadata({
 });
 
 export default function GiftOrdersPage() {
-  return <OrdersView />;
+  return (
+    <Suspense fallback={null}>
+      <OrdersView />
+    </Suspense>
+  );
 }

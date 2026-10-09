@@ -1,16 +1,22 @@
 "use client";
 
 import {
+  ChartColumn,
   Compass,
+  Feather,
   Home,
   LayoutDashboard,
+  Library,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Receipt,
   Settings,
   Settings2,
+  Share2,
   Store,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,7 +37,11 @@ import { useUiStore } from "@/store/ui.store";
 
 // Static destinations that live below the user's library.
 const navItems = [
+  { href: ROUTES.memories, label: "Memories", icon: Library },
+  { href: ROUTES.kynd, label: "Kynd", icon: Feather },
+  { href: ROUTES.referrals, label: "Referrals", icon: Share2 },
   { href: ROUTES.experiences, label: "Explore", icon: Compass },
+  { href: ROUTES.billing, label: "Billing", icon: Receipt },
   { href: ROUTES.settings, label: "Settings", icon: Settings },
 ] as const;
 
@@ -40,6 +50,8 @@ const shopNavItems = [
   { href: ROUTES.shop, label: "Shop overview", icon: LayoutDashboard },
   { href: ROUTES.shopProducts, label: "Products", icon: Package },
   { href: ROUTES.shopOrders, label: "Orders", icon: Store },
+  { href: ROUTES.shopExpenses, label: "Expenses", icon: Wallet },
+  { href: ROUTES.shopReports, label: "P&L", icon: ChartColumn },
   { href: ROUTES.shopSettings, label: "Settings", icon: Settings2 },
 ] as const;
 
@@ -96,7 +108,12 @@ export function DashboardSidebar() {
         title={sidebarOpen ? undefined : label}
       >
         {key === CREATE_KEY ? (
-          <span className={cn(iconTileClass(), "border border-dashed border-border")}>
+          <span
+            className={cn(
+              iconTileClass(),
+              "border border-dashed border-border",
+            )}
+          >
             <Plus className="size-4 shrink-0" />
           </span>
         ) : key === HOME_KEY ? (
@@ -106,12 +123,16 @@ export function DashboardSidebar() {
         ) : (
           <span className={iconTileClass()}>
             <ExperienceIcon
-              name={categories.find((c) => c.key === key)?.iconName ?? "Sparkles"}
+              name={
+                categories.find((c) => c.key === key)?.iconName ?? "Sparkles"
+              }
               className="size-4 shrink-0"
             />
           </span>
         )}
-        {sidebarOpen && <span className="min-w-0 flex-1 truncate">{label}</span>}
+        {sidebarOpen && (
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+        )}
         {sidebarOpen && typeof count === "number" && (
           <span
             className={cn(

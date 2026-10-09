@@ -25,7 +25,11 @@
  * Everything is deterministic (see `prng.ts`) — same input → identical city.
  */
 
+import { LAYOUT_ENGINE_VERSION } from "../../types";
 import { makeRng } from "./prng";
+
+/** Current layout engine revision (re-exported for callers). */
+export { LAYOUT_ENGINE_VERSION };
 
 /** A world-space coordinate `[x, y, z]`. */
 export type Vec3 = [number, number, number];
@@ -83,6 +87,8 @@ export interface CityLayout {
   fillers: FillerBuilding[];
   /** Outer radius of the built city (for fog/ground sizing). */
   radius: number;
+  /** Engine revision that produced this layout. */
+  engineVersion: number;
 }
 
 export interface LayoutParams {
@@ -149,7 +155,9 @@ export function generateLayout(
   for (const m of sorted) {
     const v = dateValue(m.date);
     const gapDays = Number.isNaN(prevVal) ? 0 : (v - prevVal) / MS_PER_DAY;
-    const cut = bucket.length > 0 && (gapDays > p.eraGapDays || bucket.length >= p.eraMax);
+    const cut =
+      bucket.length > 0 &&
+      (gapDays > p.eraGapDays || bucket.length >= p.eraMax);
     if (cut) {
       eraIds.push(bucket);
       bucket = [];
@@ -182,7 +190,13 @@ export function generateLayout(
       const z = Math.sin(theta) * rr;
       // Address the avenue: face roughly tangent to the spiral.
       const rotationY = -theta + Math.PI / 2 + jitter.range(-0.2, 0.2);
-      placed[id] = { id, eraIndex: e, order: orderIndex, position: [x, 0, z], rotationY };
+      placed[id] = {
+        id,
+        eraIndex: e,
+        order: orderIndex,
+        position: [x, 0, z],
+        rotationY,
+      };
       order.push(id);
       orderIndex++;
       // Advance ~constant arc length between nodes.
@@ -233,13 +247,25 @@ export function generateLayout(
   }
   const roads: Vec3[][] = [avenue];
   for (const era of eras) {
-    roads.push([[0, 0.02, 0], [era.center[0], 0.02, era.center[2]]]);
+    roads.push([
+      [0, 0.02, 0],
+      [era.center[0], 0.02, era.center[2]],
+    ]);
   }
 
   // 7 ─ Filler buildings lining both sides of the avenue → the city "fabric".
   const fillers = buildFillers(order, placed, p);
 
-  return { eras, placed, order, path, roads, fillers, radius };
+  return {
+    eras,
+    placed,
+    order,
+    path,
+    roads,
+    fillers,
+    radius,
+    engineVersion: LAYOUT_ENGINE_VERSION,
+  };
 }
 
 /**

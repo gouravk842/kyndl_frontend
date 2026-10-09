@@ -5,6 +5,9 @@ import { Dices, Flame, Lock, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Dice3D } from "@/components/red-zone/dice-3d";
+import { CatalogImage } from "@/features/activity-bank/components/catalog-image";
+import { applyDice } from "@/features/activity-bank/demo-content";
+import { DemoGate } from "@/features/activity-bank/demo-gate";
 import {
   DICE_CONFIG,
   type DiceConfig,
@@ -29,6 +32,7 @@ type DiceOfDesireExperienceProps = {
   config?: DiceConfig;
   /** Skip the 18+ gate (used inside the authenticated builder preview). */
   skipGate?: boolean;
+  assets?: Record<string, string>;
 };
 
 const ROLL_MS = 1000;
@@ -41,10 +45,24 @@ function rollDie(): number {
 
 type Popup = { position: Position; dice: [number, number] };
 
-export function DiceOfDesireExperience({
-  config = DICE_CONFIG,
+export function DiceOfDesireExperience(props: DiceOfDesireExperienceProps) {
+  return (
+    <DemoGate
+      authored={props.config}
+      fallback={DICE_CONFIG}
+      includeAdult
+      apply={applyDice}
+    >
+      {(config) => <DiceOfDesirePlay {...props} config={config} />}
+    </DemoGate>
+  );
+}
+
+function DiceOfDesirePlay({
+  config,
   skipGate = false,
-}: DiceOfDesireExperienceProps) {
+  assets,
+}: DiceOfDesireExperienceProps & { config: DiceConfig }) {
   const reduceMotion = useReducedMotion();
 
   const [entered, setEntered] = useState(skipGate);
@@ -188,6 +206,7 @@ export function DiceOfDesireExperience({
             <ResultPopup
               key={`p-${lastId}`}
               popup={popup}
+              assets={assets}
               reduceMotion={!!reduceMotion}
               onClose={() => setPopup(null)}
             />
@@ -319,10 +338,12 @@ function ResultPopup({
   popup,
   reduceMotion,
   onClose,
+  assets,
 }: {
   popup: Popup;
   reduceMotion: boolean;
   onClose: () => void;
+  assets?: Record<string, string>;
 }) {
   const { position, dice } = popup;
   const meta = HEAT_META[position.heat];
@@ -344,7 +365,9 @@ function ResultPopup({
             : { opacity: 0, scale: 0.7, rotateX: -45, y: 12 }
         }
         animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
-        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.85, y: -8 }}
+        exit={
+          reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.85, y: -8 }
+        }
         transition={{ type: "spring", stiffness: 240, damping: 18 }}
         className="relative w-full max-w-[15rem] overflow-hidden rounded-2xl border border-white/15 px-5 py-5 text-center shadow-[0_24px_60px_rgba(0,0,0,0.6)]"
         style={{ background: meta.card, transformStyle: "preserve-3d" }}
@@ -353,7 +376,11 @@ function ResultPopup({
           aria-hidden
           className="pointer-events-none absolute -top-12 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full blur-3xl"
           style={{ background: meta.glow }}
-          animate={reduceMotion ? {} : { scale: [0.8, 1.15, 1], opacity: [0.6, 1, 0.85] }}
+          animate={
+            reduceMotion
+              ? {}
+              : { scale: [0.8, 1.15, 1], opacity: [0.6, 1, 0.85] }
+          }
           transition={{ duration: 0.8 }}
         />
         <div className="relative flex items-center justify-between">
@@ -369,14 +396,22 @@ function ResultPopup({
         </div>
 
         {named ? (
-          <motion.h3
-            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12, type: "spring", stiffness: 260, damping: 20 }}
-            className="relative mt-3 font-display text-2xl leading-tight text-white"
-          >
-            {position.name}
-          </motion.h3>
+          <>
+            <motion.h3
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.12,
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+              }}
+              className="relative mt-3 font-display text-2xl leading-tight text-white"
+            >
+              {position.name}
+            </motion.h3>
+            <CatalogImage fileId={position.image?.fileId} assets={assets} />
+          </>
         ) : (
           <p className="relative mt-3 text-sm text-white/60">
             This square is still blank — add a position to it in the builder.

@@ -15,15 +15,21 @@ export function MomentViewer({
   content,
   assets,
   token,
+  experienceType,
 }: {
   content: unknown;
   assets: Record<string, string>;
   token?: string;
+  experienceType?: string;
 }) {
   const doc = (content as MomentDoc) ?? SAMPLE_PROPOSAL;
 
   const submit = token
-    ? async (payload: { answer: "yes" | "no"; note: string; responderName: string }) => {
+    ? async (payload: {
+        answer: "yes" | "no";
+        note: string;
+        responderName: string;
+      }) => {
         await creationService.respond(token, {
           answer: payload.answer,
           note: payload.note,
@@ -32,5 +38,13 @@ export function MomentViewer({
       }
     : undefined;
 
-  return <MomentPlayer doc={doc} assets={assets} submit={submit} />;
+  return (
+    <MomentPlayer
+      doc={doc}
+      assets={assets}
+      submit={submit}
+      experienceType={experienceType}
+      shareToken={token}
+    />
+  );
 }

@@ -1,8 +1,8 @@
 /**
  * Sample a lively "glow" colour from a photo.
  *
- * Run in the builder the moment a photo is uploaded, so the facet's room-glow
- * (see `RoomLight`) is the colour of the actual image rather than a guess. Rather
+ * Run in the builder the moment a photo is uploaded, so the memory's stage light
+ * is the colour of the actual image rather than a guess. Rather
  * than a flat average — which trends muddy grey — pixels are weighted toward the
  * vivid and bright, so the glow picks up the memory's real mood (a sunset stays
  * warm, snow stays cool).

@@ -22,9 +22,16 @@ const BUILDABLE_TYPES = [
   "memory-lantern",
   "chocolate-bouquet",
   "ludo",
+  "whack-a-mole",
+  "flames",
+  "love-calculator",
+  "folded-note",
+  "this-or-that",
+  "delulu-meter",
   "countdown",
   "proposal",
   "date-ask",
+  "mirror-match",
   "desire-deck",
   "desire-matcher",
   "dice-of-desire",
@@ -35,6 +42,8 @@ const BUILDABLE_TYPES = [
   "string-frame",
   "timeless-treasure",
   "time-capsule",
+  "twenty-four-reasons",
+  "relationship-calendar",
 ] as const;
 
 /** True when a fresh creation of this type can be authored in-app today. */
@@ -84,6 +93,8 @@ export function creationMeta(type: string) {
   return {
     name: exp?.name ?? type,
     icon: exp?.icon ?? "Sparkles",
+    /** Card cover — same path every surface uses via `ExperienceCardMedia`. */
+    previewImage: exp?.previewImage ?? null,
     previewGradient:
       exp?.previewGradient ??
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fff7f1 0%, #fbeede 60%, #f4e0cb 100%)",

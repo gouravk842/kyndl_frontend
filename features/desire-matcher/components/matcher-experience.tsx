@@ -10,6 +10,9 @@ import { Check, Flame, Lock, Minus, X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
+import { CatalogImage } from "@/features/activity-bank/components/catalog-image";
+import { applyMatcher } from "@/features/activity-bank/demo-content";
+import { DemoGate } from "@/features/activity-bank/demo-gate";
 import { Flames } from "@/features/desire-deck/components/flames";
 import { creationService } from "@/services/creations/creation.service";
 
@@ -35,16 +38,34 @@ import { RevealView } from "./reveal-view";
  */
 type Phase = "intro" | "answering" | "submitting" | "done";
 
-export function MatcherExperience({
-  content = MATCHER_CONFIG,
+export function MatcherExperience(props: {
+  content?: MatcherContent;
+  token?: string;
+  skipGate?: boolean;
+  assets?: Record<string, string>;
+}) {
+  return (
+    <DemoGate
+      authored={props.content}
+      fallback={MATCHER_CONFIG}
+      includeAdult
+      apply={applyMatcher}
+    >
+      {(content) => <MatcherPlay {...props} content={content} />}
+    </DemoGate>
+  );
+}
+
+function MatcherPlay({
+  content,
   token,
   skipGate = false,
+  assets,
 }: {
-  content?: MatcherContent;
-  /** Share token — present on the public viewer, absent in demo/preview. */
+  content: MatcherContent;
   token?: string;
-  /** Skip the 18+ gate (used inside the authenticated builder preview). */
   skipGate?: boolean;
+  assets?: Record<string, string>;
 }) {
   const reduceMotion = useReducedMotion();
   const [entered, setEntered] = useState(skipGate);
@@ -112,7 +133,7 @@ export function MatcherExperience({
       reveal.matches.length + reveal.maybes.length > 0
         ? `Out of ${reveal.total}, here's where you overlap.`
         : undefined;
-    return <RevealView reveal={reveal} intro={intro} />;
+    return <RevealView reveal={reveal} intro={intro} shareToken={token} />;
   }
 
   // ── Intro ──────────────────────────────────────────────────────────
@@ -150,8 +171,8 @@ export function MatcherExperience({
           {items.length === 0 ? "No items yet" : "Start answering"}
         </button>
         <p className="text-xs text-white/35">
-          {items.length} {items.length === 1 ? "thing" : "things"} to answer · your
-          picks stay private
+          {items.length} {items.length === 1 ? "thing" : "things"} to answer ·
+          your picks stay private
         </p>
       </motion.div>
     );
@@ -196,7 +217,9 @@ export function MatcherExperience({
               dragElastic={0.6}
               onDragEnd={onDragEnd}
               initial={
-                reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 16 }
+                reduceMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, scale: 0.92, y: 16 }
               }
               animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -225,6 +248,7 @@ export function MatcherExperience({
                 <p className="text-center font-display text-xl leading-relaxed text-white">
                   {current.label}
                 </p>
+                <CatalogImage fileId={current.image?.fileId} assets={assets} />
               </div>
             </motion.div>
           )}
@@ -300,8 +324,8 @@ function AgeGate({ onEnter }: { onEnter: () => void }) {
       <div className="space-y-2">
         <h2 className="font-display text-2xl text-white">For grown-ups only</h2>
         <p className="text-sm leading-relaxed text-white/55">
-          This is for consenting adults sharing a private moment. By entering you
-          confirm you{"'"}re 18 or older and you both want to be here.
+          This is for consenting adults sharing a private moment. By entering
+          you confirm you{"'"}re 18 or older and you both want to be here.
         </p>
       </div>
       <button

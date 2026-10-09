@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 import { hasEmbeddedBuilder, renderBuilder } from "../lib/builder-registry";
+import { GatedBuilder } from "./builder-desktop-gate";
 
 /**
  * Hosts a *fresh* experience builder inside the dashboard shell (via `?new=<type>`),
@@ -27,5 +28,9 @@ export function CreationNewHost({ type }: { type: string }) {
     );
   }
 
-  return <div className="-m-6">{renderBuilder(type)}</div>;
+  return (
+    <div className="-m-6">
+      <GatedBuilder>{renderBuilder(type)}</GatedBuilder>
+    </div>
+  );
 }

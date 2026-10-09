@@ -36,7 +36,11 @@ export function MemoryLanternBuilder() {
 
       {/* Live preview — the real experience, fed the draft. */}
       <div className="relative h-1/2 flex-1 sm:h-full">
-        <MemoryLanternExperience config={doc} assets={mediaUrls} />
+        <MemoryLanternExperience
+          config={doc}
+          assets={mediaUrls}
+          ceremony={false}
+        />
 
         <button
           type="button"

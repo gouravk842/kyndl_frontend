@@ -38,8 +38,19 @@ export function KeepsakeLetter({
           boxShadow:
             "0 14px 30px -18px rgba(60,44,20,0.55), inset 0 1px 0 rgba(255,255,255,0.7)",
           border: "1px solid rgba(120,90,50,0.15)",
+          transform: "rotate(-0.6deg)",
         }}
       >
+        {/* strip of tape holding the note into the album */}
+        <span
+          aria-hidden
+          className="absolute -top-2.5 left-8 h-5 w-16 rotate-2 rounded-[1px]"
+          style={{
+            background:
+              "linear-gradient(120deg, rgba(255,255,255,0.55), rgba(230,222,205,0.4))",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
+          }}
+        />
         {/* fold crease */}
         <div
           aria-hidden
@@ -70,11 +81,11 @@ export function KeepsakeLetter({
           {open && (
             <motion.div
               key="letter-body"
-              initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+              initial={
+                reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }
+              }
               animate={
-                reduceMotion
-                  ? { opacity: 1 }
-                  : { height: "auto", opacity: 1 }
+                reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }
               }
               exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -97,8 +108,8 @@ export function KeepsakeLetter({
                     className="font-hand text-lg leading-relaxed"
                     style={{ color: theme.ink, opacity: 0.7 }}
                   >
-                    A little something is waiting here — the sender will write it
-                    before they share.
+                    A little something is waiting here — the sender will write
+                    it before they share.
                   </p>
                 )}
               </div>

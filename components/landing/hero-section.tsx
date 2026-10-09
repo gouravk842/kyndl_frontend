@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Heart, Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 import { AmbientBackground } from "@/components/landing/ambient-background";
 import { KyndlButton } from "@/components/landing/kyndl-button";
@@ -29,7 +30,7 @@ export function HeroSection() {
       <AmbientBackground />
       <PageContainer
         size="xl"
-        className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center py-16 lg:py-24"
+        className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-start pt-6 pb-16 lg:pt-8 lg:pb-20"
       >
         <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
           <motion.div
@@ -39,14 +40,14 @@ export function HeroSection() {
           >
             <span className="inline-flex items-center gap-2 rounded-full border border-[#F2DACE] bg-white/70 px-4 py-1.5 text-xs font-medium tracking-wide text-[#C75B39] backdrop-blur-sm">
               <Sparkles className="size-3.5" />
-              Gifts that feel like a hug
+              Keep once. Gift a hundred ways.
             </span>
 
-            <h1 className="mt-6 font-display text-[2.6rem] leading-[1.04] tracking-tight text-[#3A2A25] sm:text-5xl lg:text-6xl xl:text-[4.4rem]">
+            <h1 className="mt-6 font-display text-[2.35rem] leading-[1.04] tracking-tight text-[#3A2A25] min-[380px]:text-[2.6rem] sm:text-5xl lg:text-6xl xl:text-[4.4rem]">
               Some moments
               <br />
               deserve more than a{" "}
-              <span className="relative whitespace-nowrap font-cursive text-[#C75B39]">
+              <span className="relative font-cursive text-[#C75B39]">
                 text.
                 <svg
                   className="absolute -bottom-3 left-0 w-full"
@@ -69,19 +70,29 @@ export function HeroSection() {
             </h1>
 
             <p className="mt-8 max-w-lg text-lg leading-relaxed text-[#7A6258]">
-              Kyndl turns what you feel into something they can{" "}
-              <span className="text-[#3A2A25]">hold</span> — a scrapbook they
-              turn page by page, a night sky of your moments, a jar of little
-              notes. Keepsakes, not just messages.
+              Start with a{" "}
+              <Link
+                href={ROUTES.memoryBankStory}
+                className="text-[#3A2A25] underline-offset-4 hover:underline"
+              >
+                Memory Bank
+              </Link>{" "}
+              — photos, notes, little days in one place. Then grow them into a
+              scrapbook they can hold, a night sky of your moments, a jar of
+              notes. Or craft any keepsake on its own.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
-              <KyndlButton size="lg" href={ROUTES.register} className="group">
-                Create a keepsake
+              <KyndlButton size="lg" href={ROUTES.memories} className="group">
+                Open the Memory Bank
                 <ArrowRight className="ml-2 size-4 transition-transform duration-300 group-hover:translate-x-1" />
               </KyndlButton>
-              <KyndlButton size="lg" variant="secondary" href="#experiences">
-                Explore experiences
+              <KyndlButton
+                size="lg"
+                variant="secondary"
+                href={ROUTES.recommend}
+              >
+                Find the right gift
               </KyndlButton>
             </div>
 

@@ -3,27 +3,21 @@ import { Environment, Lightformer, Stars } from "@react-three/drei";
 import type { DreamTechTheme } from "../../types";
 
 /**
- * "Dream-tech dusk" lighting rig.
- *
- * A stylized warm key + a cool fill establish the dusk base; a faint star field
- * and an accent-tinted image-based environment push it toward the futuristic /
- * holographic register without abandoning the warmth. All offline — Lightformer
- * panels stand in for an HDRI (no remote fetch), as the project constraint
- * requires. Post-processing lives in `CityScene`.
+ * "Dream-tech dusk" lighting rig. Shadow frustum scales with city radius.
  */
-export function CityEnvironment({ theme }: { theme: DreamTechTheme }) {
+export function CityEnvironment({
+  theme,
+  radius = 40,
+}: {
+  theme: DreamTechTheme;
+  radius?: number;
+}) {
+  const extent = Math.max(32, radius + 8);
+
   return (
     <>
-      {/* Soft shadows come from three's built-in PCF filter (Canvas
-          `shadows="soft"` + the key light's `shadow-radius` below). drei's
-          <SoftShadows> PCSS injection is incompatible with three r0.184 — it
-          rewrites shadowmap_pars_fragment with GLSL that fails to compile, which
-          silently kills every shadow-receiving MeshStandardMaterial. */}
-
-      {/* Cool dusk haze receding into the distance. */}
       <fogExp2 attach="fog" args={[theme.sky, theme.fogDensity]} />
 
-      {/* Low ambient + hemisphere so occlusion and accent rim both read. */}
       <ambientLight intensity={0.28} color="#cfe0ff" />
       <hemisphereLight
         intensity={0.45}
@@ -31,7 +25,6 @@ export function CityEnvironment({ theme }: { theme: DreamTechTheme }) {
         groundColor="#1a1733"
       />
 
-      {/* Warm key sun, low and raking. */}
       <directionalLight
         position={[16, 9, 6]}
         intensity={2.4}
@@ -41,22 +34,20 @@ export function CityEnvironment({ theme }: { theme: DreamTechTheme }) {
         shadow-mapSize-height={2048}
         shadow-radius={6}
         shadow-bias={-0.0004}
-        shadow-camera-far={120}
-        shadow-camera-left={-32}
-        shadow-camera-right={32}
-        shadow-camera-top={32}
-        shadow-camera-bottom={-32}
+        shadow-camera-far={Math.max(120, radius * 3)}
+        shadow-camera-left={-extent}
+        shadow-camera-right={extent}
+        shadow-camera-top={extent}
+        shadow-camera-bottom={-extent}
       />
-      {/* Cool neon-accent fill from the opposite side — the "tech" half. */}
       <directionalLight
         position={[-12, 7, -8]}
         intensity={0.7}
         color={theme.accent}
       />
 
-      {/* Faint star field for the eternal-dusk sky. */}
       <Stars
-        radius={120}
+        radius={Math.max(120, radius * 3)}
         depth={60}
         count={1800}
         factor={3}
@@ -65,7 +56,6 @@ export function CityEnvironment({ theme }: { theme: DreamTechTheme }) {
         speed={0.4}
       />
 
-      {/* Procedural image-based reflections (offline — no remote HDRI). */}
       <Environment resolution={256} background={false}>
         <Lightformer
           intensity={1.4}

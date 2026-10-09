@@ -4,6 +4,7 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { stampGateHashes } from "@/features/unlocks/answer-hash";
 import { useAuth } from "@/hooks/use-auth";
 import { fileService } from "@/services/files/file.service";
 
@@ -14,8 +15,16 @@ import { STAR_SIZES, useBuilderStore } from "../../store/builder.store";
 type GateType = "none" | "question" | "image-puzzle" | "time-lock";
 
 const GATE_OPTIONS: { value: GateType; label: string; hint: string }[] = [
-  { value: "none", label: "Opens right away", hint: "No challenge — a tap reveals it." },
-  { value: "question", label: "Answer a question", hint: "They must answer to unlock it." },
+  {
+    value: "none",
+    label: "Opens right away",
+    hint: "No challenge — a tap reveals it.",
+  },
+  {
+    value: "question",
+    label: "Answer a question",
+    hint: "They must answer to unlock it.",
+  },
   {
     value: "image-puzzle",
     label: "Solve a jigsaw",
@@ -32,6 +41,7 @@ interface FormState {
   label: string;
   date: string; // free-text caption ("Caption")
   timestamp: string; // real date, YYYY-MM-DD
+  stretch: string;
   memory: string;
   size: StarSize;
   starImage: { fileId: string; url: string } | null;
@@ -52,6 +62,7 @@ interface FormState {
   teaser: string;
   // sequential trail
   requires: number[];
+  links: number[];
 }
 
 /** Turn an ISO instant into the local value a `datetime-local` input wants. */
@@ -76,6 +87,7 @@ const EMPTY_STATE: FormState = {
   label: "",
   date: "",
   timestamp: "",
+  stretch: "",
   memory: "",
   size: "medium",
   starImage: null,
@@ -92,11 +104,29 @@ const EMPTY_STATE: FormState = {
   unlockAt: "",
   teaser: "",
   requires: [],
+  links: [] as number[],
 };
+
+function linkedIds(
+  id: number | undefined,
+  edges: [number, number][] | undefined,
+  stars: Star[],
+): number[] {
+  const drawn =
+    edges ??
+    stars
+      .slice(1)
+      .map((star, i) => [stars[i]!.id, star.id] as [number, number]);
+  if (id == null) return [];
+  return drawn
+    .filter(([a, b]) => a === id || b === id)
+    .map(([a, b]) => (a === id ? b : a));
+}
 
 function initialState(
   star: Star | null,
   urlFor: (fileId: string) => string,
+  links: number[] = [],
 ): FormState {
   if (!star) return { ...EMPTY_STATE };
   const base: FormState = {
@@ -104,6 +134,7 @@ function initialState(
     label: star.label,
     date: star.date,
     timestamp: star.timestamp ?? "",
+    stretch: star.stretch ?? "",
     memory: star.memory,
     size: star.size,
     author: star.author ?? "",
@@ -112,6 +143,7 @@ function initialState(
       ? { fileId: star.image.fileId, url: urlFor(star.image.fileId) }
       : null,
     requires: star.requires ?? [],
+    links,
   };
   const gate = star.unlock;
   const cfg = (gate?.config ?? {}) as Record<string, unknown>;
@@ -157,8 +189,7 @@ function buildGate(form: FormState): StarGate | null | false {
     case "image-puzzle": {
       const config: Record<string, unknown> = { size: form.puzzleSize };
       if (form.puzzlePrompt.trim()) config.prompt = form.puzzlePrompt.trim();
-      if (form.puzzleImage)
-        config.image = { fileId: form.puzzleImage.fileId };
+      if (form.puzzleImage) config.image = { fileId: form.puzzleImage.fileId };
       return { type: "image-puzzle", config };
     }
     case "time-lock": {
@@ -190,6 +221,8 @@ export function StarFormModal({
 }) {
   const addStar = useBuilderStore((s) => s.addStar);
   const updateStar = useBuilderStore((s) => s.updateStar);
+  const setStarLinks = useBuilderStore((s) => s.setStarLinks);
+  const customEdges = useBuilderStore((s) => s.doc.customEdges);
   const allStars = useBuilderStore((s) => s.doc.stars);
   const assets = useBuilderStore((s) => s.assets);
   const localPreviews = useBuilderStore((s) => s.localPreviews);
@@ -204,6 +237,7 @@ export function StarFormModal({
     initialState(
       star,
       (fileId) => localPreviews[fileId] ?? assets[fileId] ?? "",
+      linkedIds(star?.id, customEdges, allStars),
     ),
   );
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
@@ -263,22 +297,29 @@ export function StarFormModal({
       );
       return;
     }
-    const data: Partial<Omit<Star, "id">> = {
-      label: form.label.trim(),
-      date: form.date.trim(),
-      timestamp: form.timestamp,
-      memory: form.memory,
-      size: form.size,
-      image: form.starImage ? { fileId: form.starImage.fileId } : null,
-      // Auto-attribute to the signed-in author; keep any name already on the star.
-      author: form.author || authorName,
-      alwaysAsk: form.alwaysAsk,
-      unlock: gate,
-      requires: form.requires,
-    };
-    if (star) updateStar(star.id, data);
-    else addStar(data);
-    onClose();
+    void stampGateHashes(gate).then((stamped) => {
+      const data: Partial<Omit<Star, "id">> = {
+        label: form.label.trim(),
+        date: form.date.trim(),
+        timestamp: form.timestamp,
+        stretch: form.stretch.trim(),
+        memory: form.memory,
+        size: form.size,
+        image: form.starImage ? { fileId: form.starImage.fileId } : null,
+        author: form.author || authorName,
+        alwaysAsk: form.alwaysAsk,
+        unlock: stamped,
+        requires: form.requires,
+      };
+      if (star) {
+        updateStar(star.id, data);
+        setStarLinks(star.id, form.links);
+      } else {
+        const id = addStar(data);
+        if (form.links.length) setStarLinks(id, form.links);
+      }
+      onClose();
+    });
   };
 
   // ── wizard steps ──────────────────────────────────────────────────
@@ -366,233 +407,253 @@ export function StarFormModal({
         <div className="space-y-4 overflow-y-auto px-5 py-5">
           {current.key === "basics" ? (
             <>
-          <Field label="Label (the star's name)">
-            <input
-              className={inputCls}
-              value={form.label}
-              onChange={(e) => patch({ label: e.target.value })}
-              placeholder="the night we met"
-              autoFocus
-            />
-          </Field>
-          <Field label="Date">
-            <input
-              type="date"
-              className={inputCls}
-              value={form.timestamp}
-              onChange={(e) => patch({ timestamp: e.target.value })}
-            />
-          </Field>
-          <Field label="Caption (a few words)">
-            <input
-              className={inputCls}
-              value={form.date}
-              onChange={(e) => patch({ date: e.target.value })}
-              placeholder="that first spring"
-            />
-          </Field>
-          <ImageUploadField
-            label="Photo (optional)"
-            image={form.starImage}
-            uploading={uploadingStar}
-            onFile={(file) =>
-              uploadPhoto(file, (ref) => patch({ starImage: ref }), setUploadingStar)
-            }
-            onRemove={() => patch({ starImage: null })}
-          />
-          <Field label="The memory">
-            <textarea
-              className={`${inputCls} min-h-[150px] resize-y`}
-              value={form.memory}
-              onChange={(e) => patch({ memory: e.target.value })}
-              placeholder="Write the moment this star holds… line breaks are kept."
-            />
-          </Field>
-          <Field label="Size">
-            <select
-              className={inputCls}
-              value={form.size}
-              onChange={(e) => patch({ size: e.target.value as StarSize })}
-            >
-              {STAR_SIZES.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {form.author || authorName ? (
-            <p className="text-xs text-[#92786c]">
-              Signed as{" "}
-              <span className="font-medium text-[#3a2a25]">
-                {form.author || authorName}
-              </span>{" "}
-              — shown on this memory.
-            </p>
-          ) : null}
+              <Field label="Label (the star's name)">
+                <input
+                  className={inputCls}
+                  value={form.label}
+                  onChange={(e) => patch({ label: e.target.value })}
+                  placeholder="the night we met"
+                  autoFocus
+                />
+              </Field>
+              <Field label="Date">
+                <input
+                  type="date"
+                  className={inputCls}
+                  value={form.timestamp}
+                  onChange={(e) => patch({ timestamp: e.target.value })}
+                />
+                <span className="mt-1 block text-xs leading-relaxed text-[#92786c]">
+                  Whispered when someone passes this star. It does not move it.
+                </span>
+              </Field>
+              <Field label="Caption (a few words)">
+                <input
+                  className={inputCls}
+                  value={form.date}
+                  onChange={(e) => patch({ date: e.target.value })}
+                  placeholder="that first spring"
+                />
+              </Field>
+              <Field label="Stretch name (optional)">
+                <input
+                  className={inputCls}
+                  value={form.stretch}
+                  onChange={(e) => patch({ stretch: e.target.value })}
+                  placeholder="the trip"
+                  maxLength={40}
+                />
+                <span className="mt-1 block text-xs leading-relaxed text-[#92786c]">
+                  Whispered when someone is near this stretch of the sky.
+                </span>
+              </Field>
+              <ImageUploadField
+                label="Photo (optional)"
+                image={form.starImage}
+                uploading={uploadingStar}
+                onFile={(file) =>
+                  uploadPhoto(
+                    file,
+                    (ref) => patch({ starImage: ref }),
+                    setUploadingStar,
+                  )
+                }
+                onRemove={() => patch({ starImage: null })}
+              />
+              <Field label="The memory">
+                <textarea
+                  className={`${inputCls} min-h-[150px] resize-y`}
+                  value={form.memory}
+                  onChange={(e) => patch({ memory: e.target.value })}
+                  placeholder="Write the moment this star holds… line breaks are kept."
+                />
+              </Field>
+              <Field label="Size">
+                <select
+                  className={inputCls}
+                  value={form.size}
+                  onChange={(e) => patch({ size: e.target.value as StarSize })}
+                >
+                  {STAR_SIZES.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              {form.author || authorName ? (
+                <p className="text-xs text-[#92786c]">
+                  Signed as{" "}
+                  <span className="font-medium text-[#3a2a25]">
+                    {form.author || authorName}
+                  </span>{" "}
+                  — shown on this memory.
+                </p>
+              ) : null}
             </>
           ) : null}
 
           {/* ── How this memory opens ──────────────────────────── */}
           {current.key === "gate" ? (
-          <div className="rounded-xl border border-[#f2dace] bg-[#fdf3ea] p-4">
-            <p className="font-display text-sm text-[#3a2a25]">
-              How this memory opens
-            </p>
-            <p className="mt-0.5 mb-3 text-xs text-[#92786c]">
-              Put a little challenge in front of it — or let it open on a tap.
-            </p>
+            <div className="rounded-xl border border-[#f2dace] bg-[#fdf3ea] p-4">
+              <p className="font-display text-sm text-[#3a2a25]">
+                How this memory opens
+              </p>
+              <p className="mt-0.5 mb-3 text-xs text-[#92786c]">
+                Put a little challenge in front of it — or let it open on a tap.
+              </p>
 
-            <Field label="Unlock with">
-              <select
-                className={inputCls}
-                value={form.gateType}
-                onChange={(e) => patch({ gateType: e.target.value as GateType })}
-              >
-                {GATE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <p className="mt-1 text-xs text-[#92786c]">
-              {GATE_OPTIONS.find((o) => o.value === form.gateType)?.hint}
-            </p>
-
-            {form.gateType === "question" ? (
-              <div className="mt-3 space-y-3">
-                <Field label="Question">
-                  <input
-                    className={inputCls}
-                    value={form.qPrompt}
-                    onChange={(e) => patch({ qPrompt: e.target.value })}
-                    placeholder="Where did we first meet?"
-                  />
-                </Field>
-                <Field label="Accepted answers (one per line)">
-                  <textarea
-                    className={`${inputCls} min-h-[70px] resize-y`}
-                    value={form.qAnswers}
-                    onChange={(e) => patch({ qAnswers: e.target.value })}
-                    placeholder={"Paris\nthe cafe on rue Cler"}
-                  />
-                </Field>
-                <Field label="Multiple-choice options (optional, one per line)">
-                  <textarea
-                    className={`${inputCls} min-h-[70px] resize-y`}
-                    value={form.qChoices}
-                    onChange={(e) => patch({ qChoices: e.target.value })}
-                    placeholder={"Leave empty for a free-text answer"}
-                  />
-                </Field>
-                <Field label="Hint (optional)">
-                  <input
-                    className={inputCls}
-                    value={form.qHint}
-                    onChange={(e) => patch({ qHint: e.target.value })}
-                    placeholder="Shown after a wrong guess"
-                  />
-                </Field>
-              </div>
-            ) : null}
-
-            {form.gateType === "image-puzzle" ? (
-              <div className="mt-3 space-y-3">
-                <ImageUploadField
-                  label="Puzzle photo"
-                  image={form.puzzleImage}
-                  uploading={uploadingPuzzle}
-                  onFile={(file) =>
-                    uploadPhoto(
-                      file,
-                      (ref) => patch({ puzzleImage: ref }),
-                      setUploadingPuzzle,
-                    )
+              <Field label="Unlock with">
+                <select
+                  className={inputCls}
+                  value={form.gateType}
+                  onChange={(e) =>
+                    patch({ gateType: e.target.value as GateType })
                   }
-                  onRemove={() => patch({ puzzleImage: null })}
-                />
-                <Field label="Difficulty">
-                  <select
-                    className={inputCls}
-                    value={form.puzzleSize}
-                    onChange={(e) =>
-                      patch({ puzzleSize: Number(e.target.value) })
+                >
+                  {GATE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <p className="mt-1 text-xs text-[#92786c]">
+                {GATE_OPTIONS.find((o) => o.value === form.gateType)?.hint}
+              </p>
+
+              {form.gateType === "question" ? (
+                <div className="mt-3 space-y-3">
+                  <Field label="Question">
+                    <input
+                      className={inputCls}
+                      value={form.qPrompt}
+                      onChange={(e) => patch({ qPrompt: e.target.value })}
+                      placeholder="Where did we first meet?"
+                    />
+                  </Field>
+                  <Field label="Accepted answers (one per line)">
+                    <textarea
+                      className={`${inputCls} min-h-[70px] resize-y`}
+                      value={form.qAnswers}
+                      onChange={(e) => patch({ qAnswers: e.target.value })}
+                      placeholder={"Paris\nthe cafe on rue Cler"}
+                    />
+                  </Field>
+                  <Field label="Multiple-choice options (optional, one per line)">
+                    <textarea
+                      className={`${inputCls} min-h-[70px] resize-y`}
+                      value={form.qChoices}
+                      onChange={(e) => patch({ qChoices: e.target.value })}
+                      placeholder={"Leave empty for a free-text answer"}
+                    />
+                  </Field>
+                  <Field label="Hint (optional)">
+                    <input
+                      className={inputCls}
+                      value={form.qHint}
+                      onChange={(e) => patch({ qHint: e.target.value })}
+                      placeholder="Shown after a wrong guess"
+                    />
+                  </Field>
+                </div>
+              ) : null}
+
+              {form.gateType === "image-puzzle" ? (
+                <div className="mt-3 space-y-3">
+                  <ImageUploadField
+                    label="Puzzle photo"
+                    image={form.puzzleImage}
+                    uploading={uploadingPuzzle}
+                    onFile={(file) =>
+                      uploadPhoto(
+                        file,
+                        (ref) => patch({ puzzleImage: ref }),
+                        setUploadingPuzzle,
+                      )
                     }
-                  >
-                    <option value={2}>Easy (2×2)</option>
-                    <option value={3}>Medium (3×3)</option>
-                    <option value={4}>Hard (4×4)</option>
-                  </select>
-                </Field>
-                <Field label="Prompt (optional)">
-                  <input
-                    className={inputCls}
-                    value={form.puzzlePrompt}
-                    onChange={(e) => patch({ puzzlePrompt: e.target.value })}
-                    placeholder="Rebuild the picture"
+                    onRemove={() => patch({ puzzleImage: null })}
                   />
-                </Field>
-                <p className="text-xs text-[#92786c]">
-                  {form.puzzleImage
-                    ? "The tiles are slices of this puzzle photo."
-                    : form.starImage
-                      ? "No puzzle photo set — the tiles use this memory's photo."
-                      : "No photo yet — the puzzle falls back to numbered tiles."}
-                </p>
-              </div>
-            ) : null}
+                  <Field label="Difficulty">
+                    <select
+                      className={inputCls}
+                      value={form.puzzleSize}
+                      onChange={(e) =>
+                        patch({ puzzleSize: Number(e.target.value) })
+                      }
+                    >
+                      <option value={2}>Easy (2×2)</option>
+                      <option value={3}>Medium (3×3)</option>
+                      <option value={4}>Hard (4×4)</option>
+                    </select>
+                  </Field>
+                  <Field label="Prompt (optional)">
+                    <input
+                      className={inputCls}
+                      value={form.puzzlePrompt}
+                      onChange={(e) => patch({ puzzlePrompt: e.target.value })}
+                      placeholder="Rebuild the picture"
+                    />
+                  </Field>
+                  <p className="text-xs text-[#92786c]">
+                    {form.puzzleImage
+                      ? "The tiles are slices of this puzzle photo."
+                      : form.starImage
+                        ? "No puzzle photo set — the tiles use this memory's photo."
+                        : "No photo yet — the puzzle falls back to numbered tiles."}
+                  </p>
+                </div>
+              ) : null}
 
-            {form.gateType === "time-lock" ? (
-              <div className="mt-3 space-y-3">
-                <Field label="Opens at">
-                  <input
-                    type="datetime-local"
-                    className={inputCls}
-                    value={form.unlockAt}
-                    onChange={(e) => patch({ unlockAt: e.target.value })}
-                  />
-                </Field>
-                <Field label="Teaser while it waits (optional)">
-                  <input
-                    className={inputCls}
-                    value={form.teaser}
-                    onChange={(e) => patch({ teaser: e.target.value })}
-                    placeholder="Come back on our anniversary…"
-                  />
-                </Field>
-              </div>
-            ) : null}
+              {form.gateType === "time-lock" ? (
+                <div className="mt-3 space-y-3">
+                  <Field label="Opens at">
+                    <input
+                      type="datetime-local"
+                      className={inputCls}
+                      value={form.unlockAt}
+                      onChange={(e) => patch({ unlockAt: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Teaser while it waits (optional)">
+                    <input
+                      className={inputCls}
+                      value={form.teaser}
+                      onChange={(e) => patch({ teaser: e.target.value })}
+                      placeholder="Come back on our anniversary…"
+                    />
+                  </Field>
+                </div>
+              ) : null}
 
-            {/* Re-lock behaviour — only meaningful once there's a challenge. */}
-            {form.gateType !== "none" ? (
-              <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-lg border border-[#f2dace] bg-white px-3 py-2.5">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 size-4 accent-[#ff7a59]"
-                  checked={form.alwaysAsk}
-                  onChange={(e) => patch({ alwaysAsk: e.target.checked })}
-                />
-                <span className="text-sm text-[#3a2a25]">
-                  Ask every visit
-                  <span className="mt-0.5 block text-xs text-[#92786c]">
-                    On by choice: they must solve it each time. Off: solving once
-                    keeps it open on this device.
+              {/* Re-lock behaviour — only meaningful once there's a challenge. */}
+              {form.gateType !== "none" ? (
+                <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-lg border border-[#f2dace] bg-white px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 size-4 accent-[#ff7a59]"
+                    checked={form.alwaysAsk}
+                    onChange={(e) => patch({ alwaysAsk: e.target.checked })}
+                  />
+                  <span className="text-sm text-[#3a2a25]">
+                    Ask every visit
+                    <span className="mt-0.5 block text-xs text-[#92786c]">
+                      On by choice: they must solve it each time. Off: solving
+                      once keeps it open on this device.
+                    </span>
                   </span>
-                </span>
-              </label>
-            ) : null}
-          </div>
+                </label>
+              ) : null}
+            </div>
           ) : null}
 
           {/* ── Sequential trail: which stars must open first ──── */}
           {current.key === "trail" && otherStars.length > 0 ? (
             <div className="rounded-xl border border-[#f2dace] bg-[#fdf3ea] p-4">
-              <p className="font-display text-sm text-[#3a2a25]">
-                Open after…
-              </p>
+              <p className="font-display text-sm text-[#3a2a25]">Open after…</p>
               <p className="mt-0.5 mb-3 text-xs text-[#92786c]">
-                Keep this star dark until these are read — light the sky in order.
+                Keep this star dark until these are read — light the sky in
+                order.
               </p>
               <div className="space-y-1.5">
                 {otherStars.map((s) => (
@@ -605,6 +666,44 @@ export function StarFormModal({
                       className="size-4 accent-[#ff7a59]"
                       checked={form.requires.includes(s.id)}
                       onChange={() => toggleRequire(s.id)}
+                    />
+                    <span className="truncate">
+                      {s.label || `Star ${s.id}`}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {current.key === "trail" && otherStars.length > 0 ? (
+            <div className="mt-4 rounded-xl border border-[#f2dace] bg-[#fdf3ea] p-4">
+              <p className="font-display text-sm text-[#3a2a25]">
+                Draw a line to
+              </p>
+              <p className="mt-0.5 mb-3 text-xs text-[#92786c]">
+                These are the stars this memory belongs with. A soft light
+                reaches them while it is open. A new star starts joined to its
+                nearest neighbour.
+              </p>
+              <div className="space-y-1.5">
+                {otherStars.map((s) => (
+                  <label
+                    key={`link-${s.id}`}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[#3a2a25] hover:bg-[#fbeee6]"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[#ff7a59]"
+                      checked={form.links.includes(s.id)}
+                      onChange={() =>
+                        setForm((f) => ({
+                          ...f,
+                          links: f.links.includes(s.id)
+                            ? f.links.filter((id) => id !== s.id)
+                            : [...f.links, s.id],
+                        }))
+                      }
                     />
                     <span className="truncate">
                       {s.label || `Star ${s.id}`}

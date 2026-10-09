@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Flame, Heart, Menu, X } from "lucide-react";
+import { ChevronDown, Flame, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -14,6 +14,7 @@ import { Logo } from "@/components/shared/logo";
 import { groupByCategory } from "@/constants/experience-taxonomy";
 import { ROUTES } from "@/constants/routes";
 import { CartButton } from "@/features/gifts/components/cart-button";
+import { ideaHref } from "@/features/ideas/idea-href";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { experienceHref, experiences } from "@/lib/experiences";
 import { hasRedZoneConsent, setRedZoneConsent } from "@/lib/red-zone-consent";
@@ -22,7 +23,10 @@ import { useAuthStore } from "@/store/auth.store";
 
 /** Top-level destinations, in the order they appear in the bar. */
 const PRIMARY_LINKS = [
+  { href: ROUTES.memoryBankStory, label: "Memory Bank" },
+  { href: ROUTES.kyndStory, label: "Kynd" },
   { href: ROUTES.gifts, label: "Gifts" },
+  { href: ROUTES.recommend, label: "For you" },
   { href: ROUTES.games, label: "Games" },
   { href: ROUTES.pricing, label: "Pricing" },
 ] as const;
@@ -35,15 +39,17 @@ export function MarketingHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [redZoneAsking, setRedZoneAsking] = useState(false);
 
-  // Only trust auth state once the persisted store has rehydrated, otherwise the
-  // server (always logged-out) and first client render would disagree.
+  // Wait until the cookie session has been checked. A saved name is not a login.
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoggedIn = isHydrated && isAuthenticated;
 
   // Group the catalog once — the same spine feeds desktop mega-menu + mobile drawer.
   const groups = useMemo(
-    () => groupByCategory(experiences.filter((e) => !e.adult)),
+    () =>
+      groupByCategory(
+        experiences.filter((e) => e.status === "live" && !e.adult),
+      ),
     [],
   );
 
@@ -93,15 +99,9 @@ export function MarketingHeader() {
         </div>
 
         {/* ── Desktop nav ─────────────────────────────────────────── */}
-        <nav
-          className="hidden items-center gap-1 lg:flex"
-          aria-label="Main"
-        >
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
           {/* Experiences — opens the mega-menu */}
-          <div
-            className="relative"
-            onMouseEnter={() => setMegaOpen(true)}
-          >
+          <div className="relative" onMouseEnter={() => setMegaOpen(true)}>
             <Link
               href={ROUTES.experiences}
               className={cn(
@@ -129,9 +129,13 @@ export function MarketingHeader() {
               href={link.href}
               className={cn(
                 "rounded-full px-3.5 py-2 text-sm transition-colors",
-                isActive(link.href)
-                  ? "text-[#3A2A25]"
-                  : "text-[#7A6258] hover:text-[#3A2A25]",
+                link.label === "Memory Bank"
+                  ? isActive(link.href)
+                    ? "text-[#C75B39]"
+                    : "text-[#C75B39]/80 hover:text-[#C75B39]"
+                  : isActive(link.href)
+                    ? "text-[#3A2A25]"
+                    : "text-[#7A6258] hover:text-[#3A2A25]",
               )}
             >
               {link.label}
@@ -150,16 +154,14 @@ export function MarketingHeader() {
 
         {/* ── Right cluster ───────────────────────────────────────── */}
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link
-            href={ROUTES.giftWishlist}
-            aria-label="Wishlist"
-            className="hidden size-10 items-center justify-center rounded-full text-[#7A6258] transition-colors hover:bg-white/70 hover:text-[#C81D4E] sm:inline-flex"
-          >
-            <Heart className="size-5" />
-          </Link>
           <CartButton />
           {isLoggedIn && <NotificationBell />}
-          {isLoggedIn ? (
+          {!isHydrated ? (
+            <div
+              aria-hidden
+              className="h-9 w-24 animate-pulse rounded-full bg-[#F2DACE]/80"
+            />
+          ) : isLoggedIn ? (
             <HeaderUserMenu />
           ) : (
             <>
@@ -191,6 +193,7 @@ export function MarketingHeader() {
         groups={groups}
         onRedZone={goRedZone}
         isLoggedIn={isLoggedIn}
+        accountReady={isHydrated}
       />
 
       <AgeConsentDialog
@@ -208,6 +211,12 @@ export function MarketingHeader() {
 
 type Groups = ReturnType<typeof groupByCategory<(typeof experiences)[number]>>;
 
+/** How many sub-columns a shelf needs so a long list stays beside the others
+ *  instead of wrapping under them and falling off the bottom of the screen. */
+function shelfColumns(count: number) {
+  return count > 5 ? 2 : 1;
+}
+
 function MegaMenu({
   open,
   groups,
@@ -217,6 +226,11 @@ function MegaMenu({
   groups: Groups;
   onNavigate: () => void;
 }) {
+  const shelves = groups.map((group) => ({
+    ...group,
+    cols: shelfColumns(group.items.length),
+  }));
+
   return (
     <div
       className={cn(
@@ -224,25 +238,33 @@ function MegaMenu({
         // this element, so its hoverable box bridges the gap to the header and
         // the mouse never crosses dead space that would fire the header's
         // onMouseLeave and close the menu mid-drag.
-        "absolute left-1/2 top-full z-50 pt-2 hidden w-[52rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 origin-top transition-all duration-200 lg:block",
+        "absolute left-1/2 top-full z-50 hidden w-[min(72rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 origin-top transition-all duration-200 lg:block",
         open
           ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
           : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0",
       )}
       aria-hidden={!open}
     >
-      <div className="rounded-3xl border border-[#EAD3C6] bg-[#FFFBF7] p-5 shadow-2xl shadow-[#3A2A25]/15 ring-1 ring-[#3A2A25]/5">
-        <div className="grid grid-cols-4 gap-x-5 gap-y-2">
-          {groups.map(({ category, items }) => {
-            // Shelves with many items get double width and flow into two
-            // sub-columns so no single column runs the panel tall.
-            const wide = items.length > 5;
-            return (
-            <div key={category.id} className={cn(wide && "col-span-2")}>
+      <div className="max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain rounded-3xl border border-[#EAD3C6] bg-[#FFFBF7] p-5 shadow-2xl shadow-[#3A2A25]/15 ring-1 ring-[#3A2A25]/5">
+        <div
+          className="grid gap-x-6 gap-y-4"
+          style={{
+            gridTemplateColumns: shelves
+              .map((shelf) => `minmax(0,${shelf.cols}fr)`)
+              .join(" "),
+          }}
+        >
+          {shelves.map(({ category, items, cols }) => (
+            <div key={category.id} className="min-w-0">
               <p className="mb-3 text-xs font-semibold tracking-[0.16em] text-[#C75B39] uppercase">
                 {category.label}
               </p>
-              <ul className={cn(wide ? "grid grid-cols-2 gap-x-4 gap-y-1" : "space-y-1")}>
+              <ul
+                className="grid gap-x-3 gap-y-0.5"
+                style={{
+                  gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                }}
+              >
                 {items.map((exp) => (
                   <li key={exp.slug}>
                     <Link
@@ -254,15 +276,8 @@ function MegaMenu({
                         <ExperienceIcon name={exp.icon} className="size-4.5" />
                       </span>
                       <span className="min-w-0">
-                        <span className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-[#3A2A25]">
-                            {exp.name}
-                          </span>
-                          {exp.status === "soon" && (
-                            <span className="rounded-full bg-[#F3E4DA] px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-[#92786C] uppercase">
-                              Soon
-                            </span>
-                          )}
+                        <span className="text-sm font-medium text-[#3A2A25]">
+                          {exp.name}
                         </span>
                         <span className="mt-0.5 line-clamp-1 text-xs text-[#92786C]">
                           {exp.tagline}
@@ -273,21 +288,35 @@ function MegaMenu({
                 ))}
               </ul>
             </div>
-            );
-          })}
+          ))}
         </div>
 
         {/* Panel footer — cross-links to the other worlds */}
         <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#F2DACE] pt-4">
           <div className="flex flex-wrap items-center gap-2">
+            <PanelPill href={ROUTES.memoryBankStory} onClick={onNavigate}>
+              Memory Bank
+            </PanelPill>
+            <PanelPill href={ROUTES.kyndStory} onClick={onNavigate}>
+              Kynd
+            </PanelPill>
             <PanelPill href={ROUTES.gifts} onClick={onNavigate}>
               Physical gifts
+            </PanelPill>
+            <PanelPill href={ROUTES.recommend} onClick={onNavigate}>
+              For you
             </PanelPill>
             <PanelPill href={ROUTES.games} onClick={onNavigate}>
               Games
             </PanelPill>
             <PanelPill href={ROUTES.pricing} onClick={onNavigate}>
               Pricing
+            </PanelPill>
+            <PanelPill
+              href={ideaHref({ source: "experiences" })}
+              onClick={onNavigate}
+            >
+              Submit an idea
             </PanelPill>
           </div>
           <Link
@@ -329,12 +358,14 @@ function MobileDrawer({
   groups,
   onRedZone,
   isLoggedIn,
+  accountReady,
 }: {
   open: boolean;
   onClose: () => void;
   groups: Groups;
   onRedZone: () => void;
   isLoggedIn: boolean;
+  accountReady: boolean;
 }) {
   // Lock body scroll while the drawer is open.
   useEffect(() => {
@@ -381,12 +412,41 @@ function MobileDrawer({
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-5">
           <Link
+            href={ROUTES.memoryBankStory}
+            onClick={onClose}
+            className="mb-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#C75B39] kyndl-card-soft"
+          >
+            Memory Bank
+            <span>→</span>
+          </Link>
+          <Link
+            href={ROUTES.kyndStory}
+            onClick={onClose}
+            className="mb-4 flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[#3A2A25]"
+          >
+            <span>
+              Kynd
+              <span className="mt-0.5 block text-xs font-normal text-[#92786C]">
+                Little things I know
+              </span>
+            </span>
+            <span>→</span>
+          </Link>
+          <Link
             href={ROUTES.experiences}
             onClick={onClose}
-            className="mb-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#3A2A25] kyndl-card-soft"
+            className="mb-2 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#3A2A25] kyndl-card-soft"
           >
             All experiences
             <span className="text-[#C75B39]">→</span>
+          </Link>
+          <Link
+            href={ideaHref({ source: "experiences" })}
+            onClick={onClose}
+            className="mb-4 flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium text-[#C75B39]"
+          >
+            Don&apos;t see it? Submit an idea
+            <span>→</span>
           </Link>
 
           {groups.map(({ category, items }) => (
@@ -408,11 +468,6 @@ function MobileDrawer({
                       <span className="text-sm font-medium text-[#3A2A25]">
                         {exp.name}
                       </span>
-                      {exp.status === "soon" && (
-                        <span className="ml-auto rounded-full bg-[#F3E4DA] px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-[#92786C] uppercase">
-                          Soon
-                        </span>
-                      )}
                     </Link>
                   </li>
                 ))}
@@ -421,7 +476,9 @@ function MobileDrawer({
           ))}
 
           <div className="mt-2 space-y-1 border-t border-[#F2DACE] pt-4">
-            {PRIMARY_LINKS.map((link) => (
+            {PRIMARY_LINKS.filter(
+              (link) => link.label !== "Memory Bank" && link.label !== "Kynd",
+            ).map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
@@ -447,7 +504,12 @@ function MobileDrawer({
 
         {/* Sticky footer actions */}
         <div className="shrink-0 space-y-2 border-t border-[#F2DACE] bg-[#FCEEE3] px-5 py-4">
-          {isLoggedIn ? (
+          {!accountReady ? (
+            <div
+              aria-hidden
+              className="h-12 w-full animate-pulse rounded-full bg-[#F2DACE]/80"
+            />
+          ) : isLoggedIn ? (
             <KyndlButton
               href={ROUTES.dashboard}
               size="lg"

@@ -7,7 +7,6 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/constants/routes";
 import { GiftCard } from "@/features/gifts/components/gift-card";
-import { GiftsSectionNav } from "@/features/gifts/components/gifts-section-nav";
 import { useWishlist } from "@/hooks/use-gifts";
 
 export function WishlistView() {
@@ -16,12 +15,11 @@ export function WishlistView() {
   return (
     <>
       <PageHeader
+        compact
         eyebrow="Saved for later"
         title="Your wishlist"
         subtitle="The little things you're dreaming of."
-      >
-        <GiftsSectionNav />
-      </PageHeader>
+      />
 
       <PageContainer size="xl" className="py-10 md:py-14">
         {isLoading ? (
@@ -45,7 +43,7 @@ export function WishlistView() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {items.map((item, i) => (
               <GiftCard key={item.id} product={item.product} index={i} />
             ))}

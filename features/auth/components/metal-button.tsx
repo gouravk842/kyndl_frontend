@@ -3,8 +3,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Engraved bronze CTA — a pressed metal plate that sits on the letter sheet.
- * Plain button so it stays independent of the app-wide `ui/Button` variants.
+ * Primary auth CTA — same coral gradient as the marketing Kyndl button.
  */
 export function MetalButton({
   className,
@@ -14,7 +13,10 @@ export function MetalButton({
   return (
     <button
       className={cn(
-        "kyndl-btn-metal inline-flex w-full items-center justify-center rounded-full px-6 py-3 font-serif text-[15px] tracking-wide text-[#F7ECE2] disabled:cursor-not-allowed disabled:opacity-70",
+        "kyndl-glow-warm inline-flex h-11 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#FF7A59] to-[#F2596F] px-6 text-sm font-medium text-white transition-all duration-300",
+        "hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-14px_rgba(242,89,111,0.6)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2596F]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFF7F1]",
+        "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0",
         className,
       )}
       {...props}

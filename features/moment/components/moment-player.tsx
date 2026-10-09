@@ -24,6 +24,9 @@ export function MomentPlayer({
   doc,
   assets = {},
   submit,
+  className = "h-dvh",
+  experienceType,
+  shareToken,
 }: {
   doc: MomentDoc;
   assets?: Record<string, string>;
@@ -32,6 +35,10 @@ export function MomentPlayer({
     note: string;
     responderName: string;
   }) => Promise<void>;
+  /** Root height utility — overridden for inline product-page embeds. */
+  className?: string;
+  experienceType?: string;
+  shareToken?: string;
 }) {
   const t = themeTokens(doc.theme);
   const [phase, setPhase] = useState<Phase>("seal");
@@ -54,7 +61,9 @@ export function MomentPlayer({
   }
 
   return (
-    <div className="relative flex h-dvh w-full items-center justify-center overflow-hidden select-none">
+    <div
+      className={`relative flex w-full items-center justify-center overflow-hidden select-none ${className}`}
+    >
       <AmbientBg theme={doc.theme} />
 
       <AnimatePresence mode="wait">
@@ -70,7 +79,9 @@ export function MomentPlayer({
             <SealPhase
               theme={doc.theme}
               label={doc.sealLabel}
-              onOpen={() => setPhase(doc.approach.length ? "approach" : "question")}
+              onOpen={() =>
+                setPhase(doc.approach.length ? "approach" : "question")
+              }
             />
           )}
 
@@ -99,6 +110,8 @@ export function MomentPlayer({
               plan={doc.plan}
               submitState={submitState}
               onSeal={onSeal}
+              experienceType={experienceType}
+              shareToken={shareToken}
             />
           )}
         </motion.div>

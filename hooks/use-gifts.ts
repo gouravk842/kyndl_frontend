@@ -24,7 +24,9 @@ const PAYMENT_CANCELLED = "payment_cancelled";
 /** Public gift catalog, with optional search + sorting. */
 export function useGiftCatalog(params?: CatalogParams) {
   return useQuery({
-    queryKey: queryKeys.gifts.catalog(params as Record<string, unknown> | undefined),
+    queryKey: queryKeys.gifts.catalog(
+      params as Record<string, unknown> | undefined,
+    ),
     queryFn: () => giftService.catalog(params),
     staleTime: 30 * 1000,
   });
@@ -37,6 +39,16 @@ export function useStore(slug: string) {
     queryFn: () => giftService.store(slug),
     enabled: Boolean(slug),
     staleTime: 60 * 1000,
+  });
+}
+
+/** Product taxonomy (master categories + subcategories) for filters & the
+ * product-form combobox. Rarely changes, so cache it generously. */
+export function useCategories() {
+  return useQuery({
+    queryKey: queryKeys.gifts.categories(),
+    queryFn: () => giftService.categories(),
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -88,7 +100,10 @@ export function useGiftCheckout() {
 
   return useMutation<Order, unknown, CheckoutInput>({
     mutationFn: async ({ items, shipping, prefill }) => {
-      const { order, checkout } = await giftService.checkout({ items, shipping });
+      const { order, checkout } = await giftService.checkout({
+        items,
+        shipping,
+      });
 
       const success = await openRazorpayCheckout({
         checkout,
@@ -107,7 +122,9 @@ export function useGiftCheckout() {
     },
     onError: (error: unknown) => {
       if (error instanceof Error && error.message === PAYMENT_CANCELLED) return;
-      toast.error((error as ApiError)?.message ?? "Checkout failed. Please try again.");
+      toast.error(
+        (error as ApiError)?.message ?? "Checkout failed. Please try again.",
+      );
     },
   });
 }
@@ -141,7 +158,13 @@ export function useWishlist() {
 export function useToggleWishlist() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ slug, wishlisted }: { slug: string; wishlisted: boolean }) => {
+    mutationFn: async ({
+      slug,
+      wishlisted,
+    }: {
+      slug: string;
+      wishlisted: boolean;
+    }) => {
       if (wishlisted) await giftService.removeFromWishlist(slug);
       else await giftService.addToWishlist(slug);
     },
@@ -149,7 +172,9 @@ export function useToggleWishlist() {
       queryClient.invalidateQueries({ queryKey: queryKeys.gifts.wishlist() });
     },
     onError: (error: unknown) =>
-      toast.error((error as ApiError)?.message ?? "Could not update your wishlist."),
+      toast.error(
+        (error as ApiError)?.message ?? "Could not update your wishlist.",
+      ),
   });
 }
 
@@ -175,7 +200,9 @@ export function useSaveAddress() {
       queryClient.invalidateQueries({ queryKey: queryKeys.gifts.addresses() });
     },
     onError: (error: unknown) =>
-      toast.error((error as ApiError)?.message ?? "Could not save that address."),
+      toast.error(
+        (error as ApiError)?.message ?? "Could not save that address.",
+      ),
   });
 }
 
@@ -188,7 +215,9 @@ export function useDeleteAddress() {
       toast.success("Address removed.");
     },
     onError: (error: unknown) =>
-      toast.error((error as ApiError)?.message ?? "Could not remove that address."),
+      toast.error(
+        (error as ApiError)?.message ?? "Could not remove that address.",
+      ),
   });
 }
 

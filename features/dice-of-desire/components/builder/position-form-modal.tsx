@@ -4,6 +4,10 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, titled } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
+
 import {
   diceFor,
   type Heat,
@@ -33,6 +37,7 @@ export function PositionFormModal({
   onClose: () => void;
 }) {
   const updatePosition = useBuilderStore((s) => s.updatePosition);
+  const [bankOpen, setBankOpen] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     name: position.name,
@@ -94,6 +99,13 @@ export function PositionFormModal({
 
         {/* Body */}
         <div className="space-y-5 overflow-y-auto px-5 py-5">
+          <button
+            type="button"
+            onClick={() => setBankOpen(true)}
+            className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+          >
+            Use a bank line
+          </button>
           <Field label="Position name">
             <input
               className={inputCls}
@@ -159,6 +171,26 @@ export function PositionFormModal({
           </button>
         </div>
       </div>
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const item = picked[0];
+          if (!item) return;
+          const { title, body } = titled(item);
+          const heat = heatForType(item.type.slug);
+          setForm({ name: title, note: body, heat });
+          const image = fileRef(item);
+          updatePosition(position.id, {
+            name: title,
+            note: body,
+            heat,
+            image: image ?? null,
+          });
+        }}
+      />
     </div>
   );
 }

@@ -5,10 +5,18 @@ import { Check, ChevronLeft, ChevronRight, Flame, Lock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { CatalogImage } from "@/features/activity-bank/components/catalog-image";
+import { applyCoupons } from "@/features/activity-bank/demo-content";
+import { DemoGate } from "@/features/activity-bank/demo-gate";
 import { Flames } from "@/features/desire-deck/components/flames";
 import { creationService } from "@/services/creations/creation.service";
 
-import { type Coupon, COUPON_BOOK, type CouponBook, HEAT_META } from "../config";
+import {
+  type Coupon,
+  COUPON_BOOK,
+  type CouponBook,
+  HEAT_META,
+} from "../config";
 import { getRedeemed, markRedeemed } from "../lib/redeemed";
 import { ScratchToRedeem } from "./scratch-to-redeem";
 
@@ -23,14 +31,34 @@ import { ScratchToRedeem } from "./scratch-to-redeem";
  *
  * Acts: 18+ gate → flip the book → scratch a page to reveal & claim its coupon.
  */
-export function CouponBookExperience({
-  content = COUPON_BOOK,
-  token,
-  skipGate = false,
-}: {
+export function CouponBookExperience(props: {
   content?: CouponBook;
   token?: string;
   skipGate?: boolean;
+  assets?: Record<string, string>;
+}) {
+  return (
+    <DemoGate
+      authored={props.content}
+      fallback={COUPON_BOOK}
+      includeAdult
+      apply={applyCoupons}
+    >
+      {(content) => <CouponBookPlay {...props} content={content} />}
+    </DemoGate>
+  );
+}
+
+function CouponBookPlay({
+  content,
+  token,
+  skipGate = false,
+  assets,
+}: {
+  content: CouponBook;
+  token?: string;
+  skipGate?: boolean;
+  assets?: Record<string, string>;
 }) {
   const [entered, setEntered] = useState(skipGate);
   const [page, setPage] = useState(0);
@@ -57,7 +85,9 @@ export function CouponBookExperience({
       creationService
         .redeemCoupon(token, { couponId: id })
         .catch(() =>
-          toast.error("Couldn't reach them just now — but it's marked claimed."),
+          toast.error(
+            "Couldn't reach them just now — but it's marked claimed.",
+          ),
         );
     },
     [token],
@@ -90,7 +120,9 @@ export function CouponBookExperience({
       </header>
 
       {total === 0 || !coupon ? (
-        <p className="py-12 text-sm text-white/40">No coupons in this book yet.</p>
+        <p className="py-12 text-sm text-white/40">
+          No coupons in this book yet.
+        </p>
       ) : (
         <>
           {/* The book stage — one page at a time, flipping on navigation. */}
@@ -102,6 +134,7 @@ export function CouponBookExperience({
               <CouponPage
                 key={coupon.id}
                 coupon={coupon}
+                assets={assets}
                 number={index + 1}
                 total={total}
                 token={token}
@@ -173,6 +206,7 @@ function CouponPage({
   alreadyRedeemed,
   onReveal,
   dir,
+  assets,
 }: {
   coupon: Coupon;
   number: number;
@@ -181,6 +215,7 @@ function CouponPage({
   alreadyRedeemed: boolean;
   onReveal: () => void;
   dir: number;
+  assets?: Record<string, string>;
 }) {
   // Frozen at mount: revealing updates the parent, but this page keeps showing
   // the scratch view so the foil's fade plays out instead of snapping away.
@@ -209,7 +244,7 @@ function CouponPage({
       {/* the scratch surface fills the page; the coupon hides beneath it */}
       <div className="relative mt-1.5 flex-1">
         {startRevealed ? (
-          <RevealedCoupon coupon={coupon} token={token} />
+          <RevealedCoupon coupon={coupon} token={token} assets={assets} />
         ) : (
           <ScratchToRedeem
             accent={HEAT_META[coupon.heat].accent}
@@ -217,7 +252,7 @@ function CouponPage({
             label="SCRATCH TO REVEAL"
             className="h-full"
           >
-            <RevealedCoupon coupon={coupon} token={token} />
+            <RevealedCoupon coupon={coupon} token={token} assets={assets} />
           </ScratchToRedeem>
         )}
       </div>
@@ -229,9 +264,11 @@ function CouponPage({
 function RevealedCoupon({
   coupon,
   token,
+  assets,
 }: {
   coupon: Coupon;
   token?: string;
+  assets?: Record<string, string>;
 }) {
   const meta = HEAT_META[coupon.heat];
   return (
@@ -250,6 +287,7 @@ function RevealedCoupon({
         <h3 className="font-display text-2xl leading-tight text-white">
           {coupon.title || "Untitled coupon"}
         </h3>
+        <CatalogImage fileId={coupon.image?.fileId} assets={assets} />
         {coupon.description && (
           <p className="mt-2 text-sm leading-relaxed text-white/65">
             {coupon.description}
@@ -259,7 +297,7 @@ function RevealedCoupon({
 
       <div className="flex items-center justify-center gap-1.5 border-t border-dashed border-white/20 pt-3 text-xs font-medium text-white/55">
         <Check className="size-3.5" style={{ color: meta.accent }} />
-        {token ? "Claimed — they've been told" : "Claimed (demo — no ping sent)"}
+        {token ? "Claimed — they've been told" : "Claimed"}
       </div>
     </div>
   );
@@ -302,8 +340,8 @@ function AgeGate({ onEnter }: { onEnter: () => void }) {
       <div className="space-y-2">
         <h2 className="font-display text-2xl text-white">For grown-ups only</h2>
         <p className="text-sm leading-relaxed text-white/55">
-          This is for consenting adults sharing a private moment. By entering you
-          confirm you{"'"}re 18 or older and you both want to be here.
+          This is for consenting adults sharing a private moment. By entering
+          you confirm you{"'"}re 18 or older and you both want to be here.
         </p>
       </div>
       <button

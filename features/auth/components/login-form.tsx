@@ -31,11 +31,11 @@ export function LoginForm() {
   return (
     <AuthSheet
       title="Welcome back"
-      description="Sign in to keep sending a little warmth."
+      description="Sign in to open your Memory Bank and keep sending warmth."
     >
       <form
         onSubmit={handleSubmit((data) => login(data))}
-        className="space-y-6"
+        className="space-y-4 lg:space-y-3.5"
       >
         <AuthField
           id="email"
@@ -54,23 +54,23 @@ export function LoginForm() {
           action={
             <Link
               href={ROUTES.forgotPassword}
-              className="text-[12.5px] text-[#a06848] underline-offset-4 hover:underline"
+              className="text-xs font-medium text-[#C75B39] underline-offset-4 hover:underline"
             >
               Forgot password?
             </Link>
           }
           {...register("password")}
         />
-        <MetalButton type="submit" disabled={isLoggingIn} className="mt-2">
+        <MetalButton type="submit" disabled={isLoggingIn}>
           {isLoggingIn ? "Signing in…" : "Sign in"}
         </MetalButton>
-        <p className="text-center font-cursive text-[19px] text-[#7A6258]">
-          New account?{" "}
+        <p className="text-center text-sm text-[#7A6258]">
+          New to Kyndl?{" "}
           <Link
             href={withCallbackUrl(ROUTES.register, callbackUrl)}
-            className="text-[#C75B39] underline underline-offset-2"
+            className="font-medium text-[#C75B39] underline-offset-4 hover:underline"
           >
-            Create one
+            Create an account
           </Link>
         </p>
       </form>

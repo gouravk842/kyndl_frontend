@@ -1,11 +1,9 @@
 /**
- * Time-of-day + anniversary ambience.
+ * Time-of-day + anniversary ambience for the stage.
  *
- * A real lantern you turn on at night; ours is aware of the hour it's opened. When
- * `timeOfDayAware`, the room's brightness follows the *viewer's* local clock —
- * bright around midday, sinking to a warm, dim ember through the small hours — so
- * a lantern opened at 1am glows like a lantern should. On the `anniversary` date it
- * *flares*: a little brighter, a little more bloom, marking the day.
+ * When `timeOfDayAware`, the house light follows the viewer's local clock —
+ * bright around midday, dimmer through the small hours. On the `anniversary`
+ * date the spotlight flares a little brighter.
  *
  * Computed once on mount (not per frame): `new Date()` is fine in the browser.
  */

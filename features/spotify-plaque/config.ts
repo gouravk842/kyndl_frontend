@@ -1,23 +1,18 @@
 /**
  * Spotify Plaque — content & art-direction config.
  *
- * A framed keepsake, staged like a product shot: a wax-sealed envelope beside a
- * frosted-glass plaque. Inside the plaque, a vintage card carries a script
- * `title`, `date`, a slideshow of `photos`, a `caption`, and a "now playing"
- * scan strip for the looping `music`. Tapping the envelope unwraps the private
- * `hidden` message.
- *
- * Everything personal lives here. Edit it in your own voice before sending;
- * nothing else in the feature needs to change.
+ * Classic acrylic keepsake: square cover art, a personal message with a liked
+ * heart, track title/artist, Spotify-style transport, and a monochrome scan
+ * code — with a sealed glass whisper note beside it for the private message.
  */
 
 /** A reference to one of the user's uploaded files, resolved to a URL on read. */
 export type MediaRef = { fileId: string };
 
-/** One slide in the frame — an id for stable keys plus its media ref. */
+/** One cover slide — an id for stable keys plus its media ref. */
 export type PlaquePhoto = { id: string; fileId: string };
 
-/** The private note the envelope opens to reveal. */
+/** The private note the glass whisper opens to reveal. */
 export type HiddenMessage = {
   /** The line at the top of the letter, e.g. "Happy Anniversary". */
   heading: string;
@@ -29,57 +24,56 @@ export type HiddenMessage = {
 export type PlaqueThemeKey = "ivory" | "blush" | "noir" | "sage";
 
 export type PlaqueConfig = {
-  /** The script line across the top of the card, e.g. "Solamente tú". */
+  /** Personal line under the cover, e.g. "Happy birthday". */
   title: string;
-  /** The small line beneath the photo, e.g. "Te amo". */
+  /** Optional secondary line (kept for older drafts; not shown on the plaque). */
   caption: string;
   /** A short free-form date/occasion stamp, e.g. "14 Feb. 2024". */
   date: string;
   theme: PlaqueThemeKey;
-  /** The track name shown by the scan strip (labelling the uploaded song). */
+  /** The track name under the message. */
   songLabel: string;
-  /** Optional artist line under the song title. */
+  /** Artist line under the song title. */
   artist: string;
-  /** The slideshow photos, shown in order and cross-faded. */
+  /** Cover frames — cross-fade when more than one. */
   photos: PlaquePhoto[];
-  /** The looping track played behind the plaque. */
+  /** The looping track played by the transport. */
   music?: MediaRef;
-  /** The private message the envelope reveals when opened. */
+  /** The private message the glass note reveals when opened. */
   hidden: HiddenMessage;
 };
 
-/** The Spotify wordmark green — kept fixed across themes so the scan strip
- *  always reads as Spotify, whatever the paper. */
+/** The Spotify wordmark green — available when a green glyph is wanted. */
 export const SPOTIFY_GREEN = "#1db954";
 
 /** Visual art-direction for a plaque — one entry per {@link PlaqueThemeKey}. */
 export type PlaqueTheme = {
   key: PlaqueThemeKey;
   name: string;
-  /** Full-bleed studio backdrop (warm glow → cool wall). */
+  /** Full-bleed atmosphere behind the acrylic. */
   background: string;
-  /** Frosted-glass plaque panel tint. */
+  /** Acrylic slab fill. */
   glassTint: string;
-  /** Frosted-glass hairline border. */
+  /** Acrylic hairline border. */
   glassBorder: string;
-  /** The aged paper of the inner card. */
-  paper: string;
-  /** Script + caption ink on the card. */
+  /** Empty cover well tint. */
+  well: string;
+  /** Primary text / icons on the plaque. */
   ink: string;
-  /** A soft secondary ink for the date/labels. */
+  /** Soft secondary text. */
   inkSoft: string;
-  /** Bars of the scan strip (the Spotify glyph itself stays green). */
+  /** Bars + glyph of the scan strip (monochrome like a physical plaque). */
   scanBar: string;
-  /** Accent used off the card (reveal icon, glow). */
+  /** Accent glow / ribbon / focus. */
   accent: string;
-  /** The envelope body. */
-  envelope: string;
-  /** The envelope flap (a touch lighter than the body). */
-  envelopeFlap: string;
-  /** The wax seal's bright gold. */
-  seal: string;
-  /** The wax seal's deep gold (rim + embossed mark). */
-  sealDeep: string;
+  /** Glass note body. */
+  noteGlass: string;
+  /** Glass note border. */
+  noteBorder: string;
+  /** Ribbon / seal thread. */
+  ribbon: string;
+  /** Ribbon deep shade. */
+  ribbonDeep: string;
   /** Whether the theme reads as dark (switches some page text to light). */
   dark: boolean;
 };
@@ -89,73 +83,72 @@ export const THEMES: Record<PlaqueThemeKey, PlaqueTheme> = {
     key: "ivory",
     name: "Ivory",
     background:
-      "linear-gradient(103deg, #f4ece0 0%, #ece4d6 38%, #b9bcc1 70%, #3f434b 100%)",
-    glassTint: "rgba(246,241,232,0.16)",
-    glassBorder: "rgba(255,255,255,0.55)",
-    paper:
-      "linear-gradient(160deg, #f5e9d0 0%, #ecdcb9 52%, #ddc79a 100%)",
-    ink: "#4a3a24",
-    inkSoft: "#8a7350",
-    scanBar: "#3c3122",
-    accent: "#b98d4e",
-    envelope: "#2e333f",
-    envelopeFlap: "#353b48",
-    seal: "#e0c07f",
-    sealDeep: "#a97e46",
+      "radial-gradient(110% 80% at 18% 8%, #fffaf3 0%, transparent 55%), radial-gradient(90% 70% at 88% 88%, #d4cbc0 0%, transparent 48%), linear-gradient(165deg, #f3ebe0 0%, #cfc6bb 42%, #8a837a 100%)",
+    glassTint: "rgba(255,255,255,0.92)",
+    glassBorder: "rgba(255,255,255,0.95)",
+    well: "rgba(0,0,0,0.04)",
+    ink: "#121212",
+    inkSoft: "rgba(18,18,18,0.55)",
+    scanBar: "#121212",
+    accent: "#c4a06a",
+    noteGlass: "rgba(255,252,246,0.28)",
+    noteBorder: "rgba(255,255,255,0.55)",
+    ribbon: "#c9a46e",
+    ribbonDeep: "#8f6d3f",
     dark: false,
   },
   blush: {
     key: "blush",
     name: "Blush",
     background:
-      "linear-gradient(103deg, #fbeef1 0%, #f6e2e8 38%, #d3bcc4 70%, #4a3a44 100%)",
-    glassTint: "rgba(255,246,248,0.18)",
-    glassBorder: "rgba(255,255,255,0.6)",
-    paper: "linear-gradient(160deg, #fbecec 0%, #f5dcdf 52%, #ecc7cf 100%)",
-    ink: "#6e2a44",
-    inkSoft: "#b07d90",
-    scanBar: "#5a2438",
+      "radial-gradient(110% 80% at 16% 6%, #fff2f5 0%, transparent 55%), radial-gradient(90% 70% at 90% 86%, #e0c0c8 0%, transparent 48%), linear-gradient(165deg, #f8e8ec 0%, #d8b8c0 42%, #6a4a52 100%)",
+    glassTint: "rgba(255,248,250,0.94)",
+    glassBorder: "rgba(255,255,255,0.95)",
+    well: "rgba(74,36,52,0.05)",
+    ink: "#1a1014",
+    inkSoft: "rgba(26,16,20,0.55)",
+    scanBar: "#1a1014",
     accent: "#c2557a",
-    envelope: "#3a2b33",
-    envelopeFlap: "#45333c",
-    seal: "#e6c98f",
-    sealDeep: "#b0864f",
+    noteGlass: "rgba(255,246,248,0.3)",
+    noteBorder: "rgba(255,255,255,0.58)",
+    ribbon: "#d4889e",
+    ribbonDeep: "#9a4f68",
     dark: false,
   },
   noir: {
     key: "noir",
     name: "Noir",
     background:
-      "linear-gradient(103deg, #4a4a52 0%, #2c2c33 42%, #1a1a1f 74%, #0c0c10 100%)",
-    glassTint: "rgba(255,255,255,0.08)",
-    glassBorder: "rgba(255,255,255,0.28)",
-    paper: "linear-gradient(160deg, #f3ecdd 0%, #e7dcc4 52%, #d6c6a4 100%)",
-    ink: "#3a3222",
-    inkSoft: "#8a7c5e",
-    scanBar: "#2f2818",
+      "radial-gradient(100% 80% at 15% 0%, #3a3a44 0%, transparent 50%), radial-gradient(80% 60% at 90% 100%, #1a1a22 0%, transparent 45%), linear-gradient(165deg, #2a2a32 0%, #121218 55%, #07070a 100%)",
+    glassTint: "rgba(18,18,18,0.94)",
+    glassBorder: "rgba(255,255,255,0.14)",
+    well: "rgba(255,255,255,0.06)",
+    ink: "#f5f5f5",
+    inkSoft: "rgba(245,245,245,0.55)",
+    scanBar: "#f5f5f5",
     accent: "#caa14a",
-    envelope: "#0e0e12",
-    envelopeFlap: "#17171d",
-    seal: "#e2c079",
-    sealDeep: "#a97e46",
+    noteGlass: "rgba(255,255,255,0.08)",
+    noteBorder: "rgba(255,255,255,0.22)",
+    ribbon: "#d4b06a",
+    ribbonDeep: "#9a7a3e",
     dark: true,
   },
   sage: {
     key: "sage",
     name: "Sage",
     background:
-      "linear-gradient(103deg, #eef2e8 0%, #e2e9d8 38%, #bcc4b6 70%, #3a4038 100%)",
-    glassTint: "rgba(244,247,238,0.16)",
-    glassBorder: "rgba(255,255,255,0.55)",
-    paper: "linear-gradient(160deg, #f2eed9 0%, #e6e1c2 52%, #d3cfa0 100%)",
-    ink: "#3a442a",
-    inkSoft: "#7d8768",
-    scanBar: "#2e3620",
+      "radial-gradient(110% 80% at 16% 6%, #f4f7ef 0%, transparent 55%), radial-gradient(90% 70% at 90% 86%, #c2cbb8 0%, transparent 48%), linear-gradient(165deg, #e6ecde 0%, #b6c0ae 42%, #4a5248 100%)",
+    glassTint: "rgba(250,252,246,0.94)",
+    glassBorder: "rgba(255,255,255,0.92)",
+    well: "rgba(44,52,36,0.05)",
+    ink: "#141814",
+    inkSoft: "rgba(20,24,20,0.55)",
+    scanBar: "#141814",
     accent: "#5f8f68",
-    envelope: "#28322a",
-    envelopeFlap: "#313c33",
-    seal: "#dccb92",
-    sealDeep: "#a58e52",
+    noteGlass: "rgba(244,247,238,0.28)",
+    noteBorder: "rgba(255,255,255,0.55)",
+    ribbon: "#7fa887",
+    ribbonDeep: "#4f7356",
     dark: false,
   },
 };
@@ -167,23 +160,13 @@ export function themeFor(key: string): PlaqueTheme {
 }
 
 export const PLAQUE_CONFIG: PlaqueConfig = {
-  // ↓ Make it theirs.
-  title: "Solamente tú",
-
-  caption: "Te amo",
-
-  date: "14 Feb. 2024",
-
+  title: "Happy birthday",
+  caption: "",
+  date: "",
   theme: "ivory",
-
-  songLabel: "Our song",
-
-  artist: "",
-
-  // The demo ships with no photos — the frame shows a gentle placeholder until
-  // you add your own, so the marketing page still reads.
+  songLabel: "Tum Se Hi",
+  artist: "Mohit Chauhan",
   photos: [],
-
   hidden: {
     heading: "Happy Anniversary",
     body: "Seven years, and somehow every song still sounds like you. This one's ours — press play, look at us, and remember that I'd choose this, and you, every single time. I love you.",

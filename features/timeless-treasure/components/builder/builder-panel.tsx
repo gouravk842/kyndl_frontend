@@ -9,7 +9,11 @@ import {
   BuilderShell,
   type BuilderTab,
 } from "@/features/dashboard/components/builder-shell";
-import { THEME_ORDER, THEMES } from "@/features/timeless-treasure/config";
+import {
+  sceneFor,
+  THEME_ORDER,
+  THEMES,
+} from "@/features/timeless-treasure/config";
 import type { TimelessTreasureSync } from "@/hooks/use-timeless-treasure-sync";
 import { fileService } from "@/services/files/file.service";
 
@@ -30,12 +34,12 @@ export function BuilderPanel({
 
   const tabs: BuilderTab[] = [
     {
-      key: "treasure",
-      label: "Treasure",
+      key: "album",
+      label: "Album",
       content: (
         <div className="space-y-7">
-          {/* The box */}
-          <Section title="The box">
+          {/* The album cover */}
+          <Section title="The album">
             <Field label="For (recipient's name)">
               <input
                 className={inputCls}
@@ -54,10 +58,11 @@ export function BuilderPanel({
                 placeholder="Kabir"
               />
             </Field>
-            <Field label="Box finish">
+            <Field label="Leather & finish">
               <div className="flex flex-wrap gap-2">
                 {THEME_ORDER.map((key) => {
                   const t = THEMES[key];
+                  const s = sceneFor(key);
                   const active = doc.theme === key;
                   return (
                     <button
@@ -67,28 +72,59 @@ export function BuilderPanel({
                       aria-pressed={active}
                       onClick={() => setTheme(key)}
                       className={[
-                        "h-12 w-16 overflow-hidden rounded-lg border-2 transition-transform",
+                        "grid h-12 w-16 place-items-center overflow-hidden rounded-lg border-2 transition-transform",
                         active
                           ? "border-[#ff7a59] ring-2 ring-[#ff7a59]/30"
                           : "border-black/10 hover:scale-105",
                       ].join(" ")}
-                      style={{ background: t.boxLid }}
+                      style={{ background: s.leather }}
                       title={t.name}
-                    />
+                    >
+                      {/* a dab of foil, as embossed on the real cover */}
+                      <span
+                        aria-hidden
+                        className="block size-3 rounded-full"
+                        style={{
+                          background: s.foil,
+                          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
+                        }}
+                      />
+                    </button>
                   );
                 })}
               </div>
             </Field>
           </Section>
 
-          {/* The reel */}
-          <Section title={`The reel (${doc.frames.length})`}>
+          {/* The opening note — the first card */}
+          <Section title="Opening note · the first card">
+            <Field label="Heading">
+              <input
+                className={inputCls}
+                value={doc.letter.heading}
+                maxLength={200}
+                onChange={(e) => setLetter({ heading: e.target.value })}
+                placeholder="For you"
+              />
+            </Field>
+            <Field label="Your message">
+              <textarea
+                className={`${inputCls} min-h-[140px] resize-y`}
+                value={doc.letter.body}
+                onChange={(e) => setLetter({ body: e.target.value })}
+                placeholder="The note they open on, before the photos…"
+              />
+            </Field>
+          </Section>
+
+          {/* The memories */}
+          <Section title={`The memories (${doc.frames.length})`}>
             <FramesPicker canUpload={sync.enabled} />
           </Section>
 
-          {/* The engraved tag */}
-          <Section title="The engraved tag">
-            <Field label="Engraving">
+          {/* The dedication — the last card */}
+          <Section title="Dedication · the last card">
+            <Field label="Dedication line">
               <input
                 className={inputCls}
                 value={doc.tag.title}
@@ -108,30 +144,9 @@ export function BuilderPanel({
             </Field>
           </Section>
 
-          {/* The letter */}
-          <Section title="The letter">
-            <Field label="Heading">
-              <input
-                className={inputCls}
-                value={doc.letter.heading}
-                maxLength={200}
-                onChange={(e) => setLetter({ heading: e.target.value })}
-                placeholder="For you"
-              />
-            </Field>
-            <Field label="Your note">
-              <textarea
-                className={`${inputCls} min-h-[140px] resize-y`}
-                value={doc.letter.body}
-                onChange={(e) => setLetter({ body: e.target.value })}
-                placeholder="The letter they unfold inside the box…"
-              />
-            </Field>
-          </Section>
-
           {/* Music */}
           <Section title="Music (optional)">
-            <Field label="Track (loops while the box is open)">
+            <Field label="Track (loops while the album is open)">
               <MusicPicker canUpload={sync.enabled} />
             </Field>
           </Section>
@@ -220,20 +235,22 @@ function FramesPicker({ canUpload }: { canUpload: boolean }) {
                 </div>
 
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  <input
-                    className={smallInputCls}
+                  <textarea
+                    className={`${smallInputCls} min-h-[3rem] resize-y`}
                     value={f.caption}
                     maxLength={160}
                     onChange={(e) =>
                       updateFrame(f.id, { caption: e.target.value })
                     }
-                    placeholder="Caption"
+                    placeholder="A line to write beside it…"
                   />
                   <input
                     className={smallInputCls}
                     value={f.date}
                     maxLength={40}
-                    onChange={(e) => updateFrame(f.id, { date: e.target.value })}
+                    onChange={(e) =>
+                      updateFrame(f.id, { date: e.target.value })
+                    }
                     placeholder="Date, e.g. Aug 2023"
                   />
                 </div>
@@ -288,13 +305,13 @@ function FramesPicker({ canUpload }: { canUpload: boolean }) {
         {uploading
           ? "Uploading…"
           : frames.length
-            ? "Add more frames"
-            : "Add frames"}
+            ? "Add more photos"
+            : "Add photos"}
       </button>
       {frames.length > 0 && (
         <p className="text-xs text-[#92786c]">
-          They unspool down the reel in this order, developing as they&apos;re
-          revealed.
+          Drawn out of the pocket one at a time in this order — your line is
+          pencilled beside each photo, and it develops as it appears.
         </p>
       )}
     </div>

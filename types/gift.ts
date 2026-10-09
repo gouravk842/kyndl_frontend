@@ -15,7 +15,13 @@ export interface GiftProduct {
   price_display: string;
   image_url: string;
   gallery: string[];
+  /** Master category name (empty when uncategorised). */
   category: string;
+  /** Master category slug, for filter links. */
+  category_slug?: string;
+  /** Subcategory name (empty when none). */
+  subcategory?: string;
+  subcategory_slug?: string;
   stock: number;
   in_stock: boolean;
   is_featured: boolean;
@@ -87,6 +93,8 @@ export interface Order {
   status: OrderStatus;
   subtotal: number;
   shipping_fee: number;
+  fees_total?: number;
+  fee_lines?: FeeLine[];
   total: number;
   currency: string;
   total_display: string;
@@ -106,9 +114,11 @@ export interface Order {
   tracking_link: string;
   items: OrderItem[];
   vendor_orders: OrderVendorGroup[];
+  invoice_id?: string | null;
   created_at: string;
   paid_at: string | null;
   shipped_at: string | null;
+  delivered_at?: string | null;
 }
 
 /** Response from `POST /gifts/checkout/`: the created order + checkout params. */
@@ -143,6 +153,15 @@ export interface WishlistItem {
 }
 
 /** A cart quote (per-vendor shipping) from `POST /gifts/quote/`. */
+export interface FeeLine {
+  code: string;
+  label: string;
+  component_type: string;
+  mode: string;
+  amount: number;
+  hsn_sac?: string;
+}
+
 export interface QuoteVendorLine {
   vendor_name: string;
   subtotal: number;
@@ -152,6 +171,9 @@ export interface QuoteVendorLine {
 export interface CartQuote {
   subtotal: number;
   shipping: number;
+  fees_total?: number;
+  discount_total?: number;
+  fee_lines?: FeeLine[];
   total: number;
   currency: string;
   vendor_lines: QuoteVendorLine[];
@@ -171,5 +193,21 @@ export type CatalogSort = "newest" | "price" | "-price" | "name" | "popular";
 export interface CatalogParams {
   q?: string;
   sort?: CatalogSort;
+  /** Master category slug (or name — the backend accepts either). */
   category?: string;
+  /** Subcategory slug (or name). */
+  subcategory?: string;
+}
+
+/** A subcategory option under a master category. */
+export interface Subcategory {
+  name: string;
+  slug: string;
+}
+
+/** The shared product taxonomy (from `GET /gifts/categories/`). */
+export interface ProductCategory {
+  name: string;
+  slug: string;
+  subcategories: Subcategory[];
 }

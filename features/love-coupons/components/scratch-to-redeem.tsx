@@ -6,13 +6,21 @@ import {
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 
 import { cn } from "@/lib/utils";
 
-const REVEAL_THRESHOLD = 0.5;
+/** Share of the card that must be scratched before the rest of the foil fades. */
+const REVEAL_THRESHOLD = 0.36;
+/** Brush radius as a fraction of the shorter side — a few swipes, not a grind. */
+const BRUSH_RATIO = 0.13;
+const GRID_COLS = 12;
+const GRID_ROWS = 16;
+
+type Point = { x: number; y: number };
 
 /**
  * A metallic foil you scratch off to redeem a coupon — the scratch *is* the
@@ -38,13 +46,26 @@ export function ScratchToRedeem({
   const reduceMotion = useReducedMotion();
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const drawing = useRef(false);
   const fired = useRef(false);
+  const lastRef = useRef<Point | null>(null);
+  const pendingRef = useRef<Point | null>(null);
+  const rafRef = useRef(0);
+  const brushRef = useRef(32);
+  const gridRef = useRef<Uint8Array | null>(null);
+  const hitRef = useRef(0);
+  const sizeRef = useRef({ w: 0, h: 0 });
   const [revealed, setRevealed] = useState(false);
 
   const finish = useCallback(() => {
     if (fired.current) return;
     fired.current = true;
+    drawing.current = false;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
     setRevealed(true);
     onComplete();
   }, [onComplete]);
@@ -56,9 +77,9 @@ export function ScratchToRedeem({
       g.addColorStop(0.45, "#e7e0e6");
       g.addColorStop(0.55, "#cfc6cf");
       g.addColorStop(1, "#a89aa6");
+      ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
-      // diagonal shimmer streaks
       ctx.strokeStyle = "rgba(255,255,255,0.35)";
       ctx.lineWidth = 8;
       for (let x = -h; x < w; x += 26) {
@@ -75,61 +96,162 @@ export function ScratchToRedeem({
     [label],
   );
 
-  useEffect(() => {
+  const stamp = useCallback((x: number, y: number) => {
+    const grid = gridRef.current;
+    const { w, h } = sizeRef.current;
+    if (!grid || !w || !h) return;
+    const r = brushRef.current;
+    const cellW = w / GRID_COLS;
+    const cellH = h / GRID_ROWS;
+    const c0 = Math.max(0, Math.floor((x - r) / cellW));
+    const c1 = Math.min(GRID_COLS - 1, Math.floor((x + r) / cellW));
+    const r0 = Math.max(0, Math.floor((y - r) / cellH));
+    const r1 = Math.min(GRID_ROWS - 1, Math.floor((y + r) / cellH));
+    const r2 = r * r;
+    for (let row = r0; row <= r1; row++) {
+      const cy = (row + 0.5) * cellH;
+      const dy = cy - y;
+      for (let col = c0; col <= c1; col++) {
+        const cx = (col + 0.5) * cellW;
+        const dx = cx - x;
+        if (dx * dx + dy * dy > r2) continue;
+        const i = row * GRID_COLS + col;
+        if (grid[i]) continue;
+        grid[i] = 1;
+        hitRef.current += 1;
+      }
+    }
+  }, []);
+
+  const strokeTo = useCallback(
+    (point: Point) => {
+      const ctx = ctxRef.current;
+      if (!ctx || fired.current) return;
+      const brush = brushRef.current;
+      const prev = lastRef.current;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "#000";
+      ctx.strokeStyle = "#000";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = brush * 2;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, brush, 0, Math.PI * 2);
+      ctx.fill();
+      if (prev) {
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+      }
+
+      const from = prev ?? point;
+      const dx = point.x - from.x;
+      const dy = point.y - from.y;
+      const dist = Math.hypot(dx, dy);
+      const step = Math.max(8, brush * 0.55);
+      const steps = Math.max(1, Math.ceil(dist / step));
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        stamp(from.x + dx * t, from.y + dy * t);
+      }
+      lastRef.current = point;
+      if (hitRef.current / (GRID_COLS * GRID_ROWS) >= REVEAL_THRESHOLD) {
+        finish();
+      }
+    },
+    [finish, stamp],
+  );
+
+  const flush = useCallback(() => {
+    rafRef.current = 0;
+    const point = pendingRef.current;
+    pendingRef.current = null;
+    if (!point || !drawing.current) return;
+    strokeTo(point);
+  }, [strokeTo]);
+
+  useLayoutEffect(() => {
     if (reduceMotion) return;
     const wrap = wrapRef.current;
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!wrap || !canvas || !ctx) return;
-    const w = Math.round(wrap.clientWidth);
-    const h = Math.round(wrap.clientHeight);
-    if (!w || !h) return;
-    canvas.width = w;
-    canvas.height = h;
-    paintFoil(ctx, w, h);
+    if (!wrap || !canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const paint = () => {
+      if (fired.current) return;
+      const w = Math.round(wrap.clientWidth);
+      const h = Math.round(wrap.clientHeight);
+      if (!w || !h) return;
+      if (canvas.width === w && canvas.height === h && ctxRef.current) return;
+      canvas.width = w;
+      canvas.height = h;
+      ctxRef.current = ctx;
+      sizeRef.current = { w, h };
+      brushRef.current = Math.max(28, Math.round(Math.min(w, h) * BRUSH_RATIO));
+      gridRef.current = new Uint8Array(GRID_COLS * GRID_ROWS);
+      hitRef.current = 0;
+      lastRef.current = null;
+      paintFoil(ctx, w, h);
+    };
+
+    paint();
+    const observer = new ResizeObserver(paint);
+    observer.observe(wrap);
+    return () => observer.disconnect();
   }, [reduceMotion, paintFoil]);
 
-  const erodeAt = useCallback((clientX: number, clientY: number) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = ((clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((clientY - rect.top) / rect.height) * canvas.height;
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.beginPath();
-    ctx.arc(x, y, 22, 0, Math.PI * 2);
-    ctx.fill();
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  const measure = useCallback(() => {
+  const toCanvas = (clientX: number, clientY: number): Point | null => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let clear = 0;
-    for (let i = 3; i < data.length; i += 64) {
-      if (data[i] === 0) clear += 1;
-    }
-    if (clear / (data.length / 64) > REVEAL_THRESHOLD) finish();
-  }, [finish]);
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    return {
+      x: ((clientX - rect.left) / rect.width) * canvas.width,
+      y: ((clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (fired.current) return;
     drawing.current = true;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    erodeAt(e.clientX, e.clientY);
-  };
-  const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!drawing.current) return;
-    erodeAt(e.clientX, e.clientY);
-    measure();
-  };
-  const onPointerUp = () => {
-    drawing.current = false;
-    measure();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Capture can fail if the pointer is already gone; the stroke still counts.
+    }
+    lastRef.current = null;
+    const point = toCanvas(e.clientX, e.clientY);
+    if (point) strokeTo(point);
   };
 
-  // Reduced motion / no-scratch fallback: a plain redeem button.
+  const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!drawing.current || fired.current) return;
+    const point = toCanvas(e.clientX, e.clientY);
+    if (!point) return;
+    pendingRef.current = point;
+    if (!rafRef.current) rafRef.current = requestAnimationFrame(flush);
+  };
+
+  const onPointerUp = () => {
+    drawing.current = false;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+    const point = pendingRef.current;
+    pendingRef.current = null;
+    if (point && !fired.current) strokeTo(point);
+    lastRef.current = null;
+  };
+
   if (reduceMotion) {
     return (
       <div className={cn("relative", className)}>
@@ -141,8 +263,8 @@ export function ScratchToRedeem({
             onClick={finish}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 text-sm font-semibold text-[#7e1426] transition-transform hover:scale-[1.02] active:scale-95"
           >
-            <Sparkles className="size-4" style={{ color: accent }} /> Reveal this
-            coupon
+            <Sparkles className="size-4" style={{ color: accent }} /> Reveal
+            this coupon
           </button>
         )}
       </div>
@@ -157,19 +279,19 @@ export function ScratchToRedeem({
         className,
       )}
     >
-      {/* revealed layer */}
       <div className="absolute inset-0 grid place-items-center">{children}</div>
 
-      {/* scratch foil */}
       <canvas
         ref={canvasRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
+        onPointerCancel={onPointerUp}
         className={cn(
-          "absolute inset-0 h-full w-full touch-none transition-opacity duration-500",
-          revealed ? "pointer-events-none opacity-0" : "cursor-grab opacity-100",
+          "absolute inset-0 h-full w-full touch-none transition-opacity duration-300 active:cursor-grabbing",
+          revealed
+            ? "pointer-events-none opacity-0"
+            : "cursor-grab opacity-100",
         )}
         aria-label="Scratch to redeem"
       />

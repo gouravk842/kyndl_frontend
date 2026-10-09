@@ -14,7 +14,7 @@ const ENDPOINT = "/api/analytics/events";
 const ANON_ID_KEY = "kyndl_anon_id";
 
 /** Stable per-browser id for stitching anonymous (logged-out) activity. */
-function getAnonymousId(): string {
+export function getAnonymousId(): string {
   if (typeof window === "undefined") return "";
   try {
     let id = window.localStorage.getItem(ANON_ID_KEY);

@@ -1,9 +1,8 @@
 import * as React from "react";
 
 /**
- * The cream letter-sheet card that carries every auth form — a single sheet
- * with two more peeking out behind it (via `.kyndl-letter-stack`), a soft
- * paper grain, and a letterpressed serif title.
+ * Soft cream card that carries every auth form — sized to sit inside the
+ * desktop viewport without scrolling.
  */
 export function AuthSheet({
   title,
@@ -15,19 +14,15 @@ export function AuthSheet({
   children: React.ReactNode;
 }) {
   return (
-    <div className="kyndl-letter-stack relative w-full rounded-[1.6rem] bg-[#FBF4E8] px-7 py-9 shadow-[0_30px_64px_-30px_rgba(58,42,37,0.55)] ring-1 ring-[#e9d9c2] sm:px-10 sm:py-10">
-      <div
-        className="kyndl-paper-grain pointer-events-none absolute inset-0 rounded-[1.6rem] opacity-50"
-        aria-hidden
-      />
+    <div className="kyndl-card-soft relative w-full rounded-[1.75rem] border border-[#F4DDD0] bg-white px-6 py-7 sm:px-8 sm:py-8 lg:flex lg:h-full lg:flex-col lg:justify-center lg:px-8 lg:py-7">
       <div className="relative">
-        <h1 className="kyndl-letterpress text-center font-serif text-[2rem] leading-tight text-[#3A2A25]">
+        <h1 className="text-center font-display text-[1.75rem] leading-tight text-[#3A2A25] lg:text-[1.85rem]">
           {title}
         </h1>
-        <p className="mx-auto mt-2 max-w-xs text-center text-[14.5px] leading-relaxed text-[#8a7669]">
+        <p className="mx-auto mt-1.5 max-w-xs text-center text-sm leading-relaxed text-[#7A6258]">
           {description}
         </p>
-        <div className="mt-8">{children}</div>
+        <div className="mt-6 lg:mt-5">{children}</div>
       </div>
     </div>
   );

@@ -4,15 +4,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Lock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { matchesAnswer } from "../answer-hash";
 import type { ModuleInteractionProps } from "../types";
 import type { QuestionConfig } from "./index";
 
 type Status = "idle" | "wrong" | "solved";
-
-function isCorrect(value: string, answers: string[]) {
-  const norm = value.trim().toLowerCase();
-  return answers.some((a) => a.trim().toLowerCase() === norm);
-}
 
 /**
  * The question gate surface. Free-text or multiple-choice; a correct answer
@@ -37,13 +33,16 @@ export default function QuestionInteraction({
   }, [onClose]);
 
   const attempt = (answer: string) => {
-    if (isCorrect(answer, config.answers)) {
-      setStatus("solved");
-      // Let the "Unlocked" flash play before revealing the reward.
-      window.setTimeout(onSolve, 650);
-    } else {
-      setStatus("wrong");
-    }
+    void matchesAnswer(answer, config.answers, config.answerHashes).then(
+      (ok) => {
+        if (ok) {
+          setStatus("solved");
+          window.setTimeout(onSolve, 650);
+        } else {
+          setStatus("wrong");
+        }
+      },
+    );
   };
 
   return (

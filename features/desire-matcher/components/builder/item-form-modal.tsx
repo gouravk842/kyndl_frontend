@@ -4,14 +4,23 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, lineText } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
 import { Flames } from "@/features/desire-deck/components/flames";
 
-import { type Heat, HEAT_META, HEAT_ORDER, type MatcherItem } from "../../config";
+import {
+  type Heat,
+  HEAT_META,
+  HEAT_ORDER,
+  type MatcherItem,
+} from "../../config";
 import { itemHeatDefault, useBuilderStore } from "../../store/builder.store";
 
 interface FormState {
   label: string;
   heat: Heat;
+  image: { fileId: string } | null;
 }
 
 /**
@@ -31,9 +40,10 @@ export function ItemFormModal({
 
   const [form, setForm] = useState<FormState>(() =>
     item
-      ? { label: item.label, heat: item.heat }
-      : { label: "", heat: itemHeatDefault(items.length) },
+      ? { label: item.label, heat: item.heat, image: item.image ?? null }
+      : { label: "", heat: itemHeatDefault(items.length), image: null },
   );
+  const [bankOpen, setBankOpen] = useState(false);
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
 
   useEffect(() => {
@@ -49,7 +59,11 @@ export function ItemFormModal({
       toast.error("Write something for this one.");
       return;
     }
-    const data = { label: form.label.trim(), heat: form.heat };
+    const data = {
+      label: form.label.trim(),
+      heat: form.heat,
+      image: form.image,
+    };
     if (item) updateItem(item.id, data);
     else addItem(data);
     onClose();
@@ -79,6 +93,13 @@ export function ItemFormModal({
         </div>
 
         <div className="space-y-5 overflow-y-auto px-5 py-5">
+          <button
+            type="button"
+            onClick={() => setBankOpen(true)}
+            className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+          >
+            Use a bank line
+          </button>
           <Field label="The activity">
             <textarea
               className={`${inputCls} min-h-[110px] resize-y`}
@@ -132,6 +153,23 @@ export function ItemFormModal({
           </button>
         </div>
       </div>
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const chosen = picked[0];
+          if (!chosen) return;
+          const image = fileRef(chosen);
+          setForm((current) => ({
+            ...current,
+            label: lineText(chosen).slice(0, 400),
+            heat: heatForType(chosen.type.slug),
+            image: image ?? null,
+          }));
+        }}
+      />
     </div>
   );
 }

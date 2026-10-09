@@ -1,7 +1,14 @@
 "use client";
 
 import { useReducedMotion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import type {
   SkyConfig,
@@ -9,12 +16,19 @@ import type {
   WishConfig,
 } from "@/features/constellation/config";
 import {
+  cameraHome,
+  clampCamera,
+  type FieldCamera,
+  fieldPresence,
+  PRESENCE_GLINT,
+} from "@/features/constellation/lib/field";
+import { storyOrder } from "@/features/constellation/lib/layout";
+import {
   type Cloud,
   generateClouds,
   generateGrass,
   generateRidge,
   type GrassBlade,
-  groundLevelPx,
   paintClouds,
   paintCouple,
   paintGrass,
@@ -22,31 +36,29 @@ import {
   paintHorizon,
   paintMilkyWay,
   paintMountains,
+  paintRooftop,
+  paintShore,
   paintTree,
 } from "@/features/constellation/lib/scene";
-import { resolveFinaleGlyph } from "@/features/constellation/lib/shapes";
+import { glyphSlots } from "@/features/constellation/lib/shapes";
 import {
   applyCamera,
   type BgStar,
   type Camera,
-  constellationCenter,
-  type EdgeRender,
   edgesOf,
   ENTRANCE_MS,
   generateBackgroundStars,
   identityCamera,
   makeRng,
   paintBackgroundStars,
-  paintEdges,
-  paintHiddenShape,
+  paintKinship,
   paintNebula,
   paintShootingStar,
   paintSky,
   paintStar,
   type ShootingStar,
   spawnShootingStar,
-  starToPixel,
-  type Vec,
+  starScreen,
 } from "@/features/constellation/lib/sky";
 
 const clamp01 = (t: number): number => (t < 0 ? 0 : t > 1 ? 1 : t);
@@ -55,10 +67,25 @@ const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 const approach = (dt: number, k: number): number => 1 - Math.exp(-dt * k);
 
 const KEEPSAKE_ENTRANCE_MS = 900;
-const TOUR_ZOOM = 1.7;
 const PARALLAX_BG = 22;
 const PARALLAX_NEBULA = 12;
 const WISH_CATCH_RADIUS = 34;
+/** How wide the finale shape is, in viewport percent, while the stars hold it. */
+const SHAPE_SPAN = 42;
+
+function centroidOf(stars: { x: number; y: number }[]): {
+  x: number;
+  y: number;
+} {
+  if (stars.length === 0) return { x: 50, y: 36 };
+  let x = 0;
+  let y = 0;
+  for (const star of stars) {
+    x += star.x;
+    y += star.y;
+  }
+  return { x: x / stars.length, y: y / stars.length };
+}
 
 type TourState = "idle" | "playing" | "paused";
 
@@ -70,12 +97,21 @@ type EngineOptions = {
    * a star still hidden behind an unsolved challenge or unmet requirement, so
    * the tour pans past it without spoiling the memory. Defaults to always. */
   canOpen?: (id: number) => boolean;
+  /** Stars already read on this device. Seeded into the lit set, not including
+   * stars that ask again every visit. */
+  rememberedIds?: ReadonlySet<number>;
+  /** When set, the host owns the camera (the builder board). */
+  viewCamera?: FieldCamera | null;
+  /** fileId → URL, so a near star can wear its photo. */
+  assets?: Record<string, string>;
+  /** Return visits open on the newest star. First visits open on the oldest. */
+  focusNewest?: boolean;
 };
 
 /**
  * The brain of the Constellation. Owns interaction state (opened / active /
- * hovered), the ceremony timeline, the cinematic tour camera, parallax, the
- * draw-itself edge reveal, and the finale ignite — all on one rAF loop that
+ * hovered), the ceremony timeline, the cinematic tour camera, and parallax —
+ * all on one rAF loop that
  * reads live state through refs so opening a star never restarts it.
  */
 export function useConstellationEngine(
@@ -86,6 +122,19 @@ export function useConstellationEngine(
   const reduceMotion = useReducedMotion() ?? false;
 
   const [openedIds, setOpenedIds] = useState<Set<number>>(() => new Set());
+  const rememberedIds = options.rememberedIds;
+  const litIds = useMemo(() => {
+    if (!rememberedIds || rememberedIds.size === 0) return openedIds;
+    let changed = false;
+    const next = new Set(openedIds);
+    for (const id of rememberedIds) {
+      if (!next.has(id)) {
+        next.add(id);
+        changed = true;
+      }
+    }
+    return changed ? next : openedIds;
+  }, [openedIds, rememberedIds]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [entered, setEntered] = useState(false);
@@ -93,29 +142,49 @@ export function useConstellationEngine(
   const [touring, setTouring] = useState(false);
   const [tourPaused, setTourPaused] = useState(false);
   const [caughtWish, setCaughtWish] = useState<WishConfig | null>(null);
+  const home0 = cameraHome(config.stars, false);
+  const [camera, setCamera] = useState<FieldCamera>(home0);
+  const [shaping, setShaping] = useState(false);
 
-  const total = config.stars.length;
-  const allOpened = openedIds.size === total;
+  const authored = useMemo(
+    () => config.stars.filter((star) => !star.reply),
+    [config.stars],
+  );
+  const total = authored.length;
+  const allOpened =
+    total === 0 || authored.every((star) => litIds.has(star.id));
   const activeStar = useMemo<Star | null>(
     () => config.stars.find((s) => s.id === activeId) ?? null,
     [config.stars, activeId],
   );
 
   // ── refs the rAF loop reads without being a dependency ──
-  const openedRef = useRef(openedIds);
+  const openedRef = useRef(litIds);
   const hoveredRef = useRef(hoveredId);
   const activeRef = useRef(activeId);
   const allOpenedRef = useRef(allOpened);
   // Host callbacks read live from the rAF loop / openStar without re-subscribing.
   const onOpenRef = useRef(options.onOpen);
   const canOpenRef = useRef(options.canOpen);
+  const viewCameraRef = useRef(options.viewCamera);
+  const assetsRef = useRef(options.assets ?? {});
+  const photosRef = useRef<Map<number, CanvasImageSource>>(new Map());
+  const cameraRef = useRef<FieldCamera>(home0);
+  const cameraTargetRef = useRef<FieldCamera | null>(null);
+  const flareRef = useRef<Map<number, number>>(new Map());
+  const publishedCameraRef = useRef<FieldCamera>(home0);
+  const pannedRef = useRef(false);
+  const focusApplied = useRef<boolean | null>(null);
   useEffect(() => {
-    openedRef.current = openedIds;
+    openedRef.current = litIds;
     hoveredRef.current = hoveredId;
     activeRef.current = activeId;
     allOpenedRef.current = allOpened;
     onOpenRef.current = options.onOpen;
     canOpenRef.current = options.canOpen;
+    viewCameraRef.current = options.viewCamera;
+    assetsRef.current = options.assets ?? {};
+    if (options.viewCamera != null) cameraRef.current = options.viewCamera;
   });
 
   const startedRef = useRef(false);
@@ -130,9 +199,30 @@ export function useConstellationEngine(
 
   const openStar = useCallback((id: number) => {
     setActiveId(id);
+    flareRef.current.set(id, performance.now());
     setOpenedIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
     onOpenRef.current?.(id);
   }, []);
+
+  const panBy = useCallback(
+    (dxPx: number, dyPx: number, widthPx: number, heightPx: number) => {
+      if (widthPx <= 0 || heightPx <= 0 || viewCameraRef.current != null)
+        return;
+      const cur = cameraRef.current;
+      const next = clampCamera(
+        {
+          x: cur.x - (dxPx / widthPx) * 100,
+          y: cur.y - (dyPx / heightPx) * 100,
+        },
+        config.stars,
+      );
+      pannedRef.current = true;
+      cameraRef.current = next;
+      cameraTargetRef.current = null;
+      setCamera(next);
+    },
+    [config.stars],
+  );
 
   const closeStar = useCallback(() => setActiveId(null), []);
 
@@ -204,6 +294,21 @@ export function useConstellationEngine(
     [config.wish],
   );
 
+  const focusNewest = options.focusNewest ?? false;
+  // First visit rests on the oldest figure. A later visit opens on the newest,
+  // unless the viewer has already dragged the sky themselves.
+  useLayoutEffect(() => {
+    if (viewCameraRef.current != null) return;
+    if (pannedRef.current && focusApplied.current !== null) return;
+    if (focusApplied.current === focusNewest) return;
+    focusApplied.current = focusNewest;
+    const next = cameraHome(config.stars, focusNewest);
+    cameraRef.current = next;
+    cameraTargetRef.current = null;
+    publishedCameraRef.current = next;
+    setCamera(next);
+  }, [focusNewest, config]);
+
   // ── the render loop ──
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -229,13 +334,9 @@ export function useConstellationEngine(
       makeRng(0x5eed ^ config.backgroundStarCount),
     );
     const rng = makeRng(0xc0ffee);
-    const center = constellationCenter(config);
     const byId = new Map(config.stars.map((s) => [s.id, s]));
+    const tourStars = storyOrder(config.stars.filter((star) => !star.reply));
     const edges = edgesOf(config);
-    const glyph = config.finale.glyph
-      ? resolveFinaleGlyph(config.finale)
-      : null;
-    const litMap = new Map<string, number>();
     shootingRef.current = [];
 
     // dusk-meadow scene geometry (seeded once, normalized so resizes are free)
@@ -248,7 +349,13 @@ export function useConstellationEngine(
     const parallax = { x: 0, y: 0 };
     const parallaxTarget = { x: 0, y: 0 };
     let finale = 0;
-    let glyphAlpha = 0;
+    let sawIncomplete = !allOpenedRef.current;
+    let ceremonyPhase: "idle" | "gather" | "hold" | "release" | "done" = "idle";
+    let ceremonyElapsed = 0;
+    let ceremonyAmount = 0;
+    let ember = 0;
+    let wash = 0;
+    const shapeAt = new Map<number, { x: number; y: number }>();
     let shootingCount = 0;
     let enteredFired = false;
 
@@ -302,12 +409,12 @@ export function useConstellationEngine(
         tour.elapsed += dt * 1000;
         if (tour.elapsed >= config.tour.perStarMs) {
           tour.index += 1;
-          if (tour.index >= config.stars.length) {
+          if (tour.index >= tourStars.length) {
             tour.state = "idle";
             setTouring(false);
             closeStar();
           } else {
-            const star = config.stars[tour.index];
+            const star = tourStars[tour.index];
             // Respect gates: pan to a still-locked star but don't spoil it.
             if (star && (canOpenRef.current?.(star.id) ?? true)) {
               openStar(star.id);
@@ -319,27 +426,112 @@ export function useConstellationEngine(
         }
       }
 
-      // camera easing toward the focused star (or home)
-      const focus =
+      // The field camera. Tour and an open star glide in both axes. A drag
+      // cancels the glide. The builder passes viewCamera.
+      const touringFocus =
         tour.state !== "idle" &&
-        !reduceMotion &&
         tour.index >= 0 &&
-        tour.index < config.stars.length
-          ? config.stars[tour.index]
+        tour.index < tourStars.length
+          ? tourStars[tour.index]
           : null;
-      const targetCam: Camera = focus
-        ? { ...starToPixel(focus, width, height), zoom: TOUR_ZOOM }
-        : identityCamera(width, height);
-      if (reduceMotion) {
-        camera = targetCam;
-      } else {
-        const k = approach(dt, 4);
-        camera = {
-          x: camera.x + (targetCam.x - camera.x) * k,
-          y: camera.y + (targetCam.y - camera.y) * k,
-          zoom: camera.zoom + (targetCam.zoom - camera.zoom) * k,
-        };
+      const openFocus =
+        touringFocus ??
+        (activeRef.current != null
+          ? (byId.get(activeRef.current) ?? null)
+          : null);
+      if (!allOpenedRef.current) sawIncomplete = true;
+      if (
+        ceremonyPhase === "idle" &&
+        sawIncomplete &&
+        allOpenedRef.current &&
+        activeRef.current == null &&
+        tour.state === "idle"
+      ) {
+        const authored = config.stars.filter((star) => !star.reply);
+        const home = centroidOf(authored);
+        const slots = reduceMotion
+          ? []
+          : glyphSlots(config.finale, authored.length);
+        if (
+          !reduceMotion &&
+          slots.length === authored.length &&
+          authored.length > 0
+        ) {
+          shapeAt.clear();
+          authored.forEach((star, index) => {
+            const point = slots[index] ?? { x: 0, y: 0 };
+            shapeAt.set(star.id, {
+              x: home.x + point.x * SHAPE_SPAN,
+              y: home.y + point.y * SHAPE_SPAN,
+            });
+          });
+          ceremonyPhase = "gather";
+          ceremonyElapsed = 0;
+          ceremonyAmount = 0;
+          if (viewCameraRef.current == null) cameraTargetRef.current = home;
+          setShaping(true);
+        } else {
+          ceremonyPhase = "done";
+          ember = 0.42;
+        }
       }
+      if (ceremonyPhase === "gather") {
+        ceremonyElapsed += dt;
+        ceremonyAmount = easeOutCubic(clamp01(ceremonyElapsed / 2.2));
+        ember = ceremonyAmount * 0.7;
+        if (ceremonyElapsed >= 2.2) {
+          ceremonyPhase = "hold";
+          ceremonyElapsed = 0;
+          ceremonyAmount = 1;
+        }
+      } else if (ceremonyPhase === "hold") {
+        ceremonyElapsed += dt;
+        ceremonyAmount = 1;
+        ember = 0.7;
+        if (ceremonyElapsed >= 1.8) {
+          ceremonyPhase = "release";
+          ceremonyElapsed = 0;
+        }
+      } else if (ceremonyPhase === "release") {
+        ceremonyElapsed += dt;
+        const settled = easeOutCubic(clamp01(ceremonyElapsed / 2.2));
+        ceremonyAmount = 1 - settled;
+        ember = 0.7 + (0.42 - 0.7) * settled;
+        if (ceremonyElapsed >= 2.2) {
+          ceremonyPhase = "done";
+          ceremonyAmount = 0;
+          ember = 0.42;
+          setShaping(false);
+        }
+      }
+      if (viewCameraRef.current != null) {
+        cameraRef.current = viewCameraRef.current;
+      } else {
+        const dest = openFocus
+          ? { x: openFocus.x, y: openFocus.y }
+          : cameraTargetRef.current;
+        let cur = cameraRef.current;
+        if (dest) {
+          cur = reduceMotion
+            ? dest
+            : {
+                x: cur.x + (dest.x - cur.x) * approach(dt, 1.6),
+                y: cur.y + (dest.y - cur.y) * approach(dt, 1.6),
+              };
+          if (!openFocus && Math.hypot(dest.x - cur.x, dest.y - cur.y) < 0.2) {
+            cameraTargetRef.current = null;
+          }
+        }
+        cur = clampCamera(cur, config.stars);
+        cameraRef.current = cur;
+        const published = publishedCameraRef.current;
+        if (Math.hypot(cur.x - published.x, cur.y - published.y) > 0.4) {
+          publishedCameraRef.current = cur;
+          setCamera(cur);
+        }
+      }
+      const camNow = cameraRef.current;
+      camera = identityCamera(width, height);
 
       // parallax + finale easing
       const pk = approach(dt, 4);
@@ -347,11 +539,6 @@ export function useConstellationEngine(
       parallax.y += (parallaxTarget.y - parallax.y) * pk;
       finale +=
         ((allOpenedRef.current ? 1 : 0) - finale) * Math.min(dt * 2.5, 1);
-      glyphAlpha +=
-        ((allOpenedRef.current ? 1 : 0) - glyphAlpha) * Math.min(dt * 1.4, 1);
-      const finalePulse = reduceMotion
-        ? finale
-        : finale * (0.7 + Math.sin(t * 1.2) * 0.3);
 
       // a slow wind that moves the grass, flowers, tree and clouds
       const windPhase = t * config.scene.windSpeed;
@@ -368,7 +555,7 @@ export function useConstellationEngine(
 
       paintNebula(
         ctx,
-        center,
+        { x: 50, y: 30 },
         width,
         height,
         config.nebulaColor,
@@ -381,10 +568,17 @@ export function useConstellationEngine(
       if (config.scene.enabled) {
         paintMilkyWay(ctx, width, height, t, reduceMotion);
       }
-      paintBackgroundStars(ctx, bgStars, width, height, t, reduceMotion, {
-        x: parallax.x * PARALLAX_BG,
-        y: parallax.y * PARALLAX_BG,
-      });
+      const tile = ((camNow.x % 100) + 100) % 100;
+      const shift = (tile / 100) * width;
+      ctx.save();
+      ctx.translate(
+        -shift + parallax.x * PARALLAX_BG,
+        parallax.y * PARALLAX_BG,
+      );
+      paintBackgroundStars(ctx, bgStars, width, height, t, reduceMotion);
+      ctx.translate(width, 0);
+      paintBackgroundStars(ctx, bgStars, width, height, t, reduceMotion);
+      ctx.restore();
 
       // shooting / wish stars
       if (!reduceMotion) {
@@ -418,78 +612,80 @@ export function useConstellationEngine(
         }
       }
 
-      // edges — build render state from opened set + entrance/reveal rules
-      const drawn = entrance * edges.length;
-      const renders: EdgeRender[] = [];
-      edges.forEach(([fromId, toId], i) => {
-        const from = byId.get(fromId);
-        const to = byId.get(toId);
-        if (!from || !to) return;
-        const a = starToPixel(from, width, height);
-        const b = starToPixel(to, width, height);
-        let litAmount: number;
-        let ghostAlpha = 0;
-        if (config.revealEdgesOnOpen) {
-          const key = `${fromId}-${toId}`;
-          const target =
-            openedRef.current.has(fromId) && openedRef.current.has(toId)
-              ? 1
-              : 0;
-          const cur = litMap.get(key) ?? 0;
-          const next = cur + (target - cur) * approach(dt, 3.5);
-          litMap.set(key, next);
-          litAmount = next;
-          ghostAlpha = config.ghostEdges ? entrance : 0;
-        } else {
-          litAmount = clamp01(drawn - i);
-        }
-        renders.push({ from: a, to: b, litAmount, ghostAlpha });
-      });
-      const dashOffset = reduceMotion ? 0 : (t * 14) % 1000;
-      paintEdges(
-        ctx,
-        renders,
-        config.lineStyle,
-        config.lineColor,
-        finalePulse,
-        dashOffset,
-      );
-
-      // finale glyph, ignited over the centroid
-      if (glyph) {
-        const cpx: Vec = {
-          x: (center.x / 100) * width,
-          y: (center.y / 100) * height,
+      const paintAt = (star: { id: number; x: number; y: number }) => {
+        const home = starScreen(star, width, height, camNow);
+        const dest = shapeAt.get(star.id);
+        if (!dest || ceremonyAmount <= 0.001) return home;
+        const there = starScreen(dest, width, height, camNow);
+        return {
+          x: home.x + (there.x - home.x) * ceremonyAmount,
+          y: home.y + (there.y - home.y) * ceremonyAmount,
         };
-        const size =
-          glyph.kind === "text"
-            ? Math.min(width, height) * 0.16
-            : Math.min(width, height) * 0.34;
-        paintHiddenShape(
-          ctx,
-          glyph,
-          cpx,
-          size,
-          glyphAlpha,
-          config.finale.color,
-        );
+      };
+
+      // Kinship is a wash, and only while a memory is open.
+      const openId = activeRef.current;
+      wash += ((openId == null ? 0 : 1) - wash) * approach(dt, 3.2);
+      if (wash > 0.02 && openId != null) {
+        const breath = reduceMotion ? 1 : 0.72 + Math.sin(t * 1.5) * 0.28;
+        const fromStar = byId.get(openId);
+        if (fromStar) {
+          const fromAt = paintAt(fromStar);
+          for (const [fromId, toId] of edges) {
+            const otherId =
+              fromId === openId ? toId : toId === openId ? fromId : null;
+            if (otherId == null) continue;
+            const other = byId.get(otherId);
+            if (!other) continue;
+            paintKinship(
+              ctx,
+              fromAt,
+              paintAt(other),
+              wash * breath,
+              config.lineColor,
+            );
+          }
+        }
       }
 
-      // named stars
+      // named stars — only those near the camera. During the finale they
+      // drift onto the shape, then home. The offset is paint-only.
       const opened = openedRef.current;
+      const nowMs = performance.now();
       config.stars.forEach((star, i) => {
-        const stagger = i / Math.max(total, 1);
+        const at = paintAt(star);
+        if (at.x < -80 || at.x > width + 80 || at.y < -80 || at.y > height + 80)
+          return;
+        const stagger = Math.min(i, 12) / 12;
         const appear = reduceMotion
           ? entranceStart == null
             ? 0
             : 1
           : clamp01((entrance - stagger * 0.5) / 0.5);
+        const hovered = hoveredRef.current === star.id;
+        const active = activeRef.current === star.id;
+        const near = fieldPresence(star, camNow);
+        const presence = Math.max(
+          near,
+          hovered || active ? 1 : 0,
+          !star.reply && ceremonyAmount > 0 ? ceremonyAmount : 0,
+        );
+        const flaredAt = flareRef.current.get(star.id);
+        const flare =
+          flaredAt == null ? 0 : clamp01(1 - (nowMs - flaredAt) / 700);
+        const photo =
+          near >= PRESENCE_GLINT ? photosRef.current.get(star.id) : null;
         paintStar(ctx, star, width, height, {
-          appear,
+          appear: appear * presence * (star.reply ? 0.72 : 1),
           opened: opened.has(star.id),
-          hovered: hoveredRef.current === star.id,
-          active: activeRef.current === star.id,
+          hovered,
+          active,
           t,
+          at,
+          flare,
+          glint: photo,
+          reply: star.reply,
+          ember: star.reply ? 0 : ember,
         });
       });
 
@@ -498,8 +694,10 @@ export function useConstellationEngine(
       // ── foreground scene, drawn in screen space over the sky ──
       if (config.scene.enabled) {
         const s = config.scene;
-        const groundY = groundLevelPx(s, height);
-        const fgScale = height / 780;
+        // Lying on your back: the earth is only the bottom edge of your vision,
+        // even if an older sky stored a higher horizon.
+        const groundY = height * (Math.max(s.groundLevel, 90) / 100);
+        const fgScale = (height / 780) * 0.92;
 
         paintHorizon(ctx, width, height, groundY, s.horizonGlow, s.horizonHaze);
         paintClouds(
@@ -520,8 +718,8 @@ export function useConstellationEngine(
           groundY,
           ridgeBack,
           groundY,
-          height * 0.12,
-          "#0b1530",
+          height * 0.035,
+          "#08090e",
         );
         paintMountains(
           ctx,
@@ -530,33 +728,40 @@ export function useConstellationEngine(
           groundY,
           ridgeFront,
           groundY,
-          height * 0.07,
+          height * 0.02,
           s.silhouette,
         );
-        paintGround(ctx, width, height, groundY, s.silhouette);
-        paintTree(
-          ctx,
-          width * 0.1,
-          groundY,
-          fgScale * 1.4,
-          reduceMotion ? 0 : Math.sin(windPhase * 0.6) * gust,
-          s.silhouette,
-        );
-        paintCouple(ctx, width * 0.5, groundY, fgScale, s.silhouette);
-        paintGrass(
-          ctx,
-          width,
-          height,
-          groundY,
-          (s.grassBand / 100) * height,
-          grass,
-          t,
-          windPhase,
-          gust,
-          reduceMotion,
-          s.silhouette,
-          s.flowerColor,
-        );
+        const ground = s.ground ?? "meadow";
+        if (ground === "rooftop") {
+          paintRooftop(ctx, width, height, groundY, s.silhouette);
+        } else if (ground === "shore") {
+          paintShore(ctx, width, height, groundY, s.silhouette, t);
+        } else {
+          paintGround(ctx, width, height, groundY, s.silhouette);
+          paintTree(
+            ctx,
+            width * 0.08,
+            groundY,
+            fgScale * 0.42,
+            reduceMotion ? 0 : Math.sin(windPhase * 0.6) * gust,
+            s.silhouette,
+          );
+          paintCouple(ctx, width * 0.5, groundY, fgScale, s.silhouette, height);
+          paintGrass(
+            ctx,
+            width,
+            height,
+            groundY,
+            Math.min((s.grassBand / 100) * height, height * 0.1),
+            grass,
+            t,
+            windPhase,
+            gust,
+            reduceMotion,
+            s.silhouette,
+            s.flowerColor,
+          );
+        }
       }
 
       ctx.restore(); // ← back to identity (dpr undone)
@@ -569,14 +774,39 @@ export function useConstellationEngine(
       ro?.disconnect();
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("deviceorientation", onTilt);
+      setShaping(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config, reduceMotion, total]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const assets = options.assets ?? {};
+    const loaded = new Map<number, CanvasImageSource>();
+    for (const star of config.stars) {
+      const url = star.image?.fileId
+        ? assets[star.image.fileId]
+        : (star.imageUrl ?? null);
+      if (!url) continue;
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (cancelled) return;
+        loaded.set(star.id, img);
+        photosRef.current = new Map(loaded);
+      };
+      img.src = url;
+    }
+    photosRef.current = loaded;
+    return () => {
+      cancelled = true;
+    };
+  }, [config.stars, options.assets]);
+
   return {
     canvasRef,
     reduceMotion,
-    openedIds,
+    openedIds: litIds,
     activeId,
     activeStar,
     hoveredId,
@@ -599,5 +829,8 @@ export function useConstellationEngine(
     caughtWish,
     dismissWish,
     tryCatchWish,
+    camera: options.viewCamera ?? camera,
+    panBy,
+    shaping,
   };
 }

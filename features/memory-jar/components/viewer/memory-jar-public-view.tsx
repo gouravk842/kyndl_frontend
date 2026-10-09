@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Conversation } from "@/features/comments/components/conversation";
+import { RecipientSheetFooter } from "@/features/recipient-aftermath/components/recipient-aftermath";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ type Panel = "review" | "comments" | null;
  */
 export function MemoryJarPublicView({
   token,
+  experienceType = "memory-jar",
   title,
   commentsEnabled,
   chatEnabled,
@@ -34,6 +36,7 @@ export function MemoryJarPublicView({
   children,
 }: {
   token: string;
+  experienceType?: string;
   title: string;
   commentsEnabled: boolean;
   chatEnabled: boolean;
@@ -46,7 +49,7 @@ export function MemoryJarPublicView({
   const [panel, setPanel] = useState<Panel>(null);
 
   return (
-    <div className="kyndl-mp-ambient relative flex min-h-dvh w-full flex-col overflow-hidden">
+    <div className="kyndl-mp-ambient relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <GeoShapes />
       <Doodles />
 
@@ -70,7 +73,7 @@ export function MemoryJarPublicView({
           {musicUrl && <MusicToggle src={musicUrl} />}
           {reviewsEnabled && (
             <PillButton icon={Star} onClick={() => setPanel("review")}>
-              <span className="hidden sm:inline">Review</span>
+              <span className="hidden sm:inline">How was it?</span>
             </PillButton>
           )}
           {commentsEnabled && (
@@ -99,12 +102,18 @@ export function MemoryJarPublicView({
           open={panel === "review"}
           onOpenChange={(open) => setPanel(open ? "review" : null)}
         >
-          <FeedbackSheet eyebrow="Your review" icon={Star}>
-            <SheetTitle className="sr-only">Rate this keepsake</SheetTitle>
+          <FeedbackSheet eyebrow="How did this feel?" icon={Star}>
+            <SheetTitle className="sr-only">How did this feel?</SheetTitle>
             <ReviewsSection
               type="experience"
               refId={token}
-              title="Rate this jar"
+              title=""
+              tone="keepsake"
+              experienceType={experienceType}
+            />
+            <RecipientSheetFooter
+              token={token}
+              experienceType={experienceType}
             />
           </FeedbackSheet>
         </Sheet>
@@ -152,7 +161,10 @@ function MusicToggle({ src }: { src: string }) {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
-      void audio.play().then(() => setPlaying(true)).catch(() => {});
+      void audio
+        .play()
+        .then(() => setPlaying(true))
+        .catch(() => {});
     } else {
       audio.pause();
       setPlaying(false);
@@ -176,9 +188,7 @@ function MusicToggle({ src }: { src: string }) {
         ) : (
           <VolumeX className="size-4 text-[#c75b39]" />
         )}
-        <span className="hidden sm:inline">
-          {playing ? "Playing" : "Play"}
-        </span>
+        <span className="hidden sm:inline">{playing ? "Playing" : "Play"}</span>
       </button>
     </>
   );
@@ -344,22 +354,46 @@ function Doodles() {
       aria-hidden
       className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
     >
-      <Doodle className="top-24 left-[6%] size-10 text-[#f2596f]" delay="0s" rot={-8}>
+      <Doodle
+        className="top-24 left-[6%] size-10 text-[#f2596f]"
+        delay="0s"
+        rot={-8}
+      >
         <HeartDoodle />
       </Doodle>
-      <Doodle className="top-28 right-[9%] size-12 text-[#d4a373]" delay="1.4s" rot={10}>
+      <Doodle
+        className="top-28 right-[9%] size-12 text-[#d4a373]"
+        delay="1.4s"
+        rot={10}
+      >
         <StarDoodle />
       </Doodle>
-      <Doodle className="top-1/2 left-[4%] size-9 text-[#ff7a59]" delay="0.7s" rot={6}>
+      <Doodle
+        className="top-1/2 left-[4%] size-9 text-[#ff7a59]"
+        delay="0.7s"
+        rot={6}
+      >
         <SparkleDoodle />
       </Doodle>
-      <Doodle className="top-[46%] right-[5%] size-11 text-[#e0a86b]" delay="2.1s" rot={-12}>
+      <Doodle
+        className="top-[46%] right-[5%] size-11 text-[#e0a86b]"
+        delay="2.1s"
+        rot={-12}
+      >
         <SwirlDoodle />
       </Doodle>
-      <Doodle className="bottom-24 left-[10%] size-12 text-[#f0a13d]" delay="1s" rot={-4}>
+      <Doodle
+        className="bottom-24 left-[10%] size-12 text-[#f0a13d]"
+        delay="1s"
+        rot={-4}
+      >
         <SunDoodle />
       </Doodle>
-      <Doodle className="bottom-16 right-[14%] size-10 text-[#c9976a]" delay="1.8s" rot={4}>
+      <Doodle
+        className="bottom-16 right-[14%] size-10 text-[#c9976a]"
+        delay="1.8s"
+        rot={4}
+      >
         <EnvelopeDoodle />
       </Doodle>
     </div>

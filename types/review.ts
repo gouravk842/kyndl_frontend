@@ -14,6 +14,8 @@ export interface Review {
   rating: number;
   title: string;
   body: string;
+  /** Author opted in to anonymous marketing UGC reuse. */
+  allow_marketing_use: boolean;
   is_verified: boolean;
   is_mine: boolean;
   created_at: string;
@@ -60,4 +62,5 @@ export interface ReviewInput {
   rating: number;
   title?: string;
   body?: string;
+  allow_marketing_use?: boolean;
 }

@@ -1,9 +1,8 @@
 /**
- * Memory Lantern — content & art-direction config.
+ * Memory Lantern — content and art-direction config.
  *
  * Everything personal lives here: the recipient, the title, and the ordered
- * `panes` (one photo facet each). The order of `panes` is the order they sit
- * around the ring, which is the order they turn to face the viewer.
+ * `panes`. Pane order is the order they take the stage, one at a time.
  *
  * Mirrors the backend `MemoryLanternContentSerializer`. The art-direction blocks
  * (`material` / `motion` / `ambience` / `finale`) are optional and defaulted on
@@ -11,32 +10,39 @@
  */
 
 export type Pane = {
-  /** Stable key + ring order. */
+  /** Stable key. Order in `panes` is show order. */
   id: string;
   /** Media handle for the photo (resolved to a URL via `assets`). Null renders a
-   *  procedural placeholder so the scene is never empty while authoring. */
+   *  colour plate so the stage is never empty while authoring. */
   fileId: string | null;
-  /** The line that wakes when this facet turns to face the viewer. */
+  /** The line above the photo while this memory holds the stage. */
   caption: string;
-  /** A short date, shown under the caption. */
+  /** Optional note shown to the right of the photo. */
+  description?: string;
+  /** A short date, shown under the title. */
   date: string;
-  /** Dominant colour sampled from the photo — lights the room when this facet is
-   *  front. Optional; Phase 3 samples it, the builder can override it. */
+  /** Dominant colour sampled from the photo — washes the room while this memory
+   *  is on stage. Optional; the builder samples it and can override it. */
   glowColor?: string;
 };
 
 export type LanternMaterial = {
-  /** 0–1: how frosted the facets are when NOT facing the viewer. */
+  /** Retired with the prism. Ignored by the stage; kept so older documents parse. */
   frost: number;
+  /** Retired with the prism. Ignored by the stage. */
   metalness: number;
-  /** The inner core glow colour bleeding through the glass. */
+  /** Podium rim and spotlight base colour. */
   coreColor: string;
 };
 
 export type LanternMotion = {
-  /** Idle rotation speed, radians/sec. 0 = still. */
+  /**
+   * How long each memory holds the stage before the next, in seconds.
+   * `0` waits for the viewer. Values below 2 are the retired spin speed
+   * (radians/sec) and are treated as manual — see {@link dwellSeconds}.
+   */
   autoSpin: number;
-  /** Allow the viewer to grab and spin it (Phase 5). */
+  /** Retired with the prism. Ignored by the stage. */
   dragToSpin: boolean;
 };
 
@@ -72,30 +78,81 @@ export const DEFAULT_MATERIAL: LanternMaterial = {
 };
 
 export const DEFAULT_MOTION: LanternMotion = {
-  autoSpin: 0.32,
-  dragToSpin: true,
+  autoSpin: 0,
+  dragToSpin: false,
 };
 
 /**
- * The bundled sample. Panes carry no `fileId`, so they render as procedural
- * colour-plates — enough to see the lantern turn, wake, and light the room
+ * Seconds to hold each memory. Values under 2 are the old radians/sec spin
+ * and mean the viewer steps forward themselves.
+ */
+export function dwellSeconds(autoSpin: number | undefined): number {
+  const n = autoSpin ?? 0;
+  if (!Number.isFinite(n) || n < 2) return 0;
+  return n;
+}
+
+/**
+ * The bundled sample. Panes carry no `fileId`, so they render as colour plates —
+ * enough to see the curtains, the podium, and the room take each memory's colour
  * before any photo is uploaded. Real photos replace these in the builder.
  */
 export const SAMPLE_LANTERN: LanternConfig = {
-  id: "the-two-of-us",
+  id: "in-this-light",
   recipientName: "you",
-  title: "The two of us",
-  subtitle: "watch it turn — each side wakes a memory",
+  title: "In this light",
+  subtitle: "one memory takes the stage",
   panes: [
-    { id: "p1", fileId: null, caption: "The beach at dawn", date: "Aug 2025", glowColor: "#f4a261" },
-    { id: "p2", fileId: null, caption: "First snow together", date: "Dec 2025", glowColor: "#8ecae6" },
-    { id: "p3", fileId: null, caption: "That tiny kitchen", date: "Mar 2024", glowColor: "#e07a5f" },
-    { id: "p4", fileId: null, caption: "The long drive north", date: "Jun 2024", glowColor: "#81b29a" },
-    { id: "p5", fileId: null, caption: "Rooftop, city lights", date: "Oct 2025", glowColor: "#cdb4db" },
-    { id: "p6", fileId: null, caption: "Us, just us", date: "Feb 2026", glowColor: "#ffb4a2" },
+    {
+      id: "p1",
+      fileId: null,
+      caption: "The beach at dawn",
+      date: "Aug 2025",
+      glowColor: "#f4a261",
+    },
+    {
+      id: "p2",
+      fileId: null,
+      caption: "First snow together",
+      date: "Dec 2025",
+      glowColor: "#8ecae6",
+    },
+    {
+      id: "p3",
+      fileId: null,
+      caption: "That tiny kitchen",
+      date: "Mar 2024",
+      glowColor: "#e07a5f",
+    },
+    {
+      id: "p4",
+      fileId: null,
+      caption: "The long drive north",
+      date: "Jun 2024",
+      glowColor: "#81b29a",
+    },
+    {
+      id: "p5",
+      fileId: null,
+      caption: "Rooftop, city lights",
+      description:
+        "We stayed until the city turned the colour of the sky. Neither of us wanted the evening to end.",
+      date: "Oct 2025",
+      glowColor: "#cdb4db",
+    },
+    {
+      id: "p6",
+      fileId: null,
+      caption: "Home, at last",
+      date: "Feb 2026",
+      glowColor: "#ffb4a2",
+    },
   ],
   material: DEFAULT_MATERIAL,
   motion: DEFAULT_MOTION,
   ambience: { timeOfDayAware: true },
-  finale: { heading: "You saw every side", body: "of the two of us." },
+  finale: {
+    heading: "The lights stay with you",
+    body: "Every one of them.",
+  },
 };

@@ -7,7 +7,11 @@
  * and styling are shared with the rest of the Red Zone.
  */
 
-import { type Heat, HEAT_META, HEAT_ORDER } from "@/features/desire-deck/config";
+import {
+  type Heat,
+  HEAT_META,
+  HEAT_ORDER,
+} from "@/features/desire-deck/config";
 
 export { type Heat, HEAT_META, HEAT_ORDER };
 
@@ -17,6 +21,7 @@ export type Coupon = {
   title: string;
   /** The fine print — what the coupon actually gets them. */
   description: string;
+  image?: { fileId: string } | null;
 };
 
 export type CouponBook = {

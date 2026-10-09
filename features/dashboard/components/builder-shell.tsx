@@ -8,6 +8,7 @@ import { CollaboratorsPanel } from "@/features/collaboration/components/collabor
 import { cn } from "@/lib/utils";
 
 import { InteractionSettings } from "./interaction-settings";
+import { OpenPublicViewButton } from "./open-public-view-button";
 
 /**
  * The minimal, feature-agnostic view of a builder's persistence hook that the
@@ -25,6 +26,8 @@ export interface BuilderSync {
   save: () => void;
   /** The saved creation's id, or null before the first save. */
   creationId: string | null;
+  /** Share token for `/v/<token>`, null before the first cloud save. */
+  publicToken: string | null;
 }
 
 export interface BuilderTab {
@@ -88,7 +91,13 @@ export function BuilderShell({
       <div className="sticky top-0 z-10 border-b border-[#f2dace] bg-[#fffaf4]/95 px-5 pt-4 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <h1 className="font-display text-lg text-[#3a2a25]">{title}</h1>
-          <SaveButton sync={sync} />
+          <div className="flex shrink-0 items-center gap-2">
+            <OpenPublicViewButton
+              publicToken={sync.publicToken}
+              dirty={sync.dirty}
+            />
+            <SaveButton sync={sync} />
+          </div>
         </div>
         <SyncNote sync={sync} />
 

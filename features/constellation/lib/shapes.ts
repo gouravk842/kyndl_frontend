@@ -31,6 +31,78 @@ export function resolveFinaleGlyph(finale: FinaleConfig): ResolvedGlyph {
   return { kind: "path", path: new Path2D(glyph) };
 }
 
+/**
+ * Places for the authored stars to stand when the finale shape is made of
+ * them. Points sit in a centred unit box (about -0.5 → 0.5, y down). Call
+ * this in the browser, once — it paints the glyph offscreen and reads it back.
+ */
+export function glyphSlots(
+  finale: FinaleConfig,
+  count: number,
+): { x: number; y: number }[] {
+  if (count <= 0 || typeof document === "undefined") return [];
+  let glyph: ResolvedGlyph = null;
+  try {
+    glyph = resolveFinaleGlyph(finale);
+  } catch {
+    return [];
+  }
+  if (!glyph) return [];
+
+  const size = 180;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return [];
+
+  const scale = size * 0.62;
+  ctx.translate(size / 2, size / 2);
+  ctx.fillStyle = "#fff";
+  ctx.strokeStyle = "#fff";
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  if (glyph.kind === "path") {
+    ctx.scale(scale, scale);
+    ctx.lineWidth = 16 / scale;
+    ctx.stroke(glyph.path);
+  } else if (glyph.text.trim()) {
+    ctx.font = `600 ${Math.round(size * 0.34)}px Georgia, serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(glyph.text.slice(0, 8), 0, 0);
+  } else {
+    return [];
+  }
+
+  const data = ctx.getImageData(0, 0, size, size).data;
+  const unit = glyph.kind === "text" ? size * 0.28 : scale;
+  const found: { x: number; y: number }[] = [];
+  const step = 3;
+  for (let y = 0; y < size; y += step) {
+    for (let x = 0; x < size; x += step) {
+      if ((data[(y * size + x) * 4 + 3] ?? 0) < 48) continue;
+      found.push({
+        x: (x - size / 2) / unit,
+        y: (y - size / 2) / unit,
+      });
+    }
+  }
+  if (found.length === 0) return [];
+  found.sort((a, b) => Math.atan2(a.y, a.x) - Math.atan2(b.y, b.x));
+
+  const slots: { x: number; y: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    const idx = Math.min(
+      found.length - 1,
+      Math.floor(((i + 0.5) / count) * found.length),
+    );
+    const point = found[idx];
+    if (point) slots.push(point);
+  }
+  return slots;
+}
+
 type Pt = { x: number; y: number };
 
 /** Fit a sampled curve into a centred unit box, preserving aspect ratio. */

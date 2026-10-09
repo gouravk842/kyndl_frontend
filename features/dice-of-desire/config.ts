@@ -22,6 +22,7 @@ export type Position = {
   name: string;
   /** A short, playful how-to revealed beneath the name. */
   note: string;
+  image?: { fileId: string } | null;
 };
 
 export type DiceConfig = {
@@ -98,47 +99,191 @@ export const HEAT_META: Record<
  *  (columns); heat is mixed across the board so every roll is a surprise. */
 const SAMPLE_POSITIONS: Omit<Position, "id">[] = [
   // die 1 = 1
-  { heat: "sweet", name: "Spooning", note: "Curl up behind me, slow and close — no rush at all." },
-  { heat: "sweet", name: "Face to Face", note: "On our sides, foreheads touching, just feeling each other." },
-  { heat: "sweet", name: "The Lotus", note: "Sit me in your lap, wrap around each other, and rock slowly." },
-  { heat: "flirty", name: "Coital Alignment", note: "Missionary, but shift up an inch — it's all about the grind." },
-  { heat: "sweet", name: "Slow Dance", note: "Standing, wrapped together, swaying like the song's still on." },
-  { heat: "flirty", name: "Lazy Sunday", note: "Both on our sides, my back to you — unhurried and warm." },
+  {
+    heat: "sweet",
+    name: "Spooning",
+    note: "Curl up behind me, slow and close — no rush at all.",
+  },
+  {
+    heat: "sweet",
+    name: "Face to Face",
+    note: "On our sides, foreheads touching, just feeling each other.",
+  },
+  {
+    heat: "sweet",
+    name: "The Lotus",
+    note: "Sit me in your lap, wrap around each other, and rock slowly.",
+  },
+  {
+    heat: "flirty",
+    name: "Coital Alignment",
+    note: "Missionary, but shift up an inch — it's all about the grind.",
+  },
+  {
+    heat: "sweet",
+    name: "Slow Dance",
+    note: "Standing, wrapped together, swaying like the song's still on.",
+  },
+  {
+    heat: "flirty",
+    name: "Lazy Sunday",
+    note: "Both on our sides, my back to you — unhurried and warm.",
+  },
   // die 1 = 2
-  { heat: "flirty", name: "Cowgirl", note: "I take the lead on top and set the pace tonight." },
-  { heat: "spicy", name: "Reverse Cowgirl", note: "Same, but facing away — enjoy the view." },
-  { heat: "flirty", name: "Pillow Talk", note: "Missionary with a pillow under my hips. You'll see why." },
-  { heat: "flirty", name: "Edge of the Bed", note: "I lie back at the edge, you stand and take over." },
-  { heat: "flirty", name: "Lap of Luxury", note: "Straddle you in the chair — start with a slow tease." },
-  { heat: "flirty", name: "The Throne", note: "You sit like a king; I do all the work — for now." },
+  {
+    heat: "flirty",
+    name: "Cowgirl",
+    note: "I take the lead on top and set the pace tonight.",
+  },
+  {
+    heat: "spicy",
+    name: "Reverse Cowgirl",
+    note: "Same, but facing away — enjoy the view.",
+  },
+  {
+    heat: "flirty",
+    name: "Pillow Talk",
+    note: "Missionary with a pillow under my hips. You'll see why.",
+  },
+  {
+    heat: "flirty",
+    name: "Edge of the Bed",
+    note: "I lie back at the edge, you stand and take over.",
+  },
+  {
+    heat: "flirty",
+    name: "Lap of Luxury",
+    note: "Straddle you in the chair — start with a slow tease.",
+  },
+  {
+    heat: "flirty",
+    name: "The Throne",
+    note: "You sit like a king; I do all the work — for now.",
+  },
   // die 1 = 3
-  { heat: "spicy", name: "Doggy", note: "Hands and knees — hold my hips and don't be shy." },
-  { heat: "spicy", name: "The Lean-Back", note: "Reverse cowgirl, but lean back onto your chest." },
-  { heat: "spicy", name: "Pinned", note: "Hold my wrists above my head and make me wait for it." },
-  { heat: "wild", name: "Against the Wall", note: "Lift me, pin me to the wall, and don't let go." },
-  { heat: "spicy", name: "On Your Shoulders", note: "On my back, legs over your shoulders — deep and slow." },
-  { heat: "spicy", name: "Tabletop", note: "Lay me on the edge of the table and step in close." },
+  {
+    heat: "spicy",
+    name: "Doggy",
+    note: "Hands and knees — hold my hips and don't be shy.",
+  },
+  {
+    heat: "spicy",
+    name: "The Lean-Back",
+    note: "Reverse cowgirl, but lean back onto your chest.",
+  },
+  {
+    heat: "spicy",
+    name: "Pinned",
+    note: "Hold my wrists above my head and make me wait for it.",
+  },
+  {
+    heat: "wild",
+    name: "Against the Wall",
+    note: "Lift me, pin me to the wall, and don't let go.",
+  },
+  {
+    heat: "spicy",
+    name: "On Your Shoulders",
+    note: "On my back, legs over your shoulders — deep and slow.",
+  },
+  {
+    heat: "spicy",
+    name: "Tabletop",
+    note: "Lay me on the edge of the table and step in close.",
+  },
   // die 1 = 4
-  { heat: "wild", name: "Standing Doggy", note: "Bent over the bed while you stand behind me." },
-  { heat: "wild", name: "The Bridge", note: "I arch up off the bed — you take it from there." },
-  { heat: "wild", name: "Blindfolded", note: "Cover my eyes first. Every touch a surprise." },
-  { heat: "spicy", name: "Cross-Body", note: "I'm on my side, you kneel and pull me onto you." },
-  { heat: "flirty", name: "Side Saddle", note: "I straddle one of your thighs and grind in close." },
-  { heat: "sweet", name: "Seated Wrap", note: "Face to face, seated, legs wrapped, slow rocking." },
+  {
+    heat: "wild",
+    name: "Standing Doggy",
+    note: "Bent over the bed while you stand behind me.",
+  },
+  {
+    heat: "wild",
+    name: "The Bridge",
+    note: "I arch up off the bed — you take it from there.",
+  },
+  {
+    heat: "wild",
+    name: "Blindfolded",
+    note: "Cover my eyes first. Every touch a surprise.",
+  },
+  {
+    heat: "spicy",
+    name: "Cross-Body",
+    note: "I'm on my side, you kneel and pull me onto you.",
+  },
+  {
+    heat: "flirty",
+    name: "Side Saddle",
+    note: "I straddle one of your thighs and grind in close.",
+  },
+  {
+    heat: "sweet",
+    name: "Seated Wrap",
+    note: "Face to face, seated, legs wrapped, slow rocking.",
+  },
   // die 1 = 5
-  { heat: "wild", name: "Tied & Teased", note: "Loosely bind my hands. You're completely in charge now." },
-  { heat: "wild", name: "The Rodeo", note: "I ride on top; you hold on and let me run wild." },
-  { heat: "spicy", name: "The Pretzel", note: "Tangle our legs on our sides and meet in the middle." },
-  { heat: "sweet", name: "Morning Spoon", note: "Half-asleep, behind me, lazy and gentle." },
-  { heat: "flirty", name: "The Cradle", note: "I sit in your lap facing you; you cradle and lift." },
-  { heat: "spicy", name: "The Stairs", note: "Catch each other halfway up — don't make it to the top." },
+  {
+    heat: "wild",
+    name: "Tied & Teased",
+    note: "Loosely bind my hands. You're completely in charge now.",
+  },
+  {
+    heat: "wild",
+    name: "The Rodeo",
+    note: "I ride on top; you hold on and let me run wild.",
+  },
+  {
+    heat: "spicy",
+    name: "The Pretzel",
+    note: "Tangle our legs on our sides and meet in the middle.",
+  },
+  {
+    heat: "sweet",
+    name: "Morning Spoon",
+    note: "Half-asleep, behind me, lazy and gentle.",
+  },
+  {
+    heat: "flirty",
+    name: "The Cradle",
+    note: "I sit in your lap facing you; you cradle and lift.",
+  },
+  {
+    heat: "spicy",
+    name: "The Stairs",
+    note: "Catch each other halfway up — don't make it to the top.",
+  },
   // die 1 = 6
-  { heat: "wild", name: "Held Up", note: "I wrap my legs around you while you carry the weight." },
-  { heat: "wild", name: "Face Down", note: "Flat on my front, you press in close behind." },
-  { heat: "wild", name: "The Frog", note: "I crouch, you kneel behind — deep and intense." },
-  { heat: "spicy", name: "Wheelbarrow", note: "Bold and athletic — hold my legs and go for it." },
-  { heat: "flirty", name: "Lap Dance", note: "I start with a tease in your lap and take it from there." },
-  { heat: "wild", name: "Dealer's Choice", note: "You rolled the wild card — whatever you've both been craving." },
+  {
+    heat: "wild",
+    name: "Held Up",
+    note: "I wrap my legs around you while you carry the weight.",
+  },
+  {
+    heat: "wild",
+    name: "Face Down",
+    note: "Flat on my front, you press in close behind.",
+  },
+  {
+    heat: "wild",
+    name: "The Frog",
+    note: "I crouch, you kneel behind — deep and intense.",
+  },
+  {
+    heat: "spicy",
+    name: "Wheelbarrow",
+    note: "Bold and athletic — hold my legs and go for it.",
+  },
+  {
+    heat: "flirty",
+    name: "Lap Dance",
+    note: "I start with a tease in your lap and take it from there.",
+  },
+  {
+    heat: "wild",
+    name: "Dealer's Choice",
+    note: "You rolled the wild card — whatever you've both been craving.",
+  },
 ];
 
 export const DICE_CONFIG: DiceConfig = {

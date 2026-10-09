@@ -3,32 +3,27 @@ import { persist } from "zustand/middleware";
 
 import { SEED_DOC } from "../data/seed-city";
 import type { CityDoc } from "../lib/city-from-memories";
-import { type CityMemory, DEFAULT_THEME, type Mood } from "../types";
+import {
+  type CityMemory,
+  DEFAULT_THEME,
+  LAYOUT_ENGINE_VERSION,
+  type Mood,
+} from "../types";
 
 /**
- * The Memory City builder edits a **meaning-only** {@link CityDoc}: a title, gift
- * attribution, and an ordered list of memories (date / words / mood / shell). It
- * never touches coordinates — the layout engine derives the world from this doc
- * (see `lib/city-from-memories.ts`), so the builder's whole job is curating
- * *meaning* and letting the city arrange itself.
- *
- * Mirrors the constellation builder store: a `persist`ed `doc` + `selectedId`,
- * with add/update/remove/move/select memory actions and a `reset`. `partialize`
- * keeps only `doc` on device; the sync hook handles cloud save.
+ * The Memory City builder edits a **meaning-only** {@link CityDoc}.
  */
 
-/** A fresh city seeded from the sample so a new builder isn't an empty plaza. */
 export function starterDoc(): CityDoc {
   return {
     ...SEED_DOC,
-    // A unique id so each saved city seeds its own deterministic layout.
     id: "my-city",
     theme: SEED_DOC.theme ?? DEFAULT_THEME,
+    layoutEngineVersion: LAYOUT_ENGINE_VERSION,
     memories: SEED_DOC.memories.map((m) => ({ ...m })),
   };
 }
 
-/** Next memory id — `mem-N` one past the current max so removals never collide. */
 function nextMemoryId(memories: CityMemory[]): string {
   const max = memories.reduce((acc, m) => {
     const match = /^mem-(\d+)$/.exec(m.id);
@@ -37,7 +32,6 @@ function nextMemoryId(memories: CityMemory[]): string {
   return `mem-${max + 1}`;
 }
 
-/** A new memory dropped on today's date for the author to fill in. */
 function blankMemory(id: string): CityMemory {
   return {
     id,
@@ -53,16 +47,17 @@ type CityMeta = Pick<CityDoc, "title" | "from" | "to">;
 
 interface BuilderState {
   doc: CityDoc;
-  /** The memory currently being edited. */
   selectedId: string | null;
+  assets: Record<string, string>;
+  localPreviews: Record<string, string>;
 
-  loadDoc: (doc: CityDoc) => void;
+  loadDoc: (doc: CityDoc, assets?: Record<string, string>) => void;
+  registerPreview: (fileId: string, previewUrl: string) => void;
   setMeta: (patch: Partial<CityMeta>) => void;
 
   addMemory: () => void;
   updateMemory: (id: string, patch: Partial<Omit<CityMemory, "id">>) => void;
   removeMemory: (id: string) => void;
-  /** Reorder a memory (order sets the timeline spine when dates tie). */
   moveMemory: (id: string, dir: -1 | 1) => void;
   selectMemory: (id: string | null) => void;
 
@@ -74,9 +69,24 @@ export const useBuilderStore = create<BuilderState>()(
     (set) => ({
       doc: starterDoc(),
       selectedId: starterDoc().memories[0]?.id ?? null,
+      assets: {},
+      localPreviews: {},
 
-      loadDoc: (doc) =>
-        set({ doc, selectedId: doc.memories[0]?.id ?? null }),
+      loadDoc: (doc, assets = {}) =>
+        set({
+          doc: {
+            ...doc,
+            layoutEngineVersion:
+              doc.layoutEngineVersion ?? LAYOUT_ENGINE_VERSION,
+          },
+          selectedId: doc.memories[0]?.id ?? null,
+          assets,
+        }),
+
+      registerPreview: (fileId, previewUrl) =>
+        set((s) => ({
+          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+        })),
 
       setMeta: (patch) => set((s) => ({ doc: { ...s.doc, ...patch } })),
 
@@ -105,8 +115,6 @@ export const useBuilderStore = create<BuilderState>()(
             ...s.doc,
             memories: s.doc.memories
               .filter((m) => m.id !== id)
-              // Drop any `requires` that pointed at the removed memory so a node
-              // never waits on a memory that no longer exists.
               .map((m) =>
                 m.requires?.includes(id)
                   ? { ...m, requires: m.requires.filter((r) => r !== id) }
@@ -129,7 +137,12 @@ export const useBuilderStore = create<BuilderState>()(
       selectMemory: (id) => set({ selectedId: id }),
 
       reset: () =>
-        set({ doc: starterDoc(), selectedId: starterDoc().memories[0]?.id ?? null }),
+        set({
+          doc: starterDoc(),
+          selectedId: starterDoc().memories[0]?.id ?? null,
+          assets: {},
+          localPreviews: {},
+        }),
     }),
     {
       name: "kyndl:memory-city-builder",
@@ -138,7 +151,6 @@ export const useBuilderStore = create<BuilderState>()(
   ),
 );
 
-/** Mood options for the builder select. */
 export const MOOD_OPTIONS: { value: Mood; label: string }[] = [
   { value: "joyful", label: "Joyful" },
   { value: "nostalgic", label: "Nostalgic" },
@@ -147,10 +159,22 @@ export const MOOD_OPTIONS: { value: Mood; label: string }[] = [
   { value: "quiet", label: "Quiet" },
 ];
 
-/** Shell (building) options for the builder select. */
 export const SHELL_OPTIONS: { value: string; label: string }[] = [
   { value: "tower", label: "Tower" },
   { value: "pavilion", label: "Pavilion" },
   { value: "lantern", label: "Lantern" },
   { value: "vault", label: "Vault" },
+];
+
+export const GATE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "None" },
+  { value: "question", label: "Question" },
+  { value: "crossword", label: "Crossword" },
+  { value: "image-puzzle", label: "Image puzzle" },
+  { value: "time-lock", label: "Time lock" },
+];
+
+export const REWARD_OPTIONS: { value: string; label: string }[] = [
+  { value: "message", label: "Message (default)" },
+  { value: "mystery-box", label: "Mystery box" },
 ];

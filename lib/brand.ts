@@ -104,18 +104,3 @@ export const giftCollections = [
     accent: "from-[#FF9A7B]/30 via-[#F2596F]/15 to-transparent",
   },
 ] as const;
-
-export const testimonials = [
-  {
-    quote: "She opened it at midnight and cried.",
-    attribution: "— M., long-distance",
-  },
-  {
-    quote: "It felt more personal than any physical gift.",
-    attribution: "— J. & R., together 4 years",
-  },
-  {
-    quote: "Distance suddenly felt smaller.",
-    attribution: "— A., across time zones",
-  },
-] as const;

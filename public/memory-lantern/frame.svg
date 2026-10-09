@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="giltFace" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff6d2"/>
+      <stop offset="42%" stop-color="#e4be62"/>
+      <stop offset="100%" stop-color="#8a5a16"/>
+    </linearGradient>
+    <linearGradient id="giltEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8e0"/>
+      <stop offset="50%" stop-color="#b8862e"/>
+      <stop offset="100%" stop-color="#5c3a10"/>
+    </linearGradient>
+    <radialGradient id="garnet" cx="35%" cy="32%" r="70%">
+      <stop offset="0%" stop-color="#f4c2c2"/>
+      <stop offset="40%" stop-color="#9a3048"/>
+      <stop offset="100%" stop-color="#4a1424"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Moulding. The center stays clear so the photograph shows through. -->
+  <rect x="10" y="10" width="580" height="430" fill="none" stroke="#2a160c" stroke-width="6"/>
+  <rect x="18" y="18" width="564" height="414" fill="none" stroke="url(#giltFace)" stroke-width="22"/>
+  <rect x="36" y="36" width="528" height="378" fill="none" stroke="#3a2412" stroke-width="4"/>
+  <rect x="44" y="44" width="512" height="362" fill="none" stroke="url(#giltEdge)" stroke-width="3"/>
+  <rect x="54" y="54" width="492" height="342" fill="none" stroke="#f3dd9a" stroke-width="1.2" opacity="0.85"/>
+
+  <!-- Corner cartouches -->
+  <g fill="url(#giltFace)" stroke="#fff4d0" stroke-width="0.8">
+    <path d="M18 70 L18 18 L70 18 L58 34 L34 34 L34 58 Z"/>
+    <path d="M582 70 L582 18 L530 18 L542 34 L566 34 L566 58 Z"/>
+    <path d="M18 380 L18 432 L70 432 L58 416 L34 416 L34 392 Z"/>
+    <path d="M582 380 L582 432 L530 432 L542 416 L566 416 L566 392 Z"/>
+  </g>
+  <g>
+    <circle cx="40" cy="40" r="7" fill="url(#garnet)" stroke="#f6e2a8" stroke-width="1"/>
+    <circle cx="560" cy="40" r="7" fill="url(#garnet)" stroke="#f6e2a8" stroke-width="1"/>
+    <circle cx="40" cy="410" r="7" fill="url(#garnet)" stroke="#f6e2a8" stroke-width="1"/>
+    <circle cx="560" cy="410" r="7" fill="url(#garnet)" stroke="#f6e2a8" stroke-width="1"/>
+    <circle cx="38" cy="37" r="1.6" fill="#fff4d8"/>
+    <circle cx="558" cy="37" r="1.6" fill="#fff4d8"/>
+    <circle cx="38" cy="407" r="1.6" fill="#fff4d8"/>
+    <circle cx="558" cy="407" r="1.6" fill="#fff4d8"/>
+  </g>
+
+  <!-- Mid-edge diamonds -->
+  <g fill="url(#giltFace)">
+    <path d="M300 8 L312 22 L300 36 L288 22 Z"/>
+    <path d="M300 414 L312 428 L300 442 L288 428 Z"/>
+    <path d="M8 225 L22 237 L36 225 L22 213 Z"/>
+    <path d="M564 225 L578 237 L592 225 L578 213 Z"/>
+  </g>
+</svg>

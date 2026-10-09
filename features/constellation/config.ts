@@ -3,10 +3,18 @@
  *
  * Everything personal lives here. Rewrite the stars in your own voice before
  * gifting; nothing else in the feature needs to change. Six to twelve stars
- * feels right — under five reads as sparse, over fifteen gets crowded. The
- * order of `stars` is the order the lines connect them in, unless you define
- * `customEdges` to draw a deliberate shape instead.
+ * feels right — under five reads as sparse, over fifteen gets crowded.
+ *
+ * Positions and `customEdges` come from `lib/layout.ts`. Individual stars sit
+ * on a story path. Constellation mode gathers dated memories into one figure
+ * per week, month, or year. The builder reflows on add, remove, or a date
+ * change; authors can still drag a star.
  */
+
+export type SkyOrganization = "stars" | "constellations";
+
+/** How constellation mode buckets memories. Undated memories gather on their own. */
+export type GroupGrain = "week" | "month" | "year";
 
 export type StarSize = "small" | "medium" | "large";
 
@@ -45,6 +53,8 @@ export type Star = {
   image?: { fileId: string } | null;
   /** Who wrote this memory — stamped from the author's account, shown on the card. */
   author?: string;
+  /** Optional name for this stretch of the path ("the trip"). Shown as you pass it. */
+  stretch?: string;
   /** When true, a gated star re-asks its challenge every visit (vs. unlock once). */
   alwaysAsk?: boolean;
   /**
@@ -57,6 +67,11 @@ export type Star = {
    * A star with unmet requirements stays dim and untappable until they clear.
    */
   requires?: number[];
+  /**
+   * A line someone left in the sky. Overlay only — never saved on the creation.
+   * Faint, and it does not have to be read for the finale to light.
+   */
+  reply?: boolean;
 };
 
 /**
@@ -87,6 +102,8 @@ export type SoundConfig = {
   enabled: boolean;
   /** Start muted (recommended — sound resumes on the first tap). */
   startMuted: boolean;
+  /** Optional "our song" — a short loop, ducked under the chimes. */
+  song?: { fileId: string } | null;
 };
 
 export type WishConfig = {
@@ -95,24 +112,28 @@ export type WishConfig = {
 };
 
 /**
- * The dusk-meadow scene beneath the stars: a backlit romantic landscape with a
- * warm horizon, mountains, a tree, a couple on a blanket, and a wind-blown field
- * of grass + wildflowers. Set `enabled: false` for the plain dark-void sky.
+ * The night meadow beneath the stars: a high-contrast silhouette with cool
+ * horizon haze, ridges, a tree, a couple lying on their backs pointing up, and
+ * wind-blown grass. Set `enabled: false` for a plain deep-void sky.
  */
+export type GroundKind = "meadow" | "rooftop" | "shore";
+
 export type SceneConfig = {
   enabled: boolean;
+  /** The ground under the stars. The meadow is the default. */
+  ground?: GroundKind;
   /** Where the horizon/ground sits, as a % of viewport height from the top. */
   groundLevel: number;
   /** Height of the foreground grass band, as a % of viewport height. */
   grassBand: number;
-  /** Warm sunset tones on the horizon. */
+  /** Soft starlight tones on the horizon (cool silver, not sunset). */
   horizonGlow: string;
   horizonHaze: string;
-  /** Warm tint of the low clouds. */
+  /** Tint of the low clouds. */
   cloudTint: string;
   /** Near-black silhouette colour for ground and figures. */
   silhouette: string;
-  /** Glow colour of the wildflowers. */
+  /** Glow colour of sparse dew-points in the grass. */
   flowerColor: string;
   /** How quickly the wind cycles — lower is slower/calmer. */
   windSpeed: number;
@@ -168,7 +189,19 @@ export type SkyConfig = {
    * is [fromId, toId].
    */
   customEdges?: [number, number][];
+  /**
+   * `stars` keeps one memory per point on a path. `constellations` gathers
+   * each week, month, or year into its own figure. Absent on older skies,
+   * which stay a path of individual stars.
+   */
+  organization?: SkyOrganization;
+  /** Time bucket used when `organization` is `constellations`. */
+  groupBy?: GroupGrain;
 };
+
+/** Copy a brand-new star still carries. Publish refuses a sky that only has this. */
+export const PLACEHOLDER_STAR_LABEL = "a new memory";
+export const PLACEHOLDER_STAR_MEMORY = "Write the moment this star holds…";
 
 export const SKY_CONFIG: SkyConfig = {
   // ↓ Make it hers.
@@ -177,11 +210,13 @@ export const SKY_CONFIG: SkyConfig = {
   constellationName: "The two of us",
   subtitle: "tap a star to open a memory",
 
+  // Positions + edges come from the Celestial Bloom layout (Vogel spiral +
+  // branching asterism) — same algorithm the builder runs when memories are added.
   stars: [
     {
       id: 1,
-      x: 30,
-      y: 26,
+      x: 61.3,
+      y: 30,
       size: "large",
       label: "the beginning",
       date: "the night we met",
@@ -191,8 +226,8 @@ export const SKY_CONFIG: SkyConfig = {
     },
     {
       id: 2,
-      x: 49,
-      y: 17,
+      x: 37.7,
+      y: 37.2,
       size: "medium",
       label: "the long drive",
       date: "that first spring",
@@ -202,8 +237,8 @@ export const SKY_CONFIG: SkyConfig = {
     },
     {
       id: 3,
-      x: 67,
-      y: 28,
+      x: 52.3,
+      y: 13.8,
       size: "large",
       label: "somewhere far",
       date: "our first trip",
@@ -213,8 +248,8 @@ export const SKY_CONFIG: SkyConfig = {
     },
     {
       id: 4,
-      x: 60,
-      y: 47,
+      x: 65.1,
+      y: 42.8,
       size: "small",
       label: "the hard week",
       date: "later that year",
@@ -224,8 +259,8 @@ export const SKY_CONFIG: SkyConfig = {
     },
     {
       id: 5,
-      x: 41,
-      y: 49,
+      x: 20.5,
+      y: 26.7,
       size: "medium",
       label: "your day",
       date: "your birthday",
@@ -235,8 +270,8 @@ export const SKY_CONFIG: SkyConfig = {
     },
     {
       id: 6,
-      x: 24,
-      y: 45,
+      x: 80.7,
+      y: 17.8,
       size: "large",
       label: "when I knew",
       date: "an ordinary Tuesday",
@@ -246,8 +281,8 @@ export const SKY_CONFIG: SkyConfig = {
     },
     {
       id: 7,
-      x: 44,
-      y: 52,
+      x: 40.6,
+      y: 52.4,
       size: "medium",
       label: "still going",
       date: "and now",
@@ -257,31 +292,37 @@ export const SKY_CONFIG: SkyConfig = {
     },
   ],
 
-  lineStyle: "dashed",
-  lineColor: "rgba(255, 240, 200, 0.22)",
+  lineStyle: "solid",
+  lineColor: "rgba(235, 240, 255, 0.28)",
 
+  // Deep charcoal void — photographic night, not a painted blue dusk.
   skyColors: {
-    top: "#060f28",
-    middle: "#122146",
-    bottom: "#2b3a5e",
+    top: "#020308",
+    middle: "#05070e",
+    bottom: "#0a0c14",
   },
-  nebulaColor: "#1a2a55",
+  nebulaColor: "#12151f",
 
-  backgroundStarCount: 280,
-  shootingStarFrequency: 8000,
+  backgroundStarCount: 320,
+  shootingStarFrequency: 7500,
 
   allStarsOpenedMessage:
     "You've read every star in our sky. There are more being written every day. I love you.",
 
-  // A clean shape with a single fork at the centre rather than one long zig-zag.
+  organization: "stars",
+  groupBy: "month",
+
+  // Story spine + local branches for the sample sky.
   customEdges: [
     [1, 2],
     [2, 3],
-    [1, 6],
-    [6, 5],
-    [5, 4],
-    [4, 3],
-    [5, 7],
+    [3, 4],
+    [4, 5],
+    [5, 6],
+    [6, 7],
+    [1, 4],
+    [2, 7],
+    [1, 3],
   ],
 
   revealEdgesOnOpen: true,
@@ -289,7 +330,7 @@ export const SKY_CONFIG: SkyConfig = {
 
   finale: {
     glyph: "heart",
-    color: "rgba(255, 180, 190, 0.9)",
+    color: "rgba(255, 220, 230, 0.88)",
   },
 
   tour: {
@@ -304,14 +345,16 @@ export const SKY_CONFIG: SkyConfig = {
 
   scene: {
     enabled: true,
-    groundLevel: 70,
-    grassBand: 16,
-    horizonGlow: "#d98a4f",
-    horizonHaze: "#9c5a7a",
-    cloudTint: "#caa1b8",
-    silhouette: "#03060d",
-    flowerColor: "rgba(255, 222, 140, 0.9)",
-    windSpeed: 0.5,
+    ground: "meadow",
+    // Lying on your back: the ground is only the bottom edge of the frame.
+    groundLevel: 91,
+    grassBand: 9,
+    horizonGlow: "#8a92a8",
+    horizonHaze: "#3a4050",
+    cloudTint: "#6a7288",
+    silhouette: "#010204",
+    flowerColor: "rgba(210, 220, 240, 0.5)",
+    windSpeed: 0.4,
   },
 
   wish: {

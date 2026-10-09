@@ -1,32 +1,38 @@
 import {
+  CreateKeepsakeFab,
   ExperienceGallery,
-  FinalCta,
   HeroSection,
   HowItWorks,
+  MemoryBankSpotlight,
+  PlayAndNight,
   Testimonials,
 } from "@/components/landing";
 import { createMetadata } from "@/lib/seo";
 import { getFeaturedExperiencesView } from "@/lib/server/experiences";
+import { getApprovedTestimonials } from "@/lib/server/testimonials";
 
 export const metadata = createMetadata({
   title: "Moments made to be felt",
   description:
-    "Kyndl turns what you feel into keepsakes they can hold — a page-turning scrapbook, a night sky of your moments, a jar of little notes, and more. Personalized in minutes.",
+    "Keep the days in a Memory Bank, then grow them into a scrapbook, a night sky, a jar of notes — or craft any Kyndl experience on its own. Personalized in minutes.",
   path: "/",
 });
 
 export default async function HomePage() {
-  const featured = await getFeaturedExperiencesView();
+  const [featured, testimonials] = await Promise.all([
+    getFeaturedExperiencesView(),
+    getApprovedTestimonials(),
+  ]);
   return (
     <>
-      {/* A tight funnel: feel it → see the real experiences → how it works →
-          proof → act. The old generic "scratch/card/blur" demo was removed —
-          it showed gimmicks, not the actual products the gallery already sells. */}
+      {/* Funnel: feel it → the bank → experiences → how → play/nights → proof. */}
       <HeroSection />
+      <MemoryBankSpotlight />
       <ExperienceGallery experiences={featured} />
       <HowItWorks />
-      <Testimonials />
-      <FinalCta />
+      <PlayAndNight />
+      <Testimonials items={testimonials} />
+      <CreateKeepsakeFab />
     </>
   );
 }

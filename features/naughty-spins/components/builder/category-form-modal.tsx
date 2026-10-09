@@ -4,11 +4,11 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { lineText } from "@/features/activity-bank/map";
+
 import { CATEGORY_COLORS, type SpinCategory } from "../../config";
-import {
-  categoryDefaults,
-  useBuilderStore,
-} from "../../store/builder.store";
+import { categoryDefaults, useBuilderStore } from "../../store/builder.store";
 
 interface FormState {
   label: string;
@@ -21,8 +21,7 @@ function initialState(
   category: SpinCategory | null,
   defaultColor: string,
 ): FormState {
-  if (!category)
-    return { label: "", color: defaultColor, promptsText: "" };
+  if (!category) return { label: "", color: defaultColor, promptsText: "" };
   return {
     label: category.label,
     color: category.color,
@@ -58,6 +57,7 @@ export function CategoryFormModal({
     initialState(category, categoryDefaults(categories).color),
   );
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
+  const [bankOpen, setBankOpen] = useState(false);
 
   // Close on Escape.
   useEffect(() => {
@@ -158,6 +158,13 @@ export function CategoryFormModal({
           </Field>
 
           <Field label={`Prompts — one per line (${promptCount})`}>
+            <button
+              type="button"
+              onClick={() => setBankOpen(true)}
+              className="mb-2 rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+            >
+              Add from the bank
+            </button>
             <textarea
               className={`${inputCls} min-h-[160px] resize-y`}
               value={form.promptsText}
@@ -187,6 +194,19 @@ export function CategoryFormModal({
           </button>
         </div>
       </div>
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind={/talk/i.test(form.label) ? "truth" : "dare"}
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const lines = picked.map((item) => lineText(item));
+          const existing = form.promptsText.trim();
+          patch({
+            promptsText: [existing, ...lines].filter(Boolean).join("\n"),
+          });
+        }}
+      />
     </div>
   );
 }

@@ -7,13 +7,10 @@ import type { Star } from "@/features/constellation/config";
 
 type MemoryCardProps = {
   star: Star;
-  /** The star's resolved photo URL (uploaded image or legacy path), or null. */
   imageUrl?: string | null;
   onClose: () => void;
 };
 
-/** Format an ISO `YYYY-MM-DD` as a warm, readable date (e.g. "14 February 2024").
- * Returns "" for a missing/unparseable value so callers can fall back. */
 function formatMemoryDate(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -26,16 +23,14 @@ function formatMemoryDate(iso?: string): string {
 }
 
 /**
- * The opened memory, shown as a centred card over a dimmed sky. It rises and
- * brightens from the star like the moment is being lifted down out of the night
- * to be read. Serif type and warm starlight tones keep it of-a-piece with the
- * sky rather than a generic dialog. Closes on ×, backdrop click, or Esc.
+ * The opened memory, still inside the night. The camera has leaned into the
+ * star; the photo blooms from that point and the words sit in starlight, with
+ * the meadow left visible behind a light veil.
  */
 export function MemoryCard({ star, imageUrl, onClose }: MemoryCardProps) {
   const reduceMotion = useReducedMotion();
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  // Make the dialog immediately keyboard-operable and wire Escape to dismiss.
   useEffect(() => {
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -45,113 +40,84 @@ export function MemoryCard({ star, imageUrl, onClose }: MemoryCardProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const formatted = formatMemoryDate(star.timestamp);
+  const kicker = formatted || star.date;
+  const subtitle = formatted && star.date ? star.date : "";
+
   return (
     <motion.div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-5"
+      className="fixed inset-0 z-[60] flex items-end justify-center px-5 pt-16 pb-[22%] sm:items-center sm:pb-28"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.45 }}
       onClick={onClose}
     >
-      {/* dim the sky behind the memory */}
       <div
         aria-hidden
         className="absolute inset-0"
-        style={{
-          background: "rgba(2, 6, 18, 0.62)",
-          backdropFilter: "blur(3px)",
-        }}
+        style={{ background: "rgba(2, 4, 12, 0.28)" }}
       />
 
       <motion.div
         role="dialog"
         aria-modal="true"
         aria-label={star.label}
-        className="relative w-full max-w-[380px]"
+        className="relative w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
-        initial={
-          reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 24 }
-        }
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={
-          reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 16 }
-        }
-        transition={{ duration: 0.42, ease: "easeOut" }}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
-        <div
-          className="relative overflow-hidden rounded-2xl px-7 pt-9 pb-8"
-          style={{
-            background:
-              "linear-gradient(165deg, rgba(20,16,48,0.96) 0%, rgba(8,10,30,0.97) 100%)",
-            boxShadow:
-              "0 30px 80px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,232,180,0.14), 0 0 60px rgba(120,90,220,0.18)",
-          }}
+        <button
+          ref={closeRef}
+          type="button"
+          aria-label="Close memory"
+          onClick={onClose}
+          className="absolute -top-10 right-0 text-sm tracking-[0.18em] text-[#c4cad8] uppercase outline-none hover:text-white"
         >
-          {/* a soft glow at the top, like the star this came from */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-16 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full blur-3xl"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255,226,168,0.4) 0%, transparent 70%)",
-            }}
-          />
+          close
+        </button>
 
-          <button
-            ref={closeRef}
-            type="button"
-            aria-label="Close memory"
-            onClick={onClose}
-            className="absolute right-3.5 top-3 text-2xl leading-none text-[#9a96b8] outline-none transition-colors hover:text-[#f3ead2] focus-visible:text-[#f3ead2]"
-          >
-            ×
-          </button>
-
-          {imageUrl ? (
-            <div className="relative mb-5 aspect-[4/3] w-full overflow-hidden rounded-lg">
+        {imageUrl ? (
+          <div className="mb-5 flex justify-center">
+            <div
+              className="relative size-36 overflow-hidden rounded-full sm:size-44"
+              style={{
+                boxShadow:
+                  "0 0 40px 12px rgba(255, 236, 210, 0.35), 0 0 0 1px rgba(255,255,255,0.35)",
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element -- uploaded/presigned or /public URL */}
               <img
                 src={imageUrl}
                 alt={star.label}
-                className="absolute inset-0 h-full w-full object-cover"
+                className="h-full w-full object-cover"
               />
             </div>
+          </div>
+        ) : null}
+
+        <div className="max-h-[46dvh] overflow-y-auto text-center">
+          {kicker ? (
+            <p className="font-serif mb-1 text-sm text-[#d7c4a2] italic [text-shadow:0_1px_10px_rgba(0,0,0,0.85)]">
+              {kicker}
+            </p>
           ) : null}
-
-          {(() => {
-            // Kicker line: the real date if set, otherwise the free-text caption.
-            const formatted = formatMemoryDate(star.timestamp);
-            const kicker = formatted || star.date;
-            // Keep the caption as a subtitle only when a real date took the kicker.
-            const subtitle = formatted && star.date ? star.date : "";
-            return (
-              <>
-                {kicker ? (
-                  <p className="mb-1 text-xs font-medium tracking-[0.22em] text-[#c8b88a] uppercase">
-                    {kicker}
-                  </p>
-                ) : null}
-                <h2 className="font-serif mb-1 text-2xl leading-tight text-[#f6efdd]">
-                  {star.label}
-                </h2>
-                {subtitle ? (
-                  <p className="font-serif mb-3 text-sm text-[#b9b2d0] italic">
-                    {subtitle}
-                  </p>
-                ) : (
-                  <div className="mb-3" />
-                )}
-              </>
-            );
-          })()}
-
-          <p className="font-serif whitespace-pre-line text-[15px] leading-relaxed text-[#d8d3e8]">
+          <h2 className="font-serif text-3xl leading-tight text-[#f7f4ee] [text-shadow:0_2px_18px_rgba(0,0,0,0.9)]">
+            {star.label}
+          </h2>
+          {subtitle ? (
+            <p className="font-serif mt-1 text-sm text-[#c4cad8] italic [text-shadow:0_1px_10px_rgba(0,0,0,0.85)]">
+              {subtitle}
+            </p>
+          ) : null}
+          <p className="font-serif mt-4 text-[17px] leading-relaxed whitespace-pre-line text-[#f0f2f7] [text-shadow:0_1px_12px_rgba(0,0,0,0.95)]">
             {star.memory}
           </p>
-
           {star.author ? (
-            <p className="font-serif mt-5 text-right text-sm text-[#9a96b8]">
+            <p className="font-serif mt-5 text-sm text-[#d7c4a2] italic [text-shadow:0_1px_10px_rgba(0,0,0,0.85)]">
               — {star.author}
             </p>
           ) : null}

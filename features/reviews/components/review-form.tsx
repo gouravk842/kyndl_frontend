@@ -14,23 +14,42 @@ interface ReviewFormProps {
   existing?: Review | null;
   submitting?: boolean;
   onSubmit: (input: ReviewInput) => void;
+  /**
+   * `keepsake` softens product-review copy for recipient reactions on `/v`
+   * and shows the marketing-UGC consent checkbox.
+   */
+  tone?: "default" | "keepsake";
 }
 
 const MAX_BODY = 2000;
 
 /** The write surface: pick a rating, add an optional title + body, submit. */
-export function ReviewForm({ existing, submitting, onSubmit }: ReviewFormProps) {
+export function ReviewForm({
+  existing,
+  submitting,
+  onSubmit,
+  tone = "default",
+}: ReviewFormProps) {
   const [rating, setRating] = useState(existing?.rating ?? 0);
   const [title, setTitle] = useState(existing?.title ?? "");
   const [body, setBody] = useState(existing?.body ?? "");
+  const [allowMarketing, setAllowMarketing] = useState(
+    existing?.allow_marketing_use ?? false,
+  );
 
   const isEditing = Boolean(existing);
   const canSubmit = rating >= 1 && !submitting;
+  const keepsake = tone === "keepsake";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    onSubmit({ rating, title: title.trim(), body: body.trim() });
+    onSubmit({
+      rating,
+      title: title.trim(),
+      body: body.trim(),
+      allow_marketing_use: keepsake ? allowMarketing : false,
+    });
   };
 
   return (
@@ -40,13 +59,25 @@ export function ReviewForm({ existing, submitting, onSubmit }: ReviewFormProps) 
     >
       <div className="flex flex-col gap-2">
         <span className="text-sm font-medium text-foreground">
-          {isEditing ? "Update your review" : "Write a review"}
+          {keepsake
+            ? isEditing
+              ? "Update how it felt"
+              : "Tap a star"
+            : isEditing
+              ? "Update your review"
+              : "Write a review"}
         </span>
-        <StarRatingInput value={rating} onChange={setRating} disabled={submitting} />
+        <StarRatingInput
+          value={rating}
+          onChange={setRating}
+          disabled={submitting}
+        />
       </div>
 
       <Input
-        placeholder="Add a headline (optional)"
+        placeholder={
+          keepsake ? "A short headline (optional)" : "Add a headline (optional)"
+        }
         value={title}
         maxLength={120}
         onChange={(e) => setTitle(e.target.value)}
@@ -55,10 +86,14 @@ export function ReviewForm({ existing, submitting, onSubmit }: ReviewFormProps) 
 
       <div className="space-y-1">
         <textarea
-          placeholder="Share your honest experience — what did you love, what could be better?"
+          placeholder={
+            keepsake
+              ? "A few words, if you want — what stayed with you?"
+              : "Share your honest experience — what did you love, what could be better?"
+          }
           value={body}
           maxLength={MAX_BODY}
-          rows={4}
+          rows={keepsake ? 3 : 4}
           onChange={(e) => setBody(e.target.value)}
           disabled={submitting}
           className={cn(
@@ -72,12 +107,40 @@ export function ReviewForm({ existing, submitting, onSubmit }: ReviewFormProps) 
         </div>
       </div>
 
+      {keepsake && (
+        <label className="flex cursor-pointer items-start gap-2.5 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={allowMarketing}
+            onChange={(e) => setAllowMarketing(e.target.checked)}
+            disabled={submitting}
+            className="mt-0.5 size-4 shrink-0 rounded border-input"
+          />
+          <span>
+            Kyndl may share this anonymously so others can feel what a keepsake
+            is like.
+          </span>
+        </label>
+      )}
+
       <div className="flex items-center gap-3">
         <Button type="submit" size="lg" disabled={!canSubmit}>
-          {submitting ? "Saving…" : isEditing ? "Update review" : "Post review"}
+          {submitting
+            ? "Saving…"
+            : isEditing
+              ? keepsake
+                ? "Update"
+                : "Update review"
+              : keepsake
+                ? "Share how it felt"
+                : "Post review"}
         </Button>
         {rating === 0 && (
-          <span className="text-xs text-muted-foreground">Pick a star rating to continue.</span>
+          <span className="text-xs text-muted-foreground">
+            {keepsake
+              ? "Pick a star to continue."
+              : "Pick a star rating to continue."}
+          </span>
         )}
       </div>
     </form>

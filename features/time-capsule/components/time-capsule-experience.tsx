@@ -87,7 +87,7 @@ export function TimeCapsuleExperience({
         style={{ background: theme.glow }}
       />
 
-      <div className="relative mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center px-5 py-16">
+      <div className="relative mx-auto flex min-h-full max-w-3xl flex-col items-center justify-center px-5 py-8 md:py-16">
         <AnimatePresence mode="wait">
           {open ? (
             <OpenedCapsule
@@ -276,10 +276,7 @@ function OpenedCapsule({
         )}
       </article>
 
-      {music && (
-         
-        <audio src={music} autoPlay loop className="sr-only" />
-      )}
+      {music && <audio src={music} autoPlay loop className="sr-only" />}
     </motion.div>
   );
 }

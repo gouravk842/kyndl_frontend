@@ -81,6 +81,7 @@ const cityConfigSchema = z.object({
   nodes: z.array(memoryNodeSchema),
   fabric: fabricSchema.optional(),
   mode: z.enum(["play", "edit"]).optional(),
+  layoutEngineVersion: z.number().optional(),
 });
 
 /** Mood enum exposed for modules that want to reuse it in their own schemas. */

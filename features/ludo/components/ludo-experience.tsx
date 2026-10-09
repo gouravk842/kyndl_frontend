@@ -19,7 +19,7 @@ const LudoGame = dynamic(() => import("./ludo-game").then((m) => m.LudoGame), {
 });
 
 /**
- * The Ludo experience. On the marketing `/games/ludo` page it opens on the setup
+ * The Ludo experience. On the product page embed it opens on the setup
  * screen; a saved/shared creation passes `config` so it starts straight into the
  * authored game (see the public viewer + builder preview).
  */

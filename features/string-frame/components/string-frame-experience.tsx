@@ -7,6 +7,7 @@ import {
   type StringFrameConfig,
   themeFor,
 } from "@/features/string-frame/config";
+import { cn } from "@/lib/utils";
 
 import { BackgroundMusic } from "./background-music";
 import { GiftBox } from "./gift-box";
@@ -48,7 +49,10 @@ export function StringFrameExperience({
 
   return (
     <div
-      className={`relative isolate flex w-full flex-col items-center justify-center overflow-hidden px-4 py-14 ${className}`}
+      className={cn(
+        "relative isolate flex w-full flex-col items-center justify-center overflow-hidden px-4 py-14",
+        className,
+      )}
     >
       {/* themed full-bleed background */}
       <div

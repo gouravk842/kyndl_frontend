@@ -9,6 +9,7 @@ import type {
   CheckoutResult,
   GiftProduct,
   Order,
+  ProductCategory,
   PublicStore,
   WishlistItem,
 } from "@/types/gift";
@@ -21,17 +22,32 @@ const BASE = "/gifts";
 export const giftService = {
   // Public catalog of active gifts, with optional search + sorting.
   catalog(params?: CatalogParams) {
-    return apiRequest<GiftProduct[]>({ method: "GET", url: `${BASE}/catalog`, params });
+    return apiRequest<GiftProduct[]>({
+      method: "GET",
+      url: `${BASE}/catalog`,
+      params,
+    });
   },
 
   // Public product detail by slug.
   product(slug: string) {
-    return apiRequest<GiftProduct>({ method: "GET", url: `${BASE}/catalog/${slug}` });
+    return apiRequest<GiftProduct>({
+      method: "GET",
+      url: `${BASE}/catalog/${slug}`,
+    });
   },
 
   // Public list of shipping carriers for the fulfillment dropdown.
   carriers() {
     return apiRequest<Carrier[]>({ method: "GET", url: `${BASE}/carriers` });
+  },
+
+  // Public product taxonomy (master categories + their subcategories).
+  categories() {
+    return apiRequest<ProductCategory[]>({
+      method: "GET",
+      url: `${BASE}/categories`,
+    });
   },
 
   // Create an order from the cart + shipping address; returns checkout params.
@@ -55,23 +71,39 @@ export const giftService = {
 
   // Price a cart (per-vendor shipping) without creating an order.
   quote(items: CartLine[]) {
-    return apiRequest<CartQuote>({ method: "POST", url: `${BASE}/quote`, data: { items } });
+    return apiRequest<CartQuote>({
+      method: "POST",
+      url: `${BASE}/quote`,
+      data: { items },
+    });
   },
 
   // Public vendor storefront.
   store(slug: string) {
-    return apiRequest<PublicStore>({ method: "GET", url: `${BASE}/shops/${slug}` });
+    return apiRequest<PublicStore>({
+      method: "GET",
+      url: `${BASE}/shops/${slug}`,
+    });
   },
 
   // ── Wishlist ──────────────────────────────────────────────────────────
   wishlist() {
-    return apiRequest<WishlistItem[]>({ method: "GET", url: `${BASE}/wishlist` });
+    return apiRequest<WishlistItem[]>({
+      method: "GET",
+      url: `${BASE}/wishlist`,
+    });
   },
   addToWishlist(slug: string) {
-    return apiRequest<WishlistItem>({ method: "POST", url: `${BASE}/wishlist/${slug}` });
+    return apiRequest<WishlistItem>({
+      method: "POST",
+      url: `${BASE}/wishlist/${slug}`,
+    });
   },
   removeFromWishlist(slug: string) {
-    return apiRequest<void>({ method: "DELETE", url: `${BASE}/wishlist/${slug}` });
+    return apiRequest<void>({
+      method: "DELETE",
+      url: `${BASE}/wishlist/${slug}`,
+    });
   },
 
   // ── Saved addresses ───────────────────────────────────────────────────
@@ -79,12 +111,23 @@ export const giftService = {
     return apiRequest<Address[]>({ method: "GET", url: `${BASE}/addresses` });
   },
   createAddress(payload: AddressInput) {
-    return apiRequest<Address>({ method: "POST", url: `${BASE}/addresses`, data: payload });
+    return apiRequest<Address>({
+      method: "POST",
+      url: `${BASE}/addresses`,
+      data: payload,
+    });
   },
   updateAddress(id: string, payload: Partial<AddressInput>) {
-    return apiRequest<Address>({ method: "PATCH", url: `${BASE}/addresses/${id}`, data: payload });
+    return apiRequest<Address>({
+      method: "PATCH",
+      url: `${BASE}/addresses/${id}`,
+      data: payload,
+    });
   },
   deleteAddress(id: string) {
-    return apiRequest<void>({ method: "DELETE", url: `${BASE}/addresses/${id}` });
+    return apiRequest<void>({
+      method: "DELETE",
+      url: `${BASE}/addresses/${id}`,
+    });
   },
 };

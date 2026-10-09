@@ -1,25 +1,21 @@
 "use client";
 
-import {
-  ImagePlus,
-  Loader2,
-  MapPin,
-  Search,
-  X,
-} from "lucide-react";
-import {
-  type ChangeEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ImagePlus, Loader2, X } from "lucide-react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { SignInLink } from "@/components/auth/sign-in-link";
+import {
+  type GeoResult,
+  LocationSearch,
+} from "@/features/our-places/components/location-search";
 import { fileService } from "@/services/files/file.service";
 
-import { CATEGORY_META, type PlaceCategory, type PlaceMood } from "../../config";
-import { type GeoResult, searchLocations } from "../../lib/geocode";
+import {
+  CATEGORY_META,
+  type PlaceCategory,
+  type PlaceMood,
+} from "../../config";
 import { useBuilderStore } from "../../store/builder.store";
 import type { PlaceDoc } from "../../types";
 
@@ -86,7 +82,10 @@ export function PlaceFormModal({
 
   const [form, setForm] = useState<FormState>(() => initialState(place));
   // Photo staged locally until save: { fileId, previewUrl } or null (none/removed).
-  const [photo, setLocalPhoto] = useState<{ fileId: string; url: string } | null>(
+  const [photo, setLocalPhoto] = useState<{
+    fileId: string;
+    url: string;
+  } | null>(
     place?.photo
       ? {
           fileId: place.photo.fileId,
@@ -148,7 +147,10 @@ export function PlaceFormModal({
       if (photo) setPhoto(place.id, photo.fileId, photo.url);
       else removePhoto(place.id);
     } else {
-      const id = createPlace({ ...data, photo: photo ? { fileId: photo.fileId } : undefined });
+      const id = createPlace({
+        ...data,
+        photo: photo ? { fileId: photo.fileId } : undefined,
+      });
       if (photo) setPhoto(id, photo.fileId, photo.url);
     }
     onClose();
@@ -181,8 +183,11 @@ export function PlaceFormModal({
         {/* Body */}
         <div className="space-y-4 overflow-y-auto px-5 py-5">
           <LocationSearch
+            key={place?.id ?? "new-place"}
+            inputId="place-location"
             lat={form.lat}
             lng={form.lng}
+            label={form.name}
             onPick={onPickLocation}
           />
 
@@ -290,102 +295,6 @@ export function PlaceFormModal({
         </div>
       </div>
     </div>
-  );
-}
-
-// ── Location autocomplete ──────────────────────────────────────────
-function LocationSearch({
-  lat,
-  lng,
-  onPick,
-}: {
-  lat: number | null;
-  lng: number | null;
-  onPick: (r: GeoResult) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<GeoResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  // Debounced search; aborts the previous request on each new keystroke. All
-  // state updates happen inside the timeout, never synchronously in the effect.
-  useEffect(() => {
-    const q = query.trim();
-    const controller = new AbortController();
-    const t = setTimeout(async () => {
-      if (q.length < 3) {
-        setResults([]);
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const found = await searchLocations(q, controller.signal);
-        setResults(found);
-        setOpen(true);
-      } catch (err) {
-        if (!controller.signal.aborted) {
-          toast.error(
-            err instanceof Error ? err.message : "Location search failed.",
-          );
-        }
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }, 400);
-    return () => {
-      controller.abort();
-      clearTimeout(t);
-    };
-  }, [query]);
-
-  return (
-    <Field label="Location">
-      <div className="relative">
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#b29a89]" />
-          <input
-            className={`${inputCls} pl-9`}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => results.length && setOpen(true)}
-            placeholder="Search for a place or address…"
-            autoComplete="off"
-          />
-          {loading && (
-            <Loader2 className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-[#b29a89]" />
-          )}
-        </div>
-
-        {open && results.length > 0 && (
-          <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-[#e3d2c5] bg-white shadow-lg">
-            {results.map((r) => (
-              <li key={r.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onPick(r);
-                    setQuery(r.label);
-                    setOpen(false);
-                  }}
-                  className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-[#fbeee6]"
-                >
-                  <MapPin className="mt-0.5 size-3.5 shrink-0 text-[#c75b39]" />
-                  <span className="text-sm text-[#3a2a25]">{r.label}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[#92786c]">
-        <MapPin className="size-3.5 shrink-0" />
-        {lat !== null && lng !== null
-          ? `Pinned at ${lat.toFixed(4)}, ${lng.toFixed(4)}`
-          : "No location selected yet."}
-      </p>
-    </Field>
   );
 }
 

@@ -9,8 +9,9 @@ import {
   type MediaRef,
   themeFor,
 } from "@/features/countdown/config";
+import { cn } from "@/lib/utils";
 
-import { formatTarget, type Remaining,remainingFrom } from "../lib/time";
+import { formatTarget, type Remaining, remainingFrom } from "../lib/time";
 import { BackgroundMusic } from "./background-music";
 import { Clock } from "./clock";
 import { Confetti } from "./confetti";
@@ -78,7 +79,10 @@ export function CountdownExperience({
 
   return (
     <div
-      className={`relative isolate flex w-full flex-col items-center justify-center overflow-hidden px-4 py-14 ${className}`}
+      className={cn(
+        "relative isolate flex w-full flex-col items-center justify-center overflow-hidden px-4 py-14",
+        className,
+      )}
     >
       {/* themed full-bleed background */}
       <div
@@ -114,7 +118,7 @@ export function CountdownExperience({
         }
       />
 
-      <div className="relative z-10 flex w-full flex-col items-center">
+      <div className="relative z-10 flex flex-col items-center text-center">
         <AnimatePresence mode="wait">
           {showReveal ? (
             <Reveal
@@ -126,7 +130,7 @@ export function CountdownExperience({
           ) : (
             <motion.div
               key="counting"
-              className="flex w-full flex-col items-center text-center"
+              className="flex flex-col items-center"
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}

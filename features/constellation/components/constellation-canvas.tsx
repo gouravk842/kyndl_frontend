@@ -8,7 +8,7 @@ type ConstellationCanvasProps = {
 
 /**
  * The painted sky. All it does is hand the engine a full-bleed `<canvas>` to
- * draw into — every pixel (gradient, nebula, stars, lines, shooting stars)
+ * draw into — every pixel (gradient, nebula, stars, shooting stars)
  * comes from the rAF loop in `useConstellationEngine`. It's purely decorative
  * and unreachable by keyboard; the interactive stars live in the hit layer
  * stacked on top, so this is marked `aria-hidden`.

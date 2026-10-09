@@ -1,12 +1,9 @@
 /**
  * Single source of truth for Kyndl's experiences (products).
  *
- * Powers three surfaces:
- *   - the landing bento  (`featuredExperiences` — the live ones)
- *   - the /experiences listing page (all of them, with status)
- *   - the /experiences/[slug] product pages (live ones get a marketing page)
- *
- * `icon` values are lucide names resolved via `lib/experience-icons`.
+ * Powers marketing pages, the dashboard, and builders. Card covers are set via
+ * `previewImage` and rendered everywhere through `ExperienceCardMedia`
+ * (`lib/experience-media`) — never hardcode image paths in UI components.
  */
 
 export type ExperienceStatus = "live" | "soon";
@@ -36,8 +33,14 @@ export type Experience = {
   liveHref: string | null;
   /** Hover wash gradient for cards. */
   accent: string;
-  /** Big preview block background on the product page + listing. */
+  /** Fallback wash when `previewImage` is missing (hero + card fallback). */
   previewGradient: string;
+  /**
+   * Card cover still for this experience. Resolved centrally via
+   * `getExperienceMedia` / `ExperienceCardMedia` — do not hardcode paths in UI.
+   * Add the asset under `public/` and set the path here; every card updates.
+   */
+  previewImage?: string;
   /** Bento weight on the landing gallery. */
   span: "feature" | "wide" | "small";
   /**
@@ -50,8 +53,7 @@ export type Experience = {
    * When true, the live experience plays inside the right-hand preview card of
    * the two-column product hero (instead of the static gradient placeholder),
    * while the left column keeps its copy and CTAs. Unlike `embedded`, the hero
-   * layout is unchanged. `liveHref` still points at the standalone fullscreen
-   * route, surfaced as an "Open full screen" CTA.
+   * layout is unchanged. `liveHref` points at this same product page.
    */
   inlineEmbed?: boolean;
   /** Where the "Make your own" CTA goes (a builder). Defaults to /register. */
@@ -83,6 +85,7 @@ export const experiences: Experience[] = [
     accent: "from-[#FF7A59]/22 via-[#F2596F]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fffdf6 0%, #f7e6cf 55%, #efd6b8 100%)",
+    previewImage: "/digital_scrapbook.png",
     span: "feature",
     highlights: [
       {
@@ -132,6 +135,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F0A13D]/22 via-[#FF7A59]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fffdf6 0%, #f0dcc0 55%, #d8b88f 100%)",
+    previewImage: "/memories.png",
     span: "wide",
     highlights: [
       {
@@ -175,11 +179,13 @@ export const experiences: Experience[] = [
       "A quiet night sky that belongs to just the two of you. Each bright star is a memory; the lines between them trace a shape only you'd recognise. Touch a star and the moment opens.",
     icon: "Sparkles",
     status: "live",
-    liveHref: "/constellation",
+    liveHref: "/experiences/constellation",
+    inlineEmbed: true,
     makeHref: "/constellation/build",
     accent: "from-[#F0A13D]/22 via-[#FF7A59]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 70% 25%, #2a2350 0%, #161033 60%, #0d0a22 100%)",
+    previewImage: "/constellations.jpg",
     span: "wide",
     highlights: [
       {
@@ -223,11 +229,13 @@ export const experiences: Experience[] = [
       "Every memory becomes a place in a city that arranges and grows itself as you add to it. Walk its streets at dusk, find the glowing buildings that hold your moments, and open them one by one.",
     icon: "Building2",
     status: "live",
-    liveHref: "/memory-city",
+    liveHref: "/experiences/memory-city",
+    inlineEmbed: true,
     makeHref: "/memory-city/build",
     accent: "from-[#7FD9FF]/22 via-[#A98BFF]/10 to-transparent",
     previewGradient:
       "linear-gradient(160deg, #2a2f6b 0%, #4a4a8a 45%, #f0a868 100%)",
+    previewImage: "/memory_city.png",
     span: "wide",
     highlights: [
       {
@@ -243,7 +251,8 @@ export const experiences: Experience[] = [
       {
         icon: "Sparkles",
         title: "Unlock each memory",
-        description: "Some are sealed behind a little puzzle only you two solve.",
+        description:
+          "Some are sealed behind a little puzzle only you two solve.",
       },
     ],
     steps: [
@@ -271,7 +280,8 @@ export const experiences: Experience[] = [
       "A hand-tied bouquet where every chocolate is a memory. They pick one, peel the foil back with a drag, and the moment tucked inside slides out — a photo, a note, a secret, a milestone, or your voice. One sweet at a time.",
     icon: "Gift",
     status: "live",
-    liveHref: "/chocolate-bouquet",
+    liveHref: "/experiences/chocolate-bouquet",
+    inlineEmbed: true,
     makeHref: "/chocolate-bouquet/build",
     accent: "from-[#F0A13D]/22 via-[#D6465A]/10 to-transparent",
     previewGradient:
@@ -286,7 +296,8 @@ export const experiences: Experience[] = [
       {
         icon: "Hand",
         title: "Tear it open",
-        description: "Drag the foil back to unwrap each one, just like the real thing.",
+        description:
+          "Drag the foil back to unwrap each one, just like the real thing.",
       },
       {
         icon: "Sparkles",
@@ -312,48 +323,55 @@ export const experiences: Experience[] = [
   {
     slug: "memory-lantern",
     name: "Memory Lantern",
-    eyebrow: "A living light",
+    eyebrow: "Opening night",
     tagline:
-      "A slowly turning lantern of glowing photo-facets — the side facing you wakes, and lights the room its colour.",
+      "Curtains part, a spotlight finds the stage, and each memory is lowered into the light.",
     description:
-      "A softly glowing lantern that floats in a warm dark room. Every facet holds a memory; as it turns, the one facing you wakes — sharpens, tells its moment — while the whole room glows that photo's colour. Add more memories and the lantern grows, from a simple cube toward a glowing orb.",
+      "A private opening night, just for them. Velvet curtains part and stay tied back. A spotlight searches an empty gold podium, then each photo is lowered onto it — one at a time — while the room takes that memory's colour. Footlights mark how far they've come, and the last words are spoken over the final picture.",
     icon: "Flame",
     status: "live",
-    liveHref: "/memory-lantern",
+    liveHref: "/experiences/memory-lantern",
+    inlineEmbed: true,
     makeHref: "/memory-lantern/build",
     accent: "from-[#F0C48A]/22 via-[#E07A5F]/10 to-transparent",
     previewGradient:
-      "radial-gradient(ellipse 65% 60% at 50% 42%, #4a2f1e 0%, #241019 55%, #0a0710 100%)",
+      "radial-gradient(ellipse 70% 58% at 50% 62%, #6e2438 0%, #2a1018 46%, #0a0710 100%)",
+    previewImage: "/memory_lantern.png",
     span: "wide",
     highlights: [
       {
         icon: "Flame",
-        title: "It lights the room",
-        description: "The room glows the colour of whichever memory is facing you.",
+        title: "The light finds them",
+        description:
+          "A spotlight searches the dark, then locks on an empty stage before the first memory arrives.",
       },
       {
         icon: "Images",
-        title: "A facet per memory",
-        description: "Each side wakes and tells its moment as it turns to face you.",
+        title: "One memory, on the podium",
+        description:
+          "Each photo is lowered onto a lit platform, its title above the frame and a note beside it when you write one.",
       },
       {
         icon: "Sparkles",
-        title: "It grows with you",
-        description: "Add memories and the lantern grows from a cube toward an orb.",
+        title: "The room takes its colour",
+        description:
+          "Whichever moment is on stage washes the house in that photo's glow.",
       },
     ],
     steps: [
       {
         title: "Add your photos",
-        description: "Each becomes a glowing facet with a caption and date.",
+        description:
+          "Each one is a moment, with a title, a date, an optional note, and a colour of its own.",
       },
       {
-        title: "Set it turning",
-        description: "Choose how it spins, glows, and warms with the hour.",
+        title: "Set the evening",
+        description: "Choose the stage light, and how long each memory holds.",
       },
       {
-        title: "Send the light",
-        description: "They watch it turn, waking one memory at a time.",
+        title: "Send the night",
+        description:
+          "They open the curtains and watch one memory take the stage at a time.",
       },
     ],
   },
@@ -367,11 +385,13 @@ export const experiences: Experience[] = [
       "A handcrafted glass jar brimming with folded notes. Reach in, unfold any one, and read a little something written just for them — a warm, intimate ritual they'll return to.",
     icon: "Heart",
     status: "live",
-    liveHref: "/memory-jar",
+    liveHref: "/experiences/memory-jar",
+    inlineEmbed: true,
     makeHref: "/memory-jar/build",
     accent: "from-[#FF9A7B]/22 to-transparent",
     previewGradient:
       "linear-gradient(160deg, #fdf3e7 0%, #f5e0c3 60%, #ead5b0 100%)",
+    previewImage: "/memory_jar.png",
     span: "small",
     highlights: [
       {
@@ -415,12 +435,13 @@ export const experiences: Experience[] = [
       "A love letter drawn across a map. Drop a glowing pin on every place that's part of you two — where you met, where you said it first — and let each one open into the memory it holds.",
     icon: "MapPin",
     status: "live",
-    liveHref: "/our-places",
+    liveHref: "/experiences/our-places",
     inlineEmbed: true,
     makeHref: "/our-places/build",
     accent: "from-[#FF7A59]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 40% 35%, #ffe9d2 0%, #f6c9a3 55%, #e89f74 100%)",
+    previewImage: "/our_places.jpg",
     span: "small",
     highlights: [
       {
@@ -455,6 +476,56 @@ export const experiences: Experience[] = [
     ],
   },
   {
+    slug: "relationship-calendar",
+    name: "Relationship Calendar",
+    eyebrow: "A keepsake",
+    tagline:
+      "A month-by-month keepsake of your story — pin memories to the days that made you.",
+    description:
+      "An ornate calendar of your relationship. Add a memory to any day — a title, a note, a photo — and watch your story fill the months. Anniversaries can return every year. Share the calendar and let them wander through the days you chose each other.",
+    icon: "CalendarHeart",
+    status: "live",
+    liveHref: "/experiences/relationship-calendar",
+    inlineEmbed: true,
+    makeHref: "/relationship-calendar/build",
+    accent: "from-[#D4A373]/30 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 70% 60% at 50% 20%, #fffaf3 0%, #f3e6d4 55%, #e0c9ae 100%)",
+    previewImage: "/relationship_calender.png",
+    span: "small",
+    highlights: [
+      {
+        icon: "CalendarHeart",
+        title: "Pin every memory",
+        description: "Click a day, write what happened, add a photo.",
+      },
+      {
+        icon: "Heart",
+        title: "Yearly returns",
+        description: "Anniversaries glow again every August — and beyond.",
+      },
+      {
+        icon: "Image",
+        title: "A keepsake to share",
+        description: "Publish and let them wander your months together.",
+      },
+    ],
+    steps: [
+      {
+        title: "Open a month",
+        description: "Start with the days that already mean something.",
+      },
+      {
+        title: "Add your memories",
+        description: "Titles, notes, photos — keep coming back to fill more.",
+      },
+      {
+        title: "Share the calendar",
+        description: "Send the link and let them explore your story.",
+      },
+    ],
+  },
+  {
     slug: "ludo",
     name: "Ludo for Two",
     eyebrow: "Play together",
@@ -464,11 +535,13 @@ export const experiences: Experience[] = [
       "The Ludo you grew up with, reimagined for two. Realistic dice, satisfying captures, and a tunable couple-activity mode that turns a board game into a date night.",
     icon: "Gamepad2",
     status: "live",
-    liveHref: "/games/ludo",
+    liveHref: "/experiences/ludo",
+    inlineEmbed: true,
     makeHref: "/ludo/build",
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #fffaf4 0%, #fbeede 55%, #f4e0cb 100%)",
+    previewImage: "/ludo.png",
     span: "small",
     highlights: [
       {
@@ -503,6 +576,275 @@ export const experiences: Experience[] = [
     ],
   },
   {
+    slug: "whack-a-mole",
+    name: "Whack My Face",
+    eyebrow: "Play together",
+    tagline:
+      "They smash your face in a tiny arcade — then unlock the apology you meant to say.",
+    description:
+      "Partner mad? Send a couples whack-a-mole with your face as the mole. They bonk, collect golden apologies, dodge the sacred hearts, and unlock your letter at the end.",
+    icon: "Hammer",
+    status: "live",
+    liveHref: "/experiences/whack-a-mole",
+    inlineEmbed: true,
+    makeHref: "/whack-a-mole/build",
+    accent: "from-[#F2596F]/22 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 70% 70% at 50% 38%, #fff1e8 0%, #f8e4d4 55%, #efd2bc 100%)",
+    span: "small",
+    highlights: [
+      {
+        icon: "Image",
+        title: "Your face, the mole",
+        description: "Upload a selfie — that's what pops from the holes.",
+      },
+      {
+        icon: "Heart",
+        title: "Don't hit the heart",
+        description: "Sacred decoys keep it playful, not purely mean.",
+      },
+      {
+        icon: "HeartHandshake",
+        title: "Apology payoff",
+        description: "The round ends with the letter you wrote for them.",
+      },
+    ],
+    steps: [
+      {
+        title: "Upload your face",
+        description: "Write hit quips and the apology they'll unlock.",
+      },
+      {
+        title: "Send the link",
+        description: "They open it and smash moles on their phone.",
+      },
+      {
+        title: "Make up",
+        description: "Score settles — your letter does the rest.",
+      },
+    ],
+  },
+  {
+    slug: "flames",
+    name: "FLAMES",
+    eyebrow: "Play together",
+    tagline:
+      "The classic name game — cancel the letters, reveal Friends, Lovers, or chaos.",
+    description:
+      "Type two names, strike matching letters, and watch FLAMES decide the plot. Add your own note under the reveal and send the link.",
+    icon: "Flame",
+    status: "live",
+    liveHref: "/experiences/flames",
+    inlineEmbed: true,
+    makeHref: "/flames/build",
+    accent: "from-[#F2596F]/22 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 70% 70% at 50% 38%, #ffe8dc 0%, #f8d4c4 55%, #efc0b0 100%)",
+    span: "small",
+    highlights: [
+      {
+        icon: "Flame",
+        title: "Classic FLAMES",
+        description: "Friends through Siblings — schoolyard destiny.",
+      },
+      {
+        icon: "PenLine",
+        title: "Your note",
+        description: "A personal line under the reveal card.",
+      },
+      {
+        icon: "Users",
+        title: "Share the link",
+        description: "They play on their phone in under a minute.",
+      },
+    ],
+    steps: [
+      {
+        title: "Set the names",
+        description: "Optional defaults plus the note after destiny speaks.",
+      },
+      {
+        title: "Send the link",
+        description: "They type names and strike the letters.",
+      },
+      {
+        title: "Screenshot the fate",
+        description: "Result card + your note = instant share bait.",
+      },
+    ],
+  },
+  {
+    slug: "love-calculator",
+    name: "Love Calculator",
+    eyebrow: "Play together",
+    tagline: "Fake science, real butterflies — a silly % for two names.",
+    description:
+      "Enter two names, watch the meter climb, and land on a vibe blurb you wrote. Percentages lie. Feelings don't.",
+    icon: "Percent",
+    status: "live",
+    liveHref: "/experiences/love-calculator",
+    inlineEmbed: true,
+    makeHref: "/love-calculator/build",
+    accent: "from-[#F2596F]/22 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 70% 70% at 50% 38%, #fff1e8 0%, #f9d4e0 55%, #f0c0d0 100%)",
+    span: "small",
+    highlights: [
+      {
+        icon: "Percent",
+        title: "Vibe meter",
+        description: "A deterministic silly score from the names.",
+      },
+      {
+        icon: "Heart",
+        title: "Band blurbs",
+        description: "Low / mid / high copy you author.",
+      },
+      {
+        icon: "Sparkles",
+        title: "Share card",
+        description: "Built for WhatsApp screenshots.",
+      },
+    ],
+    steps: [
+      {
+        title: "Write the blurbs",
+        description: "Tune low, mid, and high copy.",
+      },
+      {
+        title: "Share the link",
+        description: "They enter names and calculate.",
+      },
+      {
+        title: "Compare scores",
+        description: "Argue about the science (there is none).",
+      },
+    ],
+  },
+  {
+    slug: "folded-note",
+    name: "Folded Note",
+    eyebrow: "Play together",
+    tagline: "Pass a digital folded note — Yes, No, or Maybe.",
+    description:
+      "Seal a question inside a paper fold. They open it, check a box, and get the reaction you planted.",
+    icon: "Mail",
+    status: "live",
+    liveHref: "/experiences/folded-note",
+    inlineEmbed: true,
+    makeHref: "/folded-note/build",
+    accent: "from-[#F2596F]/22 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 70% 70% at 50% 38%, #f7efe4 0%, #ebe0d0 55%, #e0d0bc 100%)",
+    span: "small",
+    highlights: [
+      {
+        icon: "Mail",
+        title: "Fold & unfold",
+        description: "The schoolyard ritual, on a phone.",
+      },
+      {
+        icon: "PenLine",
+        title: "Your reactions",
+        description: "Different lines for Yes, No, and Maybe.",
+      },
+      {
+        icon: "Heart",
+        title: "Keepsake energy",
+        description: "Cute enough to screenshot forever.",
+      },
+    ],
+    steps: [
+      {
+        title: "Write the note",
+        description: "Question, body, and three reactions.",
+      },
+      { title: "Pass the link", description: "They unfold and check a box." },
+      {
+        title: "Reveal",
+        description: "Your planted reaction does the talking.",
+      },
+    ],
+  },
+  {
+    slug: "this-or-that",
+    name: "This or That",
+    eyebrow: "Play together",
+    tagline: "Rapid A/B taps that grade their vibe on a type card.",
+    description:
+      "Plant chai-or-coffee pairs, send the link, and watch them tap through to a majority type card.",
+    icon: "Split",
+    status: "live",
+    liveHref: "/experiences/this-or-that",
+    inlineEmbed: true,
+    makeHref: "/this-or-that/build",
+    accent: "from-[#F2596F]/22 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 70% 70% at 50% 38%, #fffaf4 0%, #fbe0d4 55%, #f4d0c0 100%)",
+    span: "small",
+    highlights: [
+      {
+        icon: "Split",
+        title: "Fast pairs",
+        description: "Author as many A/B choices as you want.",
+      },
+      {
+        icon: "Sparkles",
+        title: "Type card",
+        description: "Majority side becomes the punchline.",
+      },
+      {
+        icon: "Users",
+        title: "Couch or distance",
+        description: "Works alone on a share link.",
+      },
+    ],
+    steps: [
+      { title: "List the pairs", description: "One line each: Left | Right." },
+      { title: "Send it", description: "They tap without overthinking." },
+      { title: "Read the type", description: "Left vs right energy, settled." },
+    ],
+  },
+  {
+    slug: "delulu-meter",
+    name: "Delulu Meter",
+    eyebrow: "Play together",
+    tagline: "A comedy gauge for how far gone the crush brain is.",
+    description:
+      "Author delulu prompts, they rate 1–5, and the meter roasts them with your band copy.",
+    icon: "Gauge",
+    status: "live",
+    liveHref: "/experiences/delulu-meter",
+    inlineEmbed: true,
+    makeHref: "/delulu-meter/build",
+    accent: "from-[#F2596F]/22 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 70% 70% at 50% 38%, #2a1520 0%, #1a0f14 55%, #120a10 100%)",
+    span: "small",
+    highlights: [
+      {
+        icon: "Gauge",
+        title: "0–100 gauge",
+        description: "Weighted answers, dramatic fill.",
+      },
+      {
+        icon: "Sparkles",
+        title: "Three bands",
+        description: "Grounded, hopeful, or full delulu.",
+      },
+      {
+        icon: "Flame",
+        title: "Meme bait",
+        description: "Built for story shares.",
+      },
+    ],
+    steps: [
+      { title: "Write prompts", description: "One delulu question per line." },
+      { title: "Tune the roast", description: "Band copy for each zone." },
+      { title: "Send & screenshot", description: "The gauge does the rest." },
+    ],
+  },
+  {
     slug: "time-capsule",
     name: "Time Capsule",
     eyebrow: "Sealed for later",
@@ -512,7 +854,8 @@ export const experiences: Experience[] = [
       "Seal a message today and let it unlock exactly when it should — a birthday, an anniversary, a year from now.",
     icon: "Hourglass",
     status: "live",
-    liveHref: "/time-capsule",
+    liveHref: "/experiences/time-capsule",
+    inlineEmbed: true,
     makeHref: "/time-capsule/build",
     accent: "from-[#F0A13D]/22 to-transparent",
     previewGradient:
@@ -522,7 +865,8 @@ export const experiences: Experience[] = [
       {
         icon: "Lock",
         title: "Sealed until the day",
-        description: "It stays locked, teasing a live countdown, until you say.",
+        description:
+          "It stays locked, teasing a live countdown, until you say.",
       },
       {
         icon: "BookHeart",
@@ -538,7 +882,8 @@ export const experiences: Experience[] = [
     steps: [
       {
         title: "Write & seal",
-        description: "Compose your letter, add photos, and pick the unlock date.",
+        description:
+          "Compose your letter, add photos, and pick the unlock date.",
       },
       {
         title: "Send it forward",
@@ -546,7 +891,60 @@ export const experiences: Experience[] = [
       },
       {
         title: "Let it open",
-        description: "On the day, the capsule unlocks and reveals what you left.",
+        description:
+          "On the day, the capsule unlocks and reveals what you left.",
+      },
+    ],
+  },
+  {
+    slug: "twenty-four-reasons",
+    name: "24 Reasons",
+    eyebrow: "Girlfriend Day",
+    tagline:
+      "Twenty-four reasons I love you — one for every hour of her day. Sealed notes that unlock as the clock turns.",
+    description:
+      "Write up to twenty-four short reasons — text, photo, or voice — and schedule them across the day. She opens a gallery of sealed notes; as each hour arrives, a seal breaks. By midnight, the full keepsake is hers. Made for Girlfriend Day, lovely any day you want to drip love.",
+    icon: "Heart",
+    status: "live",
+    liveHref: "/experiences/twenty-four-reasons",
+    inlineEmbed: true,
+    makeHref: "/twenty-four-reasons/build",
+    accent: "from-[#D4A373]/25 via-[#B11226]/12 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 80% 65% at 50% 25%, #fdf6ee 0%, #f3e4d4 50%, #ead7c4 100%)",
+    previewImage: "/24_reason.png",
+    span: "wide",
+    highlights: [
+      {
+        icon: "Hourglass",
+        title: "A living day",
+        description: "Reasons unlock on the hour — not a dump of text.",
+      },
+      {
+        icon: "Lock",
+        title: "Sealed until their time",
+        description:
+          "A gallery of wax-sealed notes with a next-unlock countdown.",
+      },
+      {
+        icon: "Mic",
+        title: "Text, photo, or voice",
+        description: "Mix short lines with a picture or a whispered reason.",
+      },
+    ],
+    steps: [
+      {
+        title: "Write the day",
+        description: "Load the starter pack or craft your own twenty-four.",
+      },
+      {
+        title: "Set the schedule",
+        description:
+          "Pick the first unlock and let hourly seals fall into place.",
+      },
+      {
+        title: "Share the link",
+        description: "She returns all day as each reason opens.",
       },
     ],
   },
@@ -560,11 +958,13 @@ export const experiences: Experience[] = [
       "A shared countdown to the moment you're both waiting for. Watch the clock tick down together — and when it finally hits zero, a surprise you wrote opens, confetti and all.",
     icon: "Calendar",
     status: "live",
-    liveHref: "/countdown",
+    liveHref: "/experiences/countdown",
+    inlineEmbed: true,
     makeHref: "/countdown/build",
     accent: "from-[#FF9A7B]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 35%, #ffe7e0 0%, #f7b9ac 60%, #ec8f86 100%)",
+    previewImage: "/countdown.jpg",
     span: "small",
     highlights: [
       {
@@ -601,44 +1001,48 @@ export const experiences: Experience[] = [
   {
     slug: "spotify-plaque",
     name: "Spotify Plaque",
-    eyebrow: "A framed keepsake",
+    eyebrow: "An acrylic keepsake",
     tagline:
-      "A framed photo plaque with your song playing behind it — and a wrapped gift box that opens to a hidden message.",
+      "Your song, frozen in acrylic — cover art, a personal message, and a scan code, with a sealed note beside it.",
     description:
-      "A keepsake plaque, framed like a print on a shelf. Your photos cross-fade inside the frame while your song plays underneath, styled with a Spotify-code scan strip. Beside it sits a wrapped gift box — tap it and the lid lifts to a private message written just for them.",
+      "A classic Spotify-style plaque: square cover photo, your message with a liked heart, track title and artist, full transport controls, and a monochrome scan code on clear acrylic. Beside it sits a sealed glass whisper — tap to untie the ribbon and read a private message.",
     icon: "Music",
     status: "live",
-    liveHref: "/spotify-plaque",
+    liveHref: "/experiences/spotify-plaque",
+    inlineEmbed: true,
     makeHref: "/spotify-plaque/build",
     accent: "from-[#1db954]/22 via-[#FF7A59]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fbf4ea 0%, #f3e7d6 55%, #e7d3bd 100%)",
+    previewImage: "/spotify.png",
     span: "wide",
     highlights: [
       {
         icon: "Images",
-        title: "A photo slideshow",
-        description: "Your pictures cross-fade inside the frame.",
+        title: "Your cover art",
+        description:
+          "A square photo sits at the top of the plaque — just like the real thing.",
       },
       {
         icon: "Music",
-        title: "Your song, playing",
-        description: "Upload the track — it loops behind the plaque.",
+        title: "Press play",
+        description:
+          "Upload the track — they scrub, pause, and listen on the plaque.",
       },
       {
         icon: "Gift",
-        title: "A gift box to open",
-        description: "Tap it and it opens to a hidden message.",
+        title: "A sealed glass note",
+        description: "Untie the ribbon to reveal a private message.",
       },
     ],
     steps: [
       {
         title: "Add photos & your song",
-        description: "Upload the pictures and the track that's yours.",
+        description: "Upload the cover picture and the track that's yours.",
       },
       {
-        title: "Write the hidden message",
-        description: "The note the gift box opens to reveal.",
+        title: "Write the sealed note",
+        description: "The message they read when they untie the ribbon.",
       },
       {
         title: "Share the plaque",
@@ -656,7 +1060,8 @@ export const experiences: Experience[] = [
       "A hand-drawn chalkboard, the kind you'd tape above a bed. Their name sprawls across it in bright, mismatched letters, your favourite photos hang pinned along a string, and little chalk doodles fill the gaps. Next to it waits a wrapped gift box — tap it and the lid lifts to a private message, your song playing all the while.",
     icon: "Images",
     status: "live",
-    liveHref: "/string-frame",
+    liveHref: "/experiences/string-frame",
+    inlineEmbed: true,
     makeHref: "/string-frame/build",
     accent: "from-[#ff5d73]/22 via-[#4aa8ff]/10 to-transparent",
     previewGradient:
@@ -704,12 +1109,14 @@ export const experiences: Experience[] = [
       "A treasure box, reimagined for the screen. They tap it and the lid lifts, light spilling out as a strip of film rises from inside. Pulling the reel unspools it frame by frame — each photo developing from a sepia ghost into a sharp memory — down to a folded letter that unfolds and an engraved keepsake tag, made of happy memories.",
     icon: "Gift",
     status: "live",
-    liveHref: "/timeless-treasure",
+    liveHref: "/experiences/timeless-treasure",
+    inlineEmbed: true,
     makeHref: "/timeless-treasure/build",
     accent: "from-[#c07a2c]/22 via-[#FF7A59]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fbf3e6 0%, #efdcbe 55%, #dcbc90 100%)",
     span: "wide",
+    previewImage: "/timeless_treasure.png",
     highlights: [
       {
         icon: "Gift",
@@ -724,7 +1131,8 @@ export const experiences: Experience[] = [
       {
         icon: "PenLine",
         title: "A letter & a tag",
-        description: "A folded note that unfolds, and an engraved keepsake plate.",
+        description:
+          "A folded note that unfolds, and an engraved keepsake plate.",
       },
     ],
     steps: [
@@ -752,11 +1160,13 @@ export const experiences: Experience[] = [
       "Not a card to read at leisure — a moment to live. Break the seal, walk a slow approach of your own words and memories, and arrive at the question. When they say yes, the screen blooms and the answer travels right back to you.",
     icon: "Heart",
     status: "live",
-    liveHref: "/proposal",
+    liveHref: "/experiences/proposal",
+    inlineEmbed: true,
     makeHref: "/proposal/build",
     accent: "from-[#7c6cff]/22 via-[#f4768e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 80% 65% at 50% 20%, #2a2350 0%, #171331 55%, #0a0820 100%)",
+    previewImage: "/big_question.png",
     span: "wide",
     highlights: [
       {
@@ -800,7 +1210,8 @@ export const experiences: Experience[] = [
       "The butterflies of asking someone out, made into a little moment. A short, warm build-up, the question, and — when they say yes — the plan, sealed with their answer on its way to you.",
     icon: "Heart",
     status: "live",
-    liveHref: "/date-ask",
+    liveHref: "/experiences/date-ask",
+    inlineEmbed: true,
     makeHref: "/date-ask/build",
     accent: "from-[#f4768e]/22 via-[#ffb3c1]/10 to-transparent",
     previewGradient:
@@ -839,6 +1250,56 @@ export const experiences: Experience[] = [
     ],
   },
   {
+    slug: "mirror-match",
+    name: "Mirror Match",
+    eyebrow: "Girlfriend Day",
+    tagline:
+      "Do we see us the same way? Soft questions, private answers — only the overlaps open in the mirror.",
+    description:
+      "You both answer the same prompts about us — privately. Kyndl shows only what you both feel: matches you both said yes to, and almosts worth talking about. Made for Girlfriend Day, lovely any day.",
+    icon: "Heart",
+    status: "live",
+    liveHref: "/experiences/mirror-match",
+    inlineEmbed: true,
+    makeHref: "/mirror-match/build",
+    accent: "from-[#D4A373]/25 via-[#B11226]/10 to-transparent",
+    previewGradient:
+      "radial-gradient(ellipse 80% 65% at 50% 20%, #fff6f0 0%, #ffe8dc 50%, #f5e9e2 100%)",
+    span: "small",
+    highlights: [
+      {
+        icon: "Heart",
+        title: "Private answers",
+        description:
+          "Neither of you sees the other's picks until the mirror opens.",
+      },
+      {
+        icon: "Sparkles",
+        title: "Only overlaps",
+        description: "Matches and almosts — never one-sided nos.",
+      },
+      {
+        icon: "Gift",
+        title: "Girlfriend Day seal",
+        description: "Seasonal packaging for Aug 1, reusable year-round.",
+      },
+    ],
+    steps: [
+      {
+        title: "Curate prompts",
+        description: "Load a starter pack or write your own soft truths.",
+      },
+      {
+        title: "Answer privately",
+        description: "That's us, kinda, or not really — only you see these.",
+      },
+      {
+        title: "Share the link",
+        description: "They answer; the mirror shows what you both feel.",
+      },
+    ],
+  },
+  {
     slug: "desire-deck",
     name: "Desire Deck",
     eyebrow: "Red Zone · 18+",
@@ -848,12 +1309,14 @@ export const experiences: Experience[] = [
       "The pricey romantic card deck, reimagined for the two of you. Write your own prompts, dares, and questions, set a heat for each, then draw them one at a time on a private night in — endlessly customizable, and shared by a link only you two see.",
     icon: "Flame",
     status: "live",
-    liveHref: "/desire-deck",
+    liveHref: "/experiences/desire-deck",
+    inlineEmbed: true,
     makeHref: "/desire-deck/build",
     adult: true,
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
+    previewImage: "/dark_zone/desire_deck.png",
     span: "small",
     highlights: [
       {
@@ -897,12 +1360,14 @@ export const experiences: Experience[] = [
       "The honest conversation, without the nerve it takes to start it. Curate a list of things you might be into, answer each privately, and share it. Your partner answers too — and you only ever see what you both said yes (or maybe) to. Everything else stays secret.",
     icon: "HeartHandshake",
     status: "live",
-    liveHref: "/desire-matcher",
+    liveHref: "/experiences/desire-matcher",
+    inlineEmbed: true,
     makeHref: "/desire-matcher/build",
     adult: true,
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
+    previewImage: "/dark_zone/desire_matcher.png",
     span: "small",
     highlights: [
       {
@@ -943,15 +1408,17 @@ export const experiences: Experience[] = [
     tagline:
       "An adults-only roll-a-position game — two dice, a 6×6 board, and wherever they land is what's next. No deciding, just luck.",
     description:
-      "The printed \"roll a position\" chart, reimagined for the two of you. Reword every square of a 6×6 board, set a heat for each, then roll two dice on a private night in — whatever they land on is the next thing you try. Endlessly customizable, and shared by a link only you two see.",
+      'The printed "roll a position" chart, reimagined for the two of you. Reword every square of a 6×6 board, set a heat for each, then roll two dice on a private night in — whatever they land on is the next thing you try. Endlessly customizable, and shared by a link only you two see.',
     icon: "Dices",
     status: "live",
-    liveHref: "/dice-of-desire",
+    liveHref: "/experiences/dice-of-desire",
+    inlineEmbed: true,
     makeHref: "/dice-of-desire/build",
     adult: true,
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
+    previewImage: "/dark_zone/dice_desire.png",
     span: "small",
     highlights: [
       {
@@ -992,15 +1459,17 @@ export const experiences: Experience[] = [
     tagline:
       "An adults-only Snakes & Ladders — a dare on every square, ladders rush you hotter, snakes tease you back, first to 100 directs the finale.",
     description:
-      "Snakes & Ladders, reimagined for the two of you. A dare waits on all 100 squares, climbing from sweet warm-ups to a wild climax. Take turns rolling — ladders are a \"Heat Rush\" up to something hotter, snakes are a \"Slow Burn\" that teases you back, and whoever reaches 100 first directs the finale. Reword every square, set its heat, and share it by a link only you two hold.",
+      'Snakes & Ladders, reimagined for the two of you. A dare waits on all 100 squares, climbing from sweet warm-ups to a wild climax. Take turns rolling — ladders are a "Heat Rush" up to something hotter, snakes are a "Slow Burn" that teases you back, and whoever reaches 100 first directs the finale. Reword every square, set its heat, and share it by a link only you two hold.',
     icon: "Dices",
     status: "live",
-    liveHref: "/snakes-and-lovers",
+    liveHref: "/experiences/snakes-and-lovers",
+    inlineEmbed: true,
     makeHref: "/snakes-and-lovers/build",
     adult: true,
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
+    previewImage: "/dark_zone/snake_lovers.png",
     span: "small",
     highlights: [
       {
@@ -1044,12 +1513,14 @@ export const experiences: Experience[] = [
       "The love-coupon book, reimagined: write your own redeemable coupons — a slow dance, a massage, your choice tonight — set a heat for each, and share the booklet. They open the link, pick one, and tap Redeem; you get a ping to deliver. No expiry, no limits, fully yours.",
     icon: "Ticket",
     status: "live",
-    liveHref: "/love-coupons",
+    liveHref: "/experiences/love-coupons",
+    inlineEmbed: true,
     makeHref: "/love-coupons/build",
     adult: true,
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
+    previewImage: "/dark_zone/desire_coupon.png",
     span: "small",
     highlights: [
       {
@@ -1093,12 +1564,14 @@ export const experiences: Experience[] = [
       "The naughty spinner board, reimagined for the two of you. Set your own categories — Action, Deep Talk, Dare, whatever you like — give each a colour and its own stack of prompts, then spin a real, weighted wheel that lands on one and deals a card. Endlessly customizable, and shared by a link only you two hold.",
     icon: "Disc3",
     status: "live",
-    liveHref: "/naughty-spins",
+    liveHref: "/experiences/naughty-spins",
+    inlineEmbed: true,
     makeHref: "/naughty-spins/build",
     adult: true,
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
+    previewImage: "/dark_zone/naughty_spins.png",
     span: "small",
     highlights: [
       {
@@ -1140,8 +1613,10 @@ export const featuredExperiences = experiences.filter(
   (e) => e.status === "live" && !e.adult,
 );
 
-/** Adults-only experiences, for the dedicated 18+ "Red Zone" section. */
-export const redZoneExperiences = experiences.filter((e) => e.adult);
+/** Live adults-only experiences, for the dedicated 18+ "Red Zone" section. */
+export const redZoneExperiences = experiences.filter(
+  (e) => e.status === "live" && e.adult,
+);
 
 export function getExperience(slug: string): Experience | undefined {
   return experiences.find((e) => e.slug === slug);

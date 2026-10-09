@@ -1,6 +1,12 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
+
+// An orphan lockfile at the monorepo root makes Turbopack watch the whole repo.
+const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Origin of the backend API, used to scope `connect-src` (CSP) and the image
@@ -41,8 +47,14 @@ const STORAGE_ORIGIN = storageOrigin();
 /**
  * External origins the browser is allowed to fetch from (CSP `connect-src`).
  * Our Places searches locations via OpenStreetMap's key-less Nominatim API.
+ * GA4 beacons hit Google Analytics / gtag endpoints when measurement id is set.
  */
-const CONNECT_ALLOWLIST = ["https://nominatim.openstreetmap.org"];
+const CONNECT_ALLOWLIST = [
+  "https://nominatim.openstreetmap.org",
+  "https://www.google-analytics.com",
+  "https://analytics.google.com",
+  "https://www.googletagmanager.com",
+];
 
 /**
  * Content-Security-Policy. Next.js injects a small amount of inline JS/CSS
@@ -56,6 +68,8 @@ function contentSecurityPolicy(): string {
     "script-src": [
       "'self'",
       "'unsafe-inline'",
+      "https://www.googletagmanager.com",
+      "https://www.google-analytics.com",
       ...(isDev ? ["'unsafe-eval'"] : []),
     ],
     "style-src": ["'self'", "'unsafe-inline'"],
@@ -111,6 +125,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  turbopack: {
+    root: appRoot,
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
@@ -124,6 +141,9 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
+    // Persistent dev cache has no size cap and had grown to ~8GB, which
+    // makes `next dev` map it into RAM and freeze the machine on startup.
+    turbopackFileSystemCacheForDev: false,
     optimizePackageImports: [
       "lucide-react",
       "framer-motion",

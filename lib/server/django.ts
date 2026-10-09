@@ -32,10 +32,114 @@ const baseCookieOptions = {
   path: "/",
 };
 
+const REQUEST_ID_HEADER = "X-Request-ID";
+
 export interface DjangoResult {
   status: number;
   /** Parsed JSON body, or null when Django returned no content. */
   body: unknown;
+  /** Correlation id echoed from Django (or generated locally). */
+  requestId?: string;
+}
+
+function newRequestId(): string {
+  return crypto.randomUUID();
+}
+
+function logDjangoFailure(args: {
+  path: string;
+  method: string;
+  status?: number;
+  requestId: string;
+  error?: unknown;
+}): void {
+  const { path, method, status, requestId, error } = args;
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : undefined;
+  // Server-side Next logs go to the process stdout (platform log drain).
+  console.error("[bff.django]", {
+    path,
+    method,
+    status,
+    requestId,
+    message,
+  });
+}
+
+function buildHeaders(init: {
+  accessToken?: string;
+  accept?: string;
+  json?: boolean;
+  requestId: string;
+  extra?: Record<string, string>;
+}): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: init.accept ?? "application/json",
+    [REQUEST_ID_HEADER]: init.requestId,
+  };
+  if (init.json) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (init.accessToken) {
+    headers.Authorization = `Bearer ${init.accessToken}`;
+  }
+  for (const [key, value] of Object.entries(init.extra ?? {})) {
+    if (value) headers[key] = value;
+  }
+  return headers;
+}
+
+/** Call a Django endpoint and return raw bytes (for PDFs, etc.). */
+export async function djangoFetchBinary(
+  path: string,
+  init: {
+    method?: string;
+    accessToken?: string;
+  } = {},
+): Promise<{
+  status: number;
+  body: ArrayBuffer;
+  contentType: string;
+  contentDisposition: string;
+  requestId: string;
+}> {
+  const method = init.method ?? "GET";
+  const requestId = newRequestId();
+  const headers = buildHeaders({
+    accessToken: init.accessToken,
+    accept: "application/pdf, application/json",
+    requestId,
+  });
+
+  try {
+    const res = await fetch(`${DJANGO_BASE}${path}`, {
+      method,
+      headers,
+      cache: "no-store",
+    });
+    const echoed = res.headers.get(REQUEST_ID_HEADER) || requestId;
+    if (res.status >= 500) {
+      logDjangoFailure({ path, method, status: res.status, requestId: echoed });
+    }
+    const contentType =
+      res.headers.get("Content-Type") || "application/octet-stream";
+    const contentDisposition = res.headers.get("Content-Disposition") || "";
+    const body = await res.arrayBuffer();
+    return {
+      status: res.status,
+      body,
+      contentType,
+      contentDisposition,
+      requestId: echoed,
+    };
+  } catch (error) {
+    logDjangoFailure({ path, method, requestId, error });
+    throw error;
+  }
 }
 
 /** Call a Django endpoint with a JSON body. `path` must include a trailing slash. */
@@ -45,34 +149,46 @@ export async function djangoFetch(
     method?: string;
     body?: unknown;
     accessToken?: string;
+    headers?: Record<string, string>;
   } = {},
 ): Promise<DjangoResult> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-  if (init.accessToken) {
-    headers.Authorization = `Bearer ${init.accessToken}`;
-  }
-
-  const res = await fetch(`${DJANGO_BASE}${path}`, {
-    method: init.method ?? "POST",
-    headers,
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
-    cache: "no-store",
+  const method = init.method ?? "POST";
+  const requestId = newRequestId();
+  const headers = buildHeaders({
+    accessToken: init.accessToken,
+    json: true,
+    requestId,
+    extra: init.headers,
   });
 
-  let body: unknown = null;
-  const text = await res.text();
-  if (text) {
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = { detail: text };
-    }
-  }
+  try {
+    const res = await fetch(`${DJANGO_BASE}${path}`, {
+      method,
+      headers,
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      cache: "no-store",
+    });
 
-  return { status: res.status, body };
+    const echoed = res.headers.get(REQUEST_ID_HEADER) || requestId;
+    if (res.status >= 500) {
+      logDjangoFailure({ path, method, status: res.status, requestId: echoed });
+    }
+
+    let body: unknown = null;
+    const text = await res.text();
+    if (text) {
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = { detail: text };
+      }
+    }
+
+    return { status: res.status, body, requestId: echoed };
+  } catch (error) {
+    logDjangoFailure({ path, method, requestId, error });
+    throw error;
+  }
 }
 
 export function getAccessToken(req: NextRequest): string | undefined {
@@ -85,10 +201,13 @@ export function getRefreshToken(req: NextRequest): string | undefined {
 
 /** Mirror a Django response (status + body) straight back to the browser. */
 export function forward(result: DjangoResult): NextResponse {
+  const headers = result.requestId
+    ? { [REQUEST_ID_HEADER]: result.requestId }
+    : undefined;
   if (result.body === null) {
-    return new NextResponse(null, { status: result.status });
+    return new NextResponse(null, { status: result.status, headers });
   }
-  return NextResponse.json(result.body, { status: result.status });
+  return NextResponse.json(result.body, { status: result.status, headers });
 }
 
 /** Attach freshly issued JWTs as httpOnly cookies on a response. */
@@ -138,7 +257,12 @@ interface TokenPayload {
 export function sessionResponse(result: DjangoResult): NextResponse {
   if (result.status >= 200 && result.status < 300) {
     const payload = (result.body ?? {}) as TokenPayload;
-    const response = NextResponse.json({ user: payload.user ?? null });
+    const response = NextResponse.json(
+      { user: payload.user ?? null },
+      result.requestId
+        ? { headers: { [REQUEST_ID_HEADER]: result.requestId } }
+        : undefined,
+    );
     return setAuthCookies(response, {
       access: payload.access,
       refresh: payload.refresh,
@@ -156,7 +280,9 @@ export function jsonError(
 }
 
 /** Safely read a JSON request body, returning {} on empty/invalid input. */
-export async function readJson(req: NextRequest): Promise<Record<string, unknown>> {
+export async function readJson(
+  req: NextRequest,
+): Promise<Record<string, unknown>> {
   try {
     const text = await req.text();
     return text ? (JSON.parse(text) as Record<string, unknown>) : {};

@@ -13,10 +13,12 @@ type ConstellationControlsProps = {
   soundEnabled: boolean;
   muted: boolean;
   onToggleMute: () => void;
+  onRearrange?: () => void;
+  onReset?: () => void;
 };
 
 const pill =
-  "pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-xs font-medium tracking-[0.16em] text-[#e8e2f4] uppercase backdrop-blur-sm outline-none transition-colors hover:bg-white/14 focus-visible:ring-2 focus-visible:ring-[#f3ead2]/70";
+  "pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white/8 px-3 py-1.5 text-xs text-[#e4e8f0] backdrop-blur-sm outline-none transition-colors hover:bg-white/14 focus-visible:ring-2 focus-visible:ring-[#e4e8f0]/60";
 
 /**
  * The lean control surface: a play/pause pill for the cinematic tour and a mute
@@ -34,6 +36,8 @@ export function ConstellationControls({
   soundEnabled,
   muted,
   onToggleMute,
+  onRearrange,
+  onReset,
 }: ConstellationControlsProps) {
   return (
     <>
@@ -43,52 +47,64 @@ export function ConstellationControls({
           onClick={onToggleMute}
           aria-label={muted ? "Turn sound on" : "Turn sound off"}
           aria-pressed={!muted}
-          className="pointer-events-auto absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/8 text-[#e8e2f4] backdrop-blur-sm outline-none transition-colors hover:bg-white/14 focus-visible:ring-2 focus-visible:ring-[#f3ead2]/70"
+          className="pointer-events-auto absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white/8 text-[#e4e8f0] backdrop-blur-sm outline-none transition-colors hover:bg-white/14 focus-visible:ring-2 focus-visible:ring-[#e4e8f0]/60"
         >
           {muted ? <IconMuted /> : <IconSound />}
         </button>
       ) : null}
 
-      {tourEnabled ? (
+      {tourEnabled || onRearrange || onReset ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] z-50 flex items-center justify-center gap-3">
-          <AnimatePresence mode="wait">
-            {touring ? (
-              <motion.div
-                key="touring"
-                className="flex items-center gap-3"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.3 }}
-              >
-                <button
-                  type="button"
-                  onClick={tourPaused ? onResume : onPause}
-                  className={pill}
+          {tourEnabled ? (
+            <AnimatePresence mode="wait">
+              {touring ? (
+                <motion.div
+                  key="touring"
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  {tourPaused ? <IconPlay /> : <IconPause />}
-                  {tourPaused ? "Resume" : "Pause"}
-                </button>
-                <button type="button" onClick={onExplore} className={pill}>
-                  Explore it yourself
-                </button>
-              </motion.div>
-            ) : (
-              <motion.button
-                key="play"
-                type="button"
-                onClick={onPlay}
-                className={pill}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.3 }}
-              >
-                <IconPlay />
-                Play our story
-              </motion.button>
-            )}
-          </AnimatePresence>
+                  <button
+                    type="button"
+                    onClick={tourPaused ? onResume : onPause}
+                    className={pill}
+                  >
+                    {tourPaused ? <IconPlay /> : <IconPause />}
+                    {tourPaused ? "Resume" : "Pause"}
+                  </button>
+                  <button type="button" onClick={onExplore} className={pill}>
+                    Explore it yourself
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="play"
+                  type="button"
+                  onClick={onPlay}
+                  className={pill}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconPlay />
+                  Play
+                </motion.button>
+              )}
+            </AnimatePresence>
+          ) : null}
+          {onRearrange ? (
+            <button type="button" onClick={onRearrange} className={pill}>
+              Rearrange
+            </button>
+          ) : null}
+          {onReset ? (
+            <button type="button" onClick={onReset} className={pill}>
+              Reset
+            </button>
+          ) : null}
         </div>
       ) : null}
     </>

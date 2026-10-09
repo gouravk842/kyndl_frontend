@@ -1,38 +1,55 @@
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Vector3 } from "three";
 
 import type { AmbientAudio } from "../../hooks/use-ambient-audio";
 import { markerHeight } from "../../lib/shells";
+import { emptySample, makePath } from "../../lib/spline-path";
 import { useMemoryCityStore } from "../../store";
 import type { CityConfig, MemoryNode } from "../../types";
 
-const EYE = 2.2; // camera height while touring
-const ARRIVE_DIST = 0.35; // distance at which a node counts as "arrived"
+const EYE = 2.2;
+const ARRIVE_DIST = 0.35;
+const APPROACH_BLEND = 0.55; // fraction of travel spent on the avenue before framing
 
-/** Where the camera stands and looks to frame a given node. */
+/** Final framing pose for a memory node (plaza-side, looking at the marker). */
 function stagePose(node: MemoryNode) {
   const [x, , z] = node.transform.position;
   const mh = markerHeight(node.shell.kind);
-  // The city is a spiral centred on the plaza, so stand on the avenue (plaza)
-  // side of the building — pulled toward the centre along its radial — and look
-  // outward at it. This frames every node correctly regardless of its angle.
   const r = Math.hypot(x, z) || 1;
   const ux = x / r;
   const uz = z / r;
   const back = 4.8;
   const pos = new Vector3(x - ux * back, EYE + 0.6, z - uz * back);
-  // Frame between the building body and its floating marker.
   const target = new Vector3(x, mh * 0.72, z);
   return { pos, target };
 }
 
+/** Nearest spline parameter (0..1) to a world XZ point. */
+function nearestT(
+  path: ReturnType<typeof makePath>,
+  x: number,
+  z: number,
+  steps = 64,
+): number {
+  const sample = emptySample();
+  let bestT = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < steps; i++) {
+    const t = i / steps;
+    path.at(t, sample);
+    const d = (sample.x - x) ** 2 + (sample.z - z) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      bestT = t;
+    }
+  }
+  return bestT;
+}
+
 /**
- * Guided revolve. Before the recipient starts, the camera drifts in a slow orbit
- * over the city (an attract loop behind the enter prompt). Once touring, it eases
- * from wherever it is toward the focused node's stage pose and reports `arrived`
- * when settled. While stopped, small pointer parallax gives a free-look feel
- * without fighting the rail.
+ * Guided revolve: attract orbit → ease along the avenue spline toward the
+ * focused node → settle into stage framing with camera-local parallax.
  */
 export function RevolveCamera({
   city,
@@ -44,11 +61,28 @@ export function RevolveCamera({
   const started = useMemoryCityStore((s) => s.started);
   const currentIndex = useMemoryCityStore((s) => s.currentIndex);
   const setArrived = useMemoryCityStore((s) => s.setArrived);
+  const setFocusDistance = useMemoryCityStore((s) => s.setFocusDistance);
+  const reducedMotion = useMemoryCityStore((s) => s.reducedMotion);
 
-  // Smoothed look target + live pointer parallax (refs → no per-frame renders).
   const lookAt = useRef(new Vector3(0, 3, -20));
   const pointer = useRef({ x: 0, y: 0 });
   const wasArrived = useRef(false);
+  const travel = useRef(0); // 0 → 1 progress toward current node
+  const lastIndex = useRef(-1);
+
+  const spline = city.layout.spline;
+  const path = useMemo(
+    () =>
+      makePath(
+        spline.length >= 2
+          ? spline
+          : [
+              [0, EYE, 8],
+              [0, EYE, -8],
+            ],
+      ),
+    [spline],
+  );
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -61,11 +95,11 @@ export function RevolveCamera({
 
   useFrame((state, delta) => {
     const cam = state.camera;
-    const k = 1 - Math.pow(0.0015, delta); // frame-rate-independent smoothing
+    const damp = reducedMotion ? 0.05 : 0.0015;
+    const k = 1 - Math.pow(damp, delta);
 
     if (!started) {
-      // Attract orbit around the plaza at the city's centre (origin).
-      const t = state.clock.elapsedTime * 0.12;
+      const t = state.clock.elapsedTime * (reducedMotion ? 0.04 : 0.12);
       const r = 26;
       cam.position.set(Math.sin(t) * r, 9, Math.cos(t) * r);
       lookAt.current.lerp(_tmp.set(0, 3, 0), 0.05);
@@ -75,11 +109,47 @@ export function RevolveCamera({
 
     const node = city.nodes[currentIndex];
     if (!node) return;
-    const { pos, target } = stagePose(node);
 
-    cam.position.lerp(pos, k);
+    if (lastIndex.current !== currentIndex) {
+      lastIndex.current = currentIndex;
+      travel.current = 0;
+      wasArrived.current = false;
+    }
 
-    // Bounded free-look parallax around the framed target.
+    travel.current = Math.min(
+      1,
+      travel.current + delta * (reducedMotion ? 0.35 : 0.55),
+    );
+    const { pos: stagePos, target } = stagePose(node);
+
+    // Avenue approach: sample spline near the node, then blend to stage pose.
+    const nodeT = nearestT(
+      path,
+      node.transform.position[0],
+      node.transform.position[2],
+    );
+    path.at(nodeT, _sample);
+    const avenuePos = _tmp2.set(_sample.x, EYE + 0.4, _sample.z);
+
+    let desiredPos: Vector3;
+    if (travel.current < APPROACH_BLEND) {
+      const u = travel.current / APPROACH_BLEND;
+      desiredPos = _tmp.copy(cam.position).lerp(avenuePos, 0.15 + u * 0.85);
+      // Nudge along the path slightly before the stop.
+      path.at(Math.max(0, nodeT - 0.02 * (1 - u)), _sample);
+      desiredPos.lerp(_tmp2.set(_sample.x, EYE + 0.4, _sample.z), 1 - u);
+    } else {
+      const u = (travel.current - APPROACH_BLEND) / (1 - APPROACH_BLEND);
+      desiredPos = _tmp2.copy(avenuePos).lerp(stagePos, u);
+    }
+
+    cam.position.lerp(desiredPos, k);
+
+    // Camera-local parallax basis (not world axes).
+    cam.updateMatrixWorld();
+    _right.setFromMatrixColumn(cam.matrixWorld, 0).normalize();
+    _up.setFromMatrixColumn(cam.matrixWorld, 1).normalize();
+
     _tmp
       .copy(target)
       .addScaledVector(_right, pointer.current.x * 1.4)
@@ -87,7 +157,14 @@ export function RevolveCamera({
     lookAt.current.lerp(_tmp, k);
     cam.lookAt(lookAt.current);
 
-    const arrived = cam.position.distanceTo(pos) < ARRIVE_DIST;
+    const dist = cam.position.distanceTo(stagePos);
+    const focusDist = cam.position.distanceTo(target);
+    if (
+      Math.abs(focusDist - useMemoryCityStore.getState().focusDistance) > 0.35
+    ) {
+      setFocusDistance(focusDist);
+    }
+    const arrived = travel.current > 0.92 && dist < ARRIVE_DIST;
     setArrived(arrived);
     if (arrived && !wasArrived.current) audio.chime();
     wasArrived.current = arrived;
@@ -97,5 +174,7 @@ export function RevolveCamera({
 }
 
 const _tmp = new Vector3();
+const _tmp2 = new Vector3();
 const _right = new Vector3(1, 0, 0);
 const _up = new Vector3(0, 1, 0);
+const _sample = emptySample();

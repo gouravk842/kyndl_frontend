@@ -62,9 +62,12 @@ export function VendorOverview() {
             />
             <StatTile
               icon={IndianRupee}
-              label="Gross sales"
-              value={formatPrice(finance.gross_sales)}
-              hint={`${finance.orders_count} paid orders`}
+              label="Shop profit"
+              value={formatPrice(
+                finance.profit ??
+                  finance.net_earnings - (finance.total_expenses ?? 0),
+              )}
+              hint={`Expenses ${formatPrice(finance.total_expenses ?? 0)}`}
             />
             <StatTile
               icon={Package}
@@ -77,16 +80,50 @@ export function VendorOverview() {
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Earnings breakdown */}
             <Card className="p-6">
-              <h2 className="font-heading text-lg font-medium">Earnings breakdown</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-lg font-medium">
+                  Earnings &amp; P&amp;L
+                </h2>
+                <Link
+                  href={ROUTES.shopReports}
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  Full report <ArrowRight className="size-3.5" />
+                </Link>
+              </div>
               <dl className="mt-4 space-y-3 text-sm">
-                <Row label="Gross sales" value={formatPrice(finance.gross_sales)} />
+                <Row
+                  label="Gross sales"
+                  value={formatPrice(finance.gross_sales)}
+                />
                 <Row
                   label="Platform commission"
                   value={`− ${formatPrice(finance.commission)}`}
                   muted
                 />
-                <Row label="Net earnings" value={formatPrice(finance.net_earnings)} strong />
-                <Row label="Paid out" value={`− ${formatPrice(finance.paid_out)}`} muted />
+                <Row
+                  label="Net earnings"
+                  value={formatPrice(finance.net_earnings)}
+                  strong
+                />
+                <Row
+                  label="Shop expenses"
+                  value={`− ${formatPrice(finance.total_expenses ?? 0)}`}
+                  muted
+                />
+                <Row
+                  label="Profit"
+                  value={formatPrice(
+                    finance.profit ??
+                      finance.net_earnings - (finance.total_expenses ?? 0),
+                  )}
+                  strong
+                />
+                <Row
+                  label="Paid out"
+                  value={`− ${formatPrice(finance.paid_out)}`}
+                  muted
+                />
                 <div className="border-t pt-3">
                   <Row
                     label="Payable balance"
@@ -96,14 +133,23 @@ export function VendorOverview() {
                 </div>
               </dl>
               <p className="mt-4 text-xs text-muted-foreground">
-                Payouts are settled by the Kyndl team; this balance reflects what&apos;s owed.
+                Payouts are settled by the Kyndl team.{" "}
+                <Link
+                  href={ROUTES.shopExpenses}
+                  className="text-primary hover:underline"
+                >
+                  Manage expenses
+                </Link>
+                .
               </p>
             </Card>
 
             {/* Orders by status */}
             <Card className="p-6">
               <div className="flex items-center justify-between">
-                <h2 className="font-heading text-lg font-medium">Orders by status</h2>
+                <h2 className="font-heading text-lg font-medium">
+                  Orders by status
+                </h2>
                 <Link
                   href={ROUTES.shopOrders}
                   className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
@@ -150,7 +196,9 @@ function StatTile({
         <Icon className="size-4" />
         <span className="text-sm">{label}</span>
       </div>
-      <p className="mt-2 font-display text-2xl font-bold tracking-tight">{value}</p>
+      <p className="mt-2 font-display text-2xl font-bold tracking-tight">
+        {value}
+      </p>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </Card>
   );
@@ -170,7 +218,11 @@ function Row({
   return (
     <div className="flex items-center justify-between">
       <dt className={muted ? "text-muted-foreground" : ""}>{label}</dt>
-      <dd className={strong ? "font-semibold" : muted ? "text-muted-foreground" : ""}>
+      <dd
+        className={
+          strong ? "font-semibold" : muted ? "text-muted-foreground" : ""
+        }
+      >
         {value}
       </dd>
     </div>

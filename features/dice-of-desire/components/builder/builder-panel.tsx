@@ -3,6 +3,9 @@
 import { Eye } from "lucide-react";
 import { useState } from "react";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, titled } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
 import {
   BuilderShell,
   type BuilderTab,
@@ -24,6 +27,8 @@ export function BuilderPanel({
 }) {
   const doc = useBuilderStore((s) => s.doc);
   const setMeta = useBuilderStore((s) => s.setMeta);
+  const updatePosition = useBuilderStore((s) => s.updatePosition);
+  const [bankOpen, setBankOpen] = useState(false);
 
   // The square open in the editor (null = closed).
   const [editing, setEditing] = useState<Position | null>(null);
@@ -84,6 +89,13 @@ export function BuilderPanel({
               The first die picks the row, the second the column. Tap any square
               to reword it.
             </p>
+            <button
+              type="button"
+              onClick={() => setBankOpen(true)}
+              className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+            >
+              Fill empty squares from the bank
+            </button>
 
             <div className="overflow-x-auto">
               <table className="w-full border-separate border-spacing-1 text-left">
@@ -139,6 +151,29 @@ export function BuilderPanel({
           onClose={() => setEditing(null)}
         />
       )}
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const empty = doc.positions.filter(
+            (position) => !position.name.trim(),
+          );
+          picked.forEach((item, index) => {
+            const position = empty[index];
+            if (!position) return;
+            const image = fileRef(item);
+            const { title, body } = titled(item);
+            updatePosition(position.id, {
+              name: title,
+              note: body,
+              heat: heatForType(item.type.slug),
+              ...(image ? { image } : {}),
+            });
+          });
+        }}
+      />
     </>
   );
 }

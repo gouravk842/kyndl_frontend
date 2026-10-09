@@ -9,23 +9,23 @@ const steps = [
   {
     number: "01",
     icon: PenLine,
-    title: "Choose a moment",
+    title: "Keep the days",
     description:
-      "Pick an experience and set the tone, the timing, and who it's for.",
+      "Drop photos and little notes into a bank for someone you love. One place. Always growing.",
   },
   {
     number: "02",
     icon: Sparkles,
-    title: "Make it yours",
+    title: "Grow a world — or start one",
     description:
-      "Add your photos, notes, voices, and little secrets — guided every step.",
+      "Turn the bank into a scrapbook, a jar, a sky. Or pick a single experience and make it by hand.",
   },
   {
     number: "03",
     icon: Clock,
     title: "Send the feeling",
     description:
-      "Share a link, or let it unlock at the exact moment it will mean the most.",
+      "Share a private link, or let it unlock at the exact moment it will mean the most.",
   },
 ] as const;
 
@@ -41,7 +41,7 @@ export function HowItWorks() {
             How Kyndl works
           </p>
           <h2 className="mx-auto mt-4 max-w-2xl text-center font-display text-3xl text-[#3A2A25] md:text-4xl lg:text-5xl">
-            From a thought to a moment,
+            From a kept day to a world,
             <br />
             <span className="text-[#B08C7D]">in about three minutes.</span>
           </h2>

@@ -1,8 +1,9 @@
-import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { ComponentType } from "react";
 
 import { PageContainer } from "@/components/layout/page-container";
+import { ExperienceCardMedia } from "@/components/shared/experience-card-media";
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import { ExperiencePrice } from "@/components/shared/experience-price";
 import { ROUTES } from "@/constants/routes";
@@ -145,6 +146,15 @@ export function MemoryPagesLanding({ exp, more, makeHref }: Props) {
                   <ArrowUpRight className="ml-2 size-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
                 <Link
+                  href={ROUTES.experiencePreview(exp.slug)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[#F2DACE] bg-white/70 px-8 text-base font-medium text-[#3A2A25] transition-all duration-500 hover:border-[#FF7A59]/50 hover:bg-white"
+                >
+                  <ExternalLink className="size-4" />
+                  Open public view
+                </Link>
+                <Link
                   href={ROUTES.experiences}
                   className="inline-flex h-12 items-center justify-center rounded-full border border-[#F2DACE] bg-white/70 px-8 text-base font-medium text-[#3A2A25] transition-all duration-500 hover:border-[#FF7A59]/50 hover:bg-white"
                 >
@@ -276,9 +286,13 @@ export function MemoryPagesLanding({ exp, more, makeHref }: Props) {
                 <Link
                   key={m.slug}
                   href={experienceHref(m.slug)}
-                  className="group relative flex min-h-56 flex-col justify-end overflow-hidden rounded-[1.75rem] border border-[#F0DAC9] p-6 shadow-[0_30px_70px_-40px_rgba(58,42,37,0.55)] transition-transform duration-500 hover:-translate-y-1"
-                  style={{ background: m.previewGradient }}
+                  className="group relative flex min-h-56 flex-col overflow-hidden rounded-[1.75rem] border border-[#F0DAC9] shadow-[0_30px_70px_-40px_rgba(58,42,37,0.55)] transition-transform duration-500 hover:-translate-y-1"
                 >
+                  <ExperienceCardMedia
+                    slug={m.slug}
+                    media={m}
+                    className="absolute inset-0 rounded-none aspect-auto h-full"
+                  />
                   <div
                     className="absolute inset-0"
                     style={{
@@ -287,15 +301,17 @@ export function MemoryPagesLanding({ exp, more, makeHref }: Props) {
                     }}
                     aria-hidden
                   />
-                  <span className="relative flex size-11 items-center justify-center rounded-2xl border border-white/40 bg-white/15 text-white backdrop-blur-sm">
-                    <ExperienceIcon name={m.icon} className="size-5" />
-                  </span>
-                  <h3 className="relative mt-4 font-serif text-xl text-white">
-                    {m.name}
-                  </h3>
-                  <p className="relative mt-1.5 line-clamp-2 text-sm leading-relaxed text-white/80">
-                    {m.tagline}
-                  </p>
+                  <div className="relative mt-auto flex flex-col justify-end p-6">
+                    <span className="flex size-11 items-center justify-center rounded-2xl border border-white/40 bg-white/15 text-white backdrop-blur-sm">
+                      <ExperienceIcon name={m.icon} className="size-5" />
+                    </span>
+                    <h3 className="mt-4 font-serif text-xl text-white">
+                      {m.name}
+                    </h3>
+                    <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-white/80">
+                      {m.tagline}
+                    </p>
+                  </div>
                 </Link>
               ))}
             </div>

@@ -1,15 +1,19 @@
 "use client";
 
-import { Gift, Loader2, Package } from "lucide-react";
+import { Download, Gift, Loader2, Package } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/constants/routes";
-import { GiftsSectionNav } from "@/features/gifts/components/gifts-section-nav";
+import { CompanionRecommendations } from "@/features/recommendations/components/companion-recommendations";
 import { useGiftOrders } from "@/hooks/use-gifts";
 import { formatPrice } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
+import { paymentService } from "@/services/payments/payment.service";
 import type { OrderStatus } from "@/types/gift";
 
 const STATUS_META: Record<OrderStatus, { label: string; className: string }> = {
@@ -26,19 +30,39 @@ const STATUS_META: Record<OrderStatus, { label: string; className: string }> = {
 
 export function OrdersView() {
   const { data: orders, isLoading, isError } = useGiftOrders();
+  const searchParams = useSearchParams();
+  const recommendOrderId = searchParams.get("recommend");
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  async function handleDownload(invoiceId: string) {
+    setDownloadingId(invoiceId);
+    try {
+      await paymentService.downloadInvoicePdf(invoiceId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Download failed.");
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   return (
     <>
       <PageHeader
+        compact
         eyebrow="Your bag, sent"
         title="Your orders"
         subtitle="Every little something you've sent."
-        size="lg"
-      >
-        <GiftsSectionNav />
-      </PageHeader>
+      />
 
       <PageContainer size="lg" className="py-10 md:py-14">
+        {recommendOrderId ? (
+          <CompanionRecommendations
+            orderId={recommendOrderId}
+            title="Add a digital moment"
+            subtitle="Pair what you just ordered with a keepsake they can open on a link."
+            className="mb-10"
+          />
+        ) : null}
         {isLoading ? (
           <div className="flex justify-center py-20 text-[#C75B39]">
             <Loader2 className="size-6 animate-spin" />
@@ -64,6 +88,8 @@ export function OrdersView() {
           <ul className="flex flex-col gap-4">
             {orders.map((order) => {
               const meta = STATUS_META[order.status];
+              const canDownload =
+                order.status === "delivered" && Boolean(order.invoice_id);
               return (
                 <li
                   key={order.id}
@@ -111,8 +137,6 @@ export function OrdersView() {
                     </span>
                   </div>
 
-                  {/* Shipping happens per vendor, so tracking links live on
-                      each vendor sub-order, not the order as a whole. */}
                   {order.vendor_orders
                     ?.filter((vo) => vo.tracking_link)
                     .map((vo) => (
@@ -127,6 +151,22 @@ export function OrdersView() {
                         {vo.courier_display ? ` (${vo.courier_display})` : ""} →
                       </a>
                     ))}
+
+                  {canDownload ? (
+                    <button
+                      type="button"
+                      disabled={downloadingId === order.invoice_id}
+                      onClick={() => handleDownload(order.invoice_id!)}
+                      className="mt-3 inline-flex h-9 items-center gap-2 rounded-full border border-[#F4DDD0] px-4 text-sm font-medium text-[#C75B39] hover:bg-[#FFF1E9]"
+                    >
+                      {downloadingId === order.invoice_id ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Download className="size-4" />
+                      )}
+                      Download invoice
+                    </button>
+                  ) : null}
                 </li>
               );
             })}

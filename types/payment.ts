@@ -27,3 +27,22 @@ export interface RazorpaySuccess {
   razorpay_payment_id: string;
   razorpay_signature: string;
 }
+
+/** Issued invoice for a captured payment. */
+export interface Invoice {
+  id: string;
+  number: string;
+  payment_id: string;
+  product_code: string;
+  order_id: string | null;
+  subtotal: number;
+  fees_total: number;
+  tax_total: number;
+  discount_total: number;
+  grand_total: number;
+  grand_total_display: string;
+  currency: string;
+  issued_at: string;
+  downloadable: boolean;
+  download_reason: string;
+}

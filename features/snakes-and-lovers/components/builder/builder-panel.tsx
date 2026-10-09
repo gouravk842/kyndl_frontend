@@ -3,6 +3,9 @@
 import { Eye } from "lucide-react";
 import { useState } from "react";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, titled } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
 import {
   BuilderShell,
   type BuilderTab,
@@ -32,6 +35,8 @@ export function BuilderPanel({
 }) {
   const doc = useBuilderStore((s) => s.doc);
   const setMeta = useBuilderStore((s) => s.setMeta);
+  const updateSquare = useBuilderStore((s) => s.updateSquare);
+  const [bankOpen, setBankOpen] = useState(false);
 
   // The square open in the editor (null = closed).
   const [editing, setEditing] = useState<Square | null>(null);
@@ -82,9 +87,16 @@ export function BuilderPanel({
           {/* The track */}
           <Section title="The board (100 squares)">
             <p className="-mt-1 text-xs text-white/40">
-              Tap any square to reword its dare and set its heat. 🪜 ladders rush
-              you hotter, 🐍 snakes tease you back, and 100 is the finale.
+              Tap any square to reword its dare and set its heat. 🪜 ladders
+              rush you hotter, 🐍 snakes tease you back, and 100 is the finale.
             </p>
+            <button
+              type="button"
+              onClick={() => setBankOpen(true)}
+              className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+            >
+              Fill empty squares from the bank
+            </button>
 
             <div
               className="grid gap-px overflow-hidden rounded-lg bg-white/5 p-px"
@@ -123,6 +135,27 @@ export function BuilderPanel({
       {editing && (
         <SquareFormModal square={editing} onClose={() => setEditing(null)} />
       )}
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const empty = doc.squares.filter((square) => !square.name.trim());
+          picked.forEach((item, index) => {
+            const square = empty[index];
+            if (!square) return;
+            const image = fileRef(item);
+            const { title, body } = titled(item);
+            updateSquare(square.id, {
+              name: title,
+              note: body,
+              heat: heatForType(item.type.slug),
+              ...(image ? { image } : {}),
+            });
+          });
+        }}
+      />
     </>
   );
 }
@@ -183,7 +216,13 @@ function GridCell({
 const inputCls =
   "w-full rounded-lg border border-white/12 bg-white/5 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4d6d] focus:ring-2 focus:ring-[#ff4d6d]/25";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium tracking-wide text-white/50">
@@ -194,7 +233,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold tracking-wide text-white/80 uppercase">

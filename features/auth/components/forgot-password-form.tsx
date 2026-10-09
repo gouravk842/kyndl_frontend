@@ -71,7 +71,10 @@ function RequestStep({
       title="Reset your password"
       description="Enter your email and we'll send you a reset code."
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-4 lg:space-y-3.5"
+      >
         <AuthField
           id="email"
           label="Email"
@@ -116,7 +119,10 @@ function ConfirmStep({
         </>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-4 lg:space-y-3.5"
+      >
         <AuthField
           id="otp"
           label="Reset code"
@@ -154,11 +160,11 @@ function ConfirmStep({
 
 function BackToLogin() {
   return (
-    <p className="text-center font-cursive text-[19px] text-[#7A6258]">
+    <p className="text-center text-sm text-[#7A6258]">
       Remembered it?{" "}
       <Link
         href={ROUTES.login}
-        className="text-[#C75B39] underline underline-offset-2"
+        className="font-medium text-[#C75B39] underline-offset-4 hover:underline"
       >
         Back to sign in
       </Link>

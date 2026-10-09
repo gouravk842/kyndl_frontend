@@ -23,7 +23,9 @@ export default function DashboardLayout({
           <div className="flex items-center gap-2">
             <NotificationBell />
             <ThemeToggle />
-            <DashboardHeaderActions />
+            <Suspense fallback={<div className="size-9" />}>
+              <DashboardHeaderActions />
+            </Suspense>
           </div>
         </header>
         <main className="flex-1 overflow-auto p-6">

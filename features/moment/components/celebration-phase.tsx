@@ -3,10 +3,16 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 
+import { MakeOneBackCta } from "@/features/recipient-aftermath/components/make-one-back-cta";
 import { cn } from "@/lib/utils";
 
 import { themeTokens } from "../lib/themes";
-import type { MomentAnswer, MomentCelebration, MomentPlan, MomentTheme } from "../types";
+import type {
+  MomentAnswer,
+  MomentCelebration,
+  MomentPlan,
+  MomentTheme,
+} from "../types";
 import { HeartsBurst } from "./hearts-burst";
 
 export type SubmitState = "idle" | "sending" | "sent" | "error";
@@ -15,7 +21,7 @@ export type SubmitState = "idle" | "sending" | "sent" | "error";
  * The release. After the question, the screen blooms — names together, hearts
  * up — and the recipient seals their answer back to the creator with an optional
  * note. This is where the emotion travels home. A graceful, hearts-free variant
- * handles an honest "no".
+ * handles an honest "no". After seal: soft "make one back" CTA.
  */
 export function CelebrationPhase({
   theme,
@@ -24,6 +30,8 @@ export function CelebrationPhase({
   plan,
   submitState,
   onSeal,
+  experienceType,
+  shareToken,
 }: {
   theme: MomentTheme;
   answer: MomentAnswer;
@@ -31,6 +39,9 @@ export function CelebrationPhase({
   plan?: MomentPlan;
   submitState: SubmitState;
   onSeal: (payload: { note: string; responderName: string }) => void;
+  /** Creation type slug — enables the soft reciprocal CTA after seal. */
+  experienceType?: string;
+  shareToken?: string;
 }) {
   const t = themeTokens(theme);
   const [note, setNote] = useState("");
@@ -58,7 +69,13 @@ export function CelebrationPhase({
             {celebration.askerName} &amp; {celebration.recipientName}
           </p>
         )}
-        <h1 className={cn("text-4xl leading-tight sm:text-5xl", t.headlineFont, t.text)}>
+        <h1
+          className={cn(
+            "text-4xl leading-tight sm:text-5xl",
+            t.headlineFont,
+            t.text,
+          )}
+        >
           {headline}
         </h1>
         {subtext && <p className={cn("text-base", t.muted)}>{subtext}</p>}
@@ -72,19 +89,30 @@ export function CelebrationPhase({
           className={cn("rounded-2xl border px-6 py-4", t.accentBorder)}
           style={{ background: `rgb(${t.particle} / 0.08)` }}
         >
-          {plan.when && <p className={cn("text-lg font-medium", t.text)}>{plan.when}</p>}
+          {plan.when && (
+            <p className={cn("text-lg font-medium", t.text)}>{plan.when}</p>
+          )}
           {plan.where && <p className={cn("text-sm", t.muted)}>{plan.where}</p>}
         </motion.div>
       )}
 
       {sealed ? (
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={cn("text-lg", t.headlineFont, t.text)}
+          className="flex flex-col items-center gap-5"
         >
-          Your answer is on its way 💌
-        </motion.p>
+          <p className={cn("text-lg", t.headlineFont, t.text)}>
+            Your answer is on its way
+          </p>
+          {experienceType && shareToken && (
+            <MakeOneBackCta
+              experienceType={experienceType}
+              fromToken={shareToken}
+              tone="on-dark"
+            />
+          )}
+        </motion.div>
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -116,7 +144,9 @@ export function CelebrationPhase({
           <button
             type="button"
             disabled={submitState === "sending"}
-            onClick={() => onSeal({ note: note.trim(), responderName: name.trim() })}
+            onClick={() =>
+              onSeal({ note: note.trim(), responderName: name.trim() })
+            }
             className={cn(
               "rounded-full px-8 py-3 text-lg font-semibold shadow-lg disabled:opacity-60",
               t.accentBg,

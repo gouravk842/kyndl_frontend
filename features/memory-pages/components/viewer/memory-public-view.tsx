@@ -3,12 +3,9 @@
 import { MessageCircle, Sparkles, Star, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Conversation } from "@/features/comments/components/conversation";
+import { RecipientSheetFooter } from "@/features/recipient-aftermath/components/recipient-aftermath";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
 import { cn } from "@/lib/utils";
 
@@ -18,13 +15,14 @@ type Panel = "review" | "comments" | null;
  * Public layout for a shared memory-pages album.
  *
  * One warm backdrop runs the whole screen: a slim header floats on top with the
- * keepsake's name and the "Review" / "Comments" actions (which slide in as
+ * keepsake's name and the "How was it?" / "Comments" actions (which slide in as
  * sheets), the album floats in the middle with no caramel desk of its own, and
  * a friendly chat bubble waits in the corner. Hand-drawn doodles drift behind
  * everything so the page feels made-by-a-person, not machine-generated.
  */
 export function MemoryPublicView({
   token,
+  experienceType = "memory-pages",
   title,
   commentsEnabled,
   chatEnabled,
@@ -32,6 +30,7 @@ export function MemoryPublicView({
   children,
 }: {
   token: string;
+  experienceType?: string;
   title: string;
   commentsEnabled: boolean;
   chatEnabled: boolean;
@@ -42,7 +41,7 @@ export function MemoryPublicView({
   const [panel, setPanel] = useState<Panel>(null);
 
   return (
-    <div className="kyndl-mp-ambient relative flex min-h-dvh w-full flex-col overflow-hidden">
+    <div className="kyndl-mp-ambient relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <Doodles />
 
       {/* ── Header ─────────────────────────────────────────────────── */}
@@ -64,7 +63,7 @@ export function MemoryPublicView({
         <div className="flex shrink-0 items-center gap-2">
           {reviewsEnabled && (
             <PillButton icon={Star} onClick={() => setPanel("review")}>
-              Review
+              How was it?
             </PillButton>
           )}
           {commentsEnabled && (
@@ -92,13 +91,16 @@ export function MemoryPublicView({
         open={panel === "review"}
         onOpenChange={(open) => setPanel(open ? "review" : null)}
       >
-        <FeedbackSheet eyebrow="Your review" icon={Star}>
-          <SheetTitle className="sr-only">Rate this keepsake</SheetTitle>
+        <FeedbackSheet eyebrow="How did this feel?" icon={Star}>
+          <SheetTitle className="sr-only">How did this feel?</SheetTitle>
           <ReviewsSection
             type="experience"
             refId={token}
-            title="Rate this keepsake"
+            title=""
+            tone="keepsake"
+            experienceType={experienceType}
           />
+          <RecipientSheetFooter token={token} experienceType={experienceType} />
         </FeedbackSheet>
       </Sheet>
 
@@ -211,11 +213,7 @@ function ChatDock({ token }: { token: string }) {
         aria-label={open ? "Close chat" : "Chat with the creator"}
         className="group relative grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#ff7a59] to-[#f2596f] text-white shadow-[0_14px_30px_-10px_rgba(242,89,111,0.7)] transition-transform hover:scale-105 active:scale-95"
       >
-        {open ? (
-          <X className="size-6" />
-        ) : (
-          <MessageCircle className="size-6" />
-        )}
+        {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
         {!open && (
           <span className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-emerald-400 ring-2 ring-white" />
         )}
@@ -234,22 +232,46 @@ function Doodles() {
       aria-hidden
       className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
     >
-      <Doodle className="top-24 left-[6%] size-10 text-[#f2596f]" delay="0s" rot={-8}>
+      <Doodle
+        className="top-24 left-[6%] size-10 text-[#f2596f]"
+        delay="0s"
+        rot={-8}
+      >
         <HeartDoodle />
       </Doodle>
-      <Doodle className="top-28 right-[9%] size-12 text-[#d4a373]" delay="1.4s" rot={10}>
+      <Doodle
+        className="top-28 right-[9%] size-12 text-[#d4a373]"
+        delay="1.4s"
+        rot={10}
+      >
         <StarDoodle />
       </Doodle>
-      <Doodle className="top-1/2 left-[4%] size-9 text-[#ff7a59]" delay="0.7s" rot={6}>
+      <Doodle
+        className="top-1/2 left-[4%] size-9 text-[#ff7a59]"
+        delay="0.7s"
+        rot={6}
+      >
         <SparkleDoodle />
       </Doodle>
-      <Doodle className="top-[46%] right-[5%] size-11 text-[#e0a86b]" delay="2.1s" rot={-12}>
+      <Doodle
+        className="top-[46%] right-[5%] size-11 text-[#e0a86b]"
+        delay="2.1s"
+        rot={-12}
+      >
         <SwirlDoodle />
       </Doodle>
-      <Doodle className="bottom-24 left-[10%] size-12 text-[#f0a13d]" delay="1s" rot={-4}>
+      <Doodle
+        className="bottom-24 left-[10%] size-12 text-[#f0a13d]"
+        delay="1s"
+        rot={-4}
+      >
         <SunDoodle />
       </Doodle>
-      <Doodle className="bottom-16 left-1/2 size-10 text-[#c9976a]" delay="1.8s" rot={4}>
+      <Doodle
+        className="bottom-16 left-1/2 size-10 text-[#c9976a]"
+        delay="1.8s"
+        rot={4}
+      >
         <CameraDoodle />
       </Doodle>
     </div>

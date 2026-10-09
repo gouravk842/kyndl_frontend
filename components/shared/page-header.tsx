@@ -15,6 +15,7 @@ export function PageHeader({
   children,
   size = "xl",
   glow = true,
+  compact = false,
   className,
 }: {
   eyebrow?: string;
@@ -27,10 +28,22 @@ export function PageHeader({
   size?: "sm" | "md" | "lg" | "xl" | "full";
   /** Soft warm radial wash behind the header. */
   glow?: boolean;
+  /**
+   * Tighter padding + type scale. Use on catalog/listing pages where the header
+   * is a lead-in to a grid rather than a landing-page hero, so the main content
+   * sits higher on the page.
+   */
+  compact?: boolean;
   className?: string;
 }) {
   return (
-    <section className={cn("relative pt-14 md:pt-20", className)}>
+    <section
+      className={cn(
+        "relative",
+        compact ? "pt-8 md:pt-12" : "pt-14 md:pt-20",
+        className,
+      )}
+    >
       {glow && (
         <div
           className="pointer-events-none absolute inset-0 opacity-70"
@@ -49,11 +62,23 @@ export function PageHeader({
                 {eyebrow}
               </p>
             )}
-            <h1 className="font-display text-3xl leading-[1.06] text-[#3A2A25] sm:text-4xl lg:text-5xl">
+            <h1
+              className={cn(
+                "font-display leading-[1.06] text-[#3A2A25]",
+                compact
+                  ? "text-3xl sm:text-4xl"
+                  : "text-3xl sm:text-4xl lg:text-5xl",
+              )}
+            >
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-4 max-w-xl text-lg leading-relaxed text-[#7A6258]">
+              <p
+                className={cn(
+                  "max-w-xl leading-relaxed text-[#7A6258]",
+                  compact ? "mt-3 text-base" : "mt-4 text-lg",
+                )}
+              >
                 {subtitle}
               </p>
             )}
@@ -62,7 +87,9 @@ export function PageHeader({
             <div className="flex flex-wrap items-center gap-3">{actions}</div>
           )}
         </div>
-        {children && <div className="mt-8">{children}</div>}
+        {children && (
+          <div className={compact ? "mt-5" : "mt-8"}>{children}</div>
+        )}
       </PageContainer>
     </section>
   );

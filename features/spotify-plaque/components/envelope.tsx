@@ -1,22 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useState } from "react";
 
 import type { HiddenMessage, PlaqueTheme } from "../config";
-import { KyndlSealMark } from "./kyndl-seal-mark";
-
-// A faint damask flourish embossed across the envelope paper.
-const DAMASK =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.5'%3E%3Cpath d='M24 8c6 4 6 12 0 16-6-4-6-12 0-16zM24 40c-6-4-6-12 0-16 6 4 6 12 0 16zM8 24c4-6 12-6 16 0-4 6-12 6-16 0zM40 24c-4 6-12 6-16 0 4-6 12-6 16 0z'/%3E%3Ccircle cx='24' cy='24' r='2'/%3E%3C/g%3E%3C/svg%3E\")";
 
 /**
- * A wax-sealed envelope the recipient taps to unwrap. Light streaks orbit it;
- * on tap the seal breaks, the flap lifts and tips back, a letter rises out, and
- * the private {@link HiddenMessage} settles into a centred card over a dimmed
- * backdrop. The seal is stamped with the Kyndl mark. Tapping the backdrop (or
- * the close button) folds it back.
+ * A sealed glass whisper — a slim frosted card with a silk ribbon tied across
+ * it. Tap to untie: the ribbon parts, the card blooms into a matching glass
+ * letter. Replaces the old 3D wax-seal envelope.
  */
 export function Envelope({
   hidden,
@@ -27,7 +20,6 @@ export function Envelope({
 }) {
   const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
-
   const hasMessage = hidden.heading.trim() || hidden.body.trim();
 
   return (
@@ -35,164 +27,132 @@ export function Envelope({
       <motion.button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Unwrap the envelope"
+        aria-label="Open the sealed note"
         className="relative block cursor-pointer outline-none"
-        whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+        whileHover={reduceMotion ? undefined : { y: -3 }}
         whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 320, damping: 22 }}
       >
-        {/* Orbiting light streaks */}
-        {!reduceMotion && (
-          <div aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center">
-            {[0, 32].map((tilt, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-[50%] border border-white/30 blur-[1px]"
-                style={{
-                  width: 380,
-                  height: 150,
-                  transform: `rotate(${tilt}deg)`,
-                }}
-                animate={{ rotate: [tilt, tilt + 360] }}
-                transition={{
-                  duration: 14 - i * 3,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* opening glow */}
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10 rounded-full blur-2xl"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(255,238,200,0.95) 0%, rgba(255,210,120,0.4) 45%, transparent 70%)",
-              }}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1.5 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Envelope */}
+        {/* soft ambient bloom — still, not orbiting */}
         <div
-          className="relative"
-          style={{ width: 300, height: 200, perspective: 1100 }}
+          aria-hidden
+          className="pointer-events-none absolute -inset-8 -z-10 rounded-full blur-2xl"
+          style={{
+            background: `radial-gradient(circle, ${theme.accent}55 0%, transparent 70%)`,
+            opacity: open ? 0.9 : 0.45,
+          }}
+        />
+
+        <div
+          className="relative overflow-hidden rounded-[22px] backdrop-blur-2xl"
+          style={{
+            width: 168,
+            height: 220,
+            background: theme.noteGlass,
+            boxShadow: `
+              0 28px 60px -24px rgba(0,0,0,0.5),
+              inset 0 1px 0 rgba(255,255,255,0.5),
+              inset 0 0 0 1px ${theme.noteBorder}
+            `,
+          }}
         >
-          {/* back / inside */}
+          {/* glass sheen */}
           <div
-            className="absolute inset-0 rounded-[10px]"
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
             style={{
-              background: theme.envelope,
-              backgroundImage: DAMASK,
-              backgroundSize: "52px 52px",
-              boxShadow: "inset 0 0 40px rgba(0,0,0,0.45)",
+              background:
+                "linear-gradient(145deg, rgba(255,255,255,0.42) 0%, transparent 42%, transparent 68%, rgba(255,255,255,0.08) 100%)",
             }}
           />
 
-          {/* letter that rises out */}
+          {/* faint handwritten cue behind the ribbon */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-5 pt-2">
+            <p
+              className="font-serif text-center text-[15px] leading-snug italic"
+              style={{ color: theme.inkSoft }}
+            >
+              a note
+              <br />
+              for you
+            </p>
+            <span
+              className="mt-4 block h-px w-10"
+              style={{ background: theme.inkSoft, opacity: 0.35 }}
+            />
+          </div>
+
+          {/* silk ribbon band */}
           <motion.div
-            className="absolute left-1/2 z-[15] w-[82%] -translate-x-1/2 rounded-[6px] bg-[#f6ecd7] shadow-lg"
-            style={{ top: 18, height: 150 }}
-            initial={false}
+            aria-hidden
+            className="absolute inset-x-0 top-[46%] z-20 h-[34px] -translate-y-1/2"
             animate={
-              open ? { y: -104, opacity: 1 } : { y: 0, opacity: 0 }
+              open ? { opacity: 0, scaleX: 1.15 } : { opacity: 1, scaleX: 1 }
             }
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: open ? 0.15 : 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="space-y-2 p-4">
-              <div className="h-2 w-1/2 rounded-full bg-[#d8c7a4]" />
-              <div className="h-1.5 w-full rounded-full bg-[#e4d7bb]" />
-              <div className="h-1.5 w-5/6 rounded-full bg-[#e4d7bb]" />
-              <div className="h-1.5 w-2/3 rounded-full bg-[#e4d7bb]" />
-            </div>
+            <div
+              className="absolute inset-y-0 -left-3 -right-3"
+              style={{
+                background: `linear-gradient(180deg, ${theme.ribbon} 0%, ${theme.ribbonDeep} 100%)`,
+                boxShadow:
+                  "0 4px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.35)",
+              }}
+            />
+            {/* soft fold crease on ribbon */}
+            <div
+              className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2"
+              style={{ background: "rgba(0,0,0,0.12)" }}
+            />
           </motion.div>
 
-          {/* front pocket (bottom flap) — keeps the letter tucked */}
-          <div
-            className="absolute inset-0 z-20 rounded-[10px]"
-            style={{
-              background: `linear-gradient(180deg, ${theme.envelopeFlap} 0%, ${theme.envelope} 100%)`,
-              clipPath: "polygon(0 100%, 100% 100%, 50% 34%)",
-              boxShadow: "inset 0 2px 6px rgba(255,255,255,0.06)",
-            }}
-          />
-          {/* side fold lines */}
-          <svg
-            aria-hidden
-            viewBox="0 0 300 200"
-            className="absolute inset-0 z-20 h-full w-full"
-            fill="none"
-            stroke="rgba(255,255,255,0.12)"
-            strokeWidth="1"
-          >
-            <path d="M0 8 L150 116 L300 8 M0 196 L150 116 L300 196" />
-          </svg>
-
-          {/* flap */}
+          {/* ribbon knot / bow */}
           <motion.div
-            className="absolute inset-0 origin-top rounded-[10px]"
-            style={{
-              background: `linear-gradient(180deg, ${theme.envelopeFlap} 0%, ${theme.envelope} 100%)`,
-              backgroundImage: DAMASK,
-              backgroundSize: "52px 52px",
-              clipPath: "polygon(0 0, 100% 0, 50% 70%)",
-              transformStyle: "preserve-3d",
-              zIndex: open ? 5 : 30,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-            }}
-            animate={{ rotateX: open ? -168 : 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          />
-
-          {/* wax seal */}
-          <motion.div
-            className="absolute top-1/2 left-1/2 z-40 grid size-[68px] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full"
-            style={{
-              background: `radial-gradient(circle at 36% 30%, ${theme.seal} 0%, ${theme.seal} 32%, ${theme.sealDeep} 78%, ${theme.sealDeep} 100%)`,
-              color: theme.sealDeep,
-              boxShadow:
-                "0 4px 10px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.35)",
-            }}
+            className="absolute top-[46%] left-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
             animate={
               open
-                ? { scale: 0.6, opacity: 0, y: 8 }
-                : { scale: 1, opacity: 1, y: 0 }
+                ? { scale: 0.4, opacity: 0, rotate: 18 }
+                : { scale: 1, opacity: 1, rotate: 0 }
             }
-            transition={{ duration: 0.35 }}
+            transition={{ duration: 0.4 }}
           >
-            {/* scalloped rim */}
-            <span
-              aria-hidden
-              className="absolute inset-0 rounded-full"
-              style={{ boxShadow: `inset 0 0 0 2px ${theme.sealDeep}` }}
-            />
-            {/* embossed Kyndl mark (inherits the seal's deep-gold colour) */}
-            <KyndlSealMark className="w-8 drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]" />
+            <RibbonKnot theme={theme} />
           </motion.div>
+
+          {/* opening: letter peek rising inside the glass */}
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                aria-hidden
+                className="absolute inset-x-4 top-6 bottom-6 rounded-[14px]"
+                style={{
+                  background: theme.dark
+                    ? "rgba(255,255,255,0.06)"
+                    : "rgba(255,255,255,0.35)",
+                  boxShadow: `inset 0 0 0 1px ${theme.noteBorder}`,
+                }}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              />
+            )}
+          </AnimatePresence>
         </div>
       </motion.button>
 
       {!open && (
         <motion.p
-          className="flex items-center gap-1.5 text-sm font-medium"
+          className="text-sm tracking-wide"
           style={{ color: theme.dark ? "#e9e2d8" : theme.ink }}
-          animate={reduceMotion ? undefined : { opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          animate={reduceMotion ? undefined : { opacity: [0.55, 1, 0.55] }}
+          transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Sparkles className="size-4" style={{ color: theme.seal }} />
-          Unwrap to Reveal
+          Untie to read
         </motion.p>
       )}
 
-      {/* The reveal */}
+      {/* The reveal — matching glass letter */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -201,73 +161,142 @@ export function Envelope({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* backdrop */}
             <button
               type="button"
               aria-label="Close message"
               onClick={() => setOpen(false)}
-              className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 cursor-default bg-black/55 backdrop-blur-md"
             />
 
             <motion.div
-              className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-black/5 bg-[#f8efdd] p-8 text-center shadow-2xl"
+              className="relative z-10 w-full max-w-md overflow-hidden rounded-[28px] p-8 text-center backdrop-blur-2xl"
+              style={{
+                background: theme.noteGlass,
+                boxShadow: `
+                  0 40px 90px -20px rgba(0,0,0,0.55),
+                  inset 0 1px 0 rgba(255,255,255,0.45),
+                  inset 0 0 0 1px ${theme.noteBorder}
+                `,
+                color: theme.ink,
+              }}
               initial={
-                reduceMotion ? { opacity: 0 } : { opacity: 0, y: 60, scale: 0.85 }
+                reduceMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 48, scale: 0.92 }
               }
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 30, scale: 0.9 }}
+              exit={{ opacity: 0, y: 24, scale: 0.96 }}
               transition={{
                 type: "spring",
-                stiffness: 160,
-                damping: 18,
-                delay: reduceMotion ? 0 : 0.45,
+                stiffness: 170,
+                damping: 20,
+                delay: reduceMotion ? 0 : 0.28,
               }}
             >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(160deg, rgba(255,255,255,0.35) 0%, transparent 45%)",
+                }}
+              />
+
               <button
                 type="button"
                 aria-label="Close"
                 onClick={() => setOpen(false)}
-                className="absolute top-3 right-3 grid size-8 place-items-center rounded-full text-[#a9906a] transition-colors hover:bg-black/5 hover:text-[#6f5a3a]"
+                className="absolute top-3 right-3 z-10 grid size-8 place-items-center rounded-full transition-colors"
+                style={{
+                  color: theme.inkSoft,
+                  background: theme.dark
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(255,255,255,0.35)",
+                }}
               >
                 <X className="size-4" />
               </button>
 
-              <span
-                className="mx-auto mb-4 grid size-11 place-items-center rounded-full"
-                style={{ background: `${theme.accent}22`, color: theme.accent }}
-              >
-                <Sparkles className="size-5" />
-              </span>
+              <div className="relative z-10">
+                <span
+                  className="mx-auto mb-5 block h-px w-12"
+                  style={{ background: theme.accent }}
+                />
 
-              {hasMessage ? (
-                <>
-                  {hidden.heading.trim() && (
-                    <h2
-                      className="font-serif text-2xl italic sm:text-3xl"
-                      style={{ color: theme.ink }}
-                    >
-                      {hidden.heading}
-                    </h2>
-                  )}
-                  {hidden.body.trim() && (
-                    <p
-                      className="mt-3 text-base leading-relaxed whitespace-pre-line"
-                      style={{ color: theme.inkSoft }}
-                    >
-                      {hidden.body}
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-base leading-relaxed" style={{ color: theme.inkSoft }}>
-                  A little something is waiting here — the sender will write it
-                  before they share.
-                </p>
-              )}
+                {hasMessage ? (
+                  <>
+                    {hidden.heading.trim() && (
+                      <h2
+                        className="font-serif text-2xl italic sm:text-3xl"
+                        style={{ color: theme.ink }}
+                      >
+                        {hidden.heading}
+                      </h2>
+                    )}
+                    {hidden.body.trim() && (
+                      <p
+                        className="mt-4 text-base leading-relaxed whitespace-pre-line"
+                        style={{ color: theme.inkSoft }}
+                      >
+                        {hidden.body}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p
+                    className="text-base leading-relaxed"
+                    style={{ color: theme.inkSoft }}
+                  >
+                    A little something is waiting here — the sender will write
+                    it before they share.
+                  </p>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function RibbonKnot({ theme }: { theme: PlaqueTheme }) {
+  return (
+    <div className="relative size-14">
+      <span
+        className="absolute top-1/2 left-0 h-7 w-8 -translate-y-1/2 -rotate-[28deg] rounded-full"
+        style={{
+          background: `radial-gradient(circle at 30% 30%, ${theme.ribbon}, ${theme.ribbonDeep})`,
+          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.35)",
+        }}
+      />
+      <span
+        className="absolute top-1/2 right-0 h-7 w-8 -translate-y-1/2 rotate-[28deg] rounded-full"
+        style={{
+          background: `radial-gradient(circle at 70% 30%, ${theme.ribbon}, ${theme.ribbonDeep})`,
+          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.35)",
+        }}
+      />
+      <span
+        className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background: `radial-gradient(circle at 35% 30%, ${theme.ribbon}, ${theme.ribbonDeep})`,
+          boxShadow:
+            "0 2px 6px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.4)",
+        }}
+      />
+      <span
+        className="absolute top-[58%] left-[28%] h-7 w-3 origin-top -rotate-[18deg] rounded-b-sm"
+        style={{
+          background: `linear-gradient(180deg, ${theme.ribbon}, ${theme.ribbonDeep})`,
+        }}
+      />
+      <span
+        className="absolute top-[58%] right-[28%] h-7 w-3 origin-top rotate-[18deg] rounded-b-sm"
+        style={{
+          background: `linear-gradient(180deg, ${theme.ribbon}, ${theme.ribbonDeep})`,
+        }}
+      />
     </div>
   );
 }

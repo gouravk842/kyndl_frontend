@@ -9,6 +9,7 @@ import {
   SMAA,
   Vignette,
 } from "@react-three/postprocessing";
+import { Suspense } from "react";
 import { Vector2 } from "three";
 
 import type { AmbientAudio } from "../../hooks/use-ambient-audio";
@@ -22,10 +23,8 @@ import { NodeBuilding } from "./node-building";
 import { RevolveCamera } from "./revolve-camera";
 import { RoamPlayer } from "./roam-player";
 
-// Faint chromatic split for the "tech" edge (module const → no per-frame alloc).
 const CA_OFFSET = new Vector2(0.0006, 0.0006);
 
-/** Swap the active navigator based on tour mode. */
 function Navigation({
   city,
   audio,
@@ -41,38 +40,47 @@ function Navigation({
   );
 }
 
-/**
- * The full Memory City scene graph: dream-tech dusk lighting, the glowing plaza,
- * one building per memory node, the active navigator (revolve or roam), and a
- * cinematic post stack (ambient occlusion, bloom, depth-of-field, a faint
- * chromatic split, a cool grade, and a vignette) that lifts primitives into "a
- * place". Sits inside `<Physics>` so colliders and the roam player work.
- */
-export function CityScene({
-  city,
-  audio,
-}: {
-  city: CityConfig;
-  audio: AmbientAudio;
-}) {
-  return (
-    <>
-      <CityEnvironment theme={city.theme} />
-      <CityGround theme={city.theme} />
+function CityPost() {
+  const quality = useMemoryCityStore((s) => s.quality);
+  const arrived = useMemoryCityStore((s) => s.arrived);
+  const focusDistance = useMemoryCityStore((s) => s.focusDistance);
 
-      {city.fabric && (
-        <KitFabric fabric={city.fabric} accent={city.theme.accent} />
-      )}
+  if (quality === "low") {
+    return (
+      <EffectComposer multisampling={0}>
+        <Bloom
+          intensity={0.55}
+          luminanceThreshold={0.55}
+          luminanceSmoothing={0.4}
+          mipmapBlur
+        />
+        <Vignette eskil={false} offset={0.22} darkness={0.85} />
+        <SMAA />
+      </EffectComposer>
+    );
+  }
 
-      {/* Ambient life — traffic, lit windows, birds, shooting stars. */}
-      <AmbientLife city={city} />
+  if (quality === "med") {
+    return (
+      <EffectComposer multisampling={0}>
+        <N8AO aoRadius={1.2} intensity={1.6} distanceFalloff={1} halfRes />
+        <Bloom
+          intensity={0.9}
+          luminanceThreshold={0.5}
+          luminanceSmoothing={0.32}
+          mipmapBlur
+        />
+        <HueSaturation saturation={0.08} hue={0} />
+        <BrightnessContrast brightness={0.01} contrast={0.12} />
+        <Vignette eskil={false} offset={0.22} darkness={0.9} />
+        <SMAA />
+      </EffectComposer>
+    );
+  }
 
-      {city.nodes.map((node, index) => (
-        <NodeBuilding key={node.id} node={node} index={index} />
-      ))}
-
-      <Navigation city={city} audio={audio} />
-
+  // DoF only when framed — a mis-focused CoC can wash the whole city to black.
+  if (!arrived) {
+    return (
       <EffectComposer multisampling={0}>
         <N8AO aoRadius={1.4} intensity={2} distanceFalloff={1} halfRes />
         <Bloom
@@ -81,7 +89,6 @@ export function CityScene({
           luminanceSmoothing={0.32}
           mipmapBlur
         />
-        <DepthOfField focusDistance={0} focalLength={0.5} bokehScale={2} />
         <ChromaticAberration
           offset={CA_OFFSET}
           radialModulation={false}
@@ -92,6 +99,70 @@ export function CityScene({
         <Vignette eskil={false} offset={0.22} darkness={0.92} />
         <SMAA />
       </EffectComposer>
+    );
+  }
+
+  return (
+    <EffectComposer multisampling={0}>
+      <N8AO aoRadius={1.4} intensity={2} distanceFalloff={1} halfRes />
+      <Bloom
+        intensity={1.1}
+        luminanceThreshold={0.5}
+        luminanceSmoothing={0.32}
+        mipmapBlur
+      />
+      <DepthOfField
+        focusDistance={Math.min(0.05, Math.max(0.002, focusDistance / 400))}
+        focalLength={0.04}
+        bokehScale={1.6}
+      />
+      <ChromaticAberration
+        offset={CA_OFFSET}
+        radialModulation={false}
+        modulationOffset={0}
+      />
+      <HueSaturation saturation={0.1} hue={0} />
+      <BrightnessContrast brightness={0.01} contrast={0.14} />
+      <Vignette eskil={false} offset={0.22} darkness={0.92} />
+      <SMAA />
+    </EffectComposer>
+  );
+}
+
+/**
+ * Full Memory City scene graph with tiered post and dual navigation.
+ * Kit assets suspend in their own boundary so lighting/camera still show.
+ */
+export function CityScene({
+  city,
+  audio,
+}: {
+  city: CityConfig;
+  audio: AmbientAudio;
+}) {
+  const radius = city.fabric?.radius ?? 40;
+
+  return (
+    <>
+      <CityEnvironment theme={city.theme} radius={radius} />
+      <CityGround theme={city.theme} radius={radius} />
+
+      {city.fabric && (
+        <Suspense fallback={null}>
+          <KitFabric fabric={city.fabric} accent={city.theme.accent} />
+        </Suspense>
+      )}
+
+      <Suspense fallback={null}>
+        <AmbientLife city={city} />
+      </Suspense>
+
+      {city.nodes.map((node, index) => (
+        <NodeBuilding key={node.id} node={node} index={index} />
+      ))}
+
+      <Navigation city={city} audio={audio} />
+      <CityPost />
     </>
   );
 }

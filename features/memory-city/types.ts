@@ -182,7 +182,10 @@ export interface CityMemory {
   body: string;
   person?: string;
   mood: Mood;
+  /** Legacy direct URL (seed / old docs). Prefer `image.fileId`. */
   imageUrl?: string;
+  /** Uploaded photo — resolved through creation `assets`. */
+  image?: { fileId: string } | null;
   /** Optional shell override; otherwise chosen deterministically from the memory. */
   shellKind?: string;
   /** Optional challenge guarding the reward. */
@@ -200,6 +203,9 @@ export type CityMode = "play" | "edit";
  * The complete, serializable experience. Authoring writes it; the share link
  * reads it; the renderer is driven entirely by it.
  */
+/** Bump when layout math changes so shared links can pin an engine revision. */
+export const LAYOUT_ENGINE_VERSION = 1;
+
 export interface CityConfig {
   id: string;
   /** Headline, e.g. "Our City of Years". */
@@ -218,4 +224,6 @@ export interface CityConfig {
   fabric?: CityFabric;
   /** Recipient (`play`) vs author (`edit`). Defaults to "play". */
   mode?: CityMode;
+  /** Layout engine revision that produced fabric / positions. */
+  layoutEngineVersion?: number;
 }

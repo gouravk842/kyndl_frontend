@@ -60,7 +60,7 @@ export function VerifyEmailForm() {
     >
       <form
         onSubmit={handleSubmit(({ otp }) => verifyEmail({ email, otp }))}
-        className="space-y-6"
+        className="space-y-4 lg:space-y-3.5"
       >
         <AuthField
           id="otp"
@@ -83,7 +83,7 @@ export function VerifyEmailForm() {
           type="button"
           onClick={handleResend}
           disabled={isResendingOtp || cooldown > 0 || !email}
-          className="w-full text-center text-[13px] text-[#8a7669] underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60"
+          className="w-full text-center text-sm text-[#7A6258] underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60"
         >
           {cooldown > 0
             ? `Resend code in ${cooldown}s`
@@ -91,11 +91,11 @@ export function VerifyEmailForm() {
               ? "Sending…"
               : "Resend code"}
         </button>
-        <p className="text-center font-cursive text-[19px] text-[#7A6258]">
+        <p className="text-center text-sm text-[#7A6258]">
           Wrong email?{" "}
           <Link
             href={ROUTES.register}
-            className="text-[#C75B39] underline underline-offset-2"
+            className="font-medium text-[#C75B39] underline-offset-4 hover:underline"
           >
             Start over
           </Link>

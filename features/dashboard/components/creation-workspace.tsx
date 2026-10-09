@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CompanionRecommendations } from "@/features/recommendations/components/companion-recommendations";
 import {
   useDeleteCreation,
   useDuplicateCreation,
@@ -34,6 +35,7 @@ import { hasEmbeddedBuilder, renderBuilder } from "../lib/builder-registry";
 import { useLibrary } from "../lib/use-library";
 import { resolveWorkspaceTab } from "../lib/workspace-tabs";
 import { AccessForm } from "./access-sheet";
+import { GatedBuilder } from "./builder-desktop-gate";
 
 /**
  * The unified workspace for a single creation. One tabbed surface replacing the
@@ -98,7 +100,14 @@ function DesignPanel({ creation }: { creation: Creation }) {
   // the old edit host. The builder reads `?id=` itself, so it needs no props.
   // Interaction (comments/reviews/chat) now lives inside every builder's own
   // sidebar as a shared BuilderShell tab, so nothing extra is layered here.
-  return <div className="-m-6">{renderBuilder(creation.type)}</div>;
+  // Phones get a desktop gate — editing needs room; share links still work.
+  return (
+    <div className="-m-6">
+      <GatedBuilder publicToken={creation.public_token}>
+        {renderBuilder(creation.type)}
+      </GatedBuilder>
+    </div>
+  );
 }
 
 // ── Share & access ──────────────────────────────────────────────────
@@ -164,7 +173,9 @@ function PublishPanel({ creation }: { creation: Creation }) {
         {published ? (
           <div className="flex flex-wrap gap-2">
             <Button
-              render={<Link href={shareHref} target="_blank" rel="noreferrer" />}
+              render={
+                <Link href={shareHref} target="_blank" rel="noreferrer" />
+              }
               variant="secondary"
             >
               <ExternalLink className="size-4" />
@@ -197,7 +208,9 @@ function PublishPanel({ creation }: { creation: Creation }) {
               {publish.isPending ? "Publishing…" : "Publish"}
             </Button>
             <Button
-              render={<Link href={shareHref} target="_blank" rel="noreferrer" />}
+              render={
+                <Link href={shareHref} target="_blank" rel="noreferrer" />
+              }
               variant="secondary"
             >
               <Eye className="size-4" />
@@ -213,7 +226,11 @@ function PublishPanel({ creation }: { creation: Creation }) {
           <div className="flex gap-2">
             <Input readOnly value={shareUrl} className="text-xs" />
             <Button type="button" variant="secondary" onClick={copyLink}>
-              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+              {copied ? (
+                <Check className="size-4" />
+              ) : (
+                <Copy className="size-4" />
+              )}
             </Button>
           </div>
           {!published && (
@@ -225,6 +242,16 @@ function PublishPanel({ creation }: { creation: Creation }) {
           )}
         </div>
       </div>
+
+      {published ? (
+        <CompanionRecommendations
+          seedKind="digital"
+          seedId={creation.type}
+          creationId={creation.id}
+          title="Pair it with something they can hold"
+          subtitle="Physical gifts that complement this keepsake."
+        />
+      ) : null}
     </PanelShell>
   );
 }
@@ -284,7 +311,11 @@ function ManagePanel({ creation }: { creation: Creation }) {
                 }}
                 className="max-w-sm"
               />
-              <Button size="icon-sm" onClick={saveRename} disabled={rename.isPending}>
+              <Button
+                size="icon-sm"
+                onClick={saveRename}
+                disabled={rename.isPending}
+              >
                 <Check className="size-4" />
               </Button>
               <Button

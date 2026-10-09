@@ -1,10 +1,10 @@
-import { Link2, PenLine, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { ExperiencesExplorer } from "@/components/experiences/experiences-explorer";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/constants/routes";
+import { ideaHref } from "@/features/ideas/idea-href";
 import { createMetadata } from "@/lib/seo";
 import { getExperiencesView } from "@/lib/server/experiences";
 
@@ -18,91 +18,54 @@ export const metadata = createMetadata({
 // Visibility/status/pricing are backend-controlled, fetched fresh per request.
 export const dynamic = "force-dynamic";
 
-const STEPS = [
-  {
-    icon: PenLine,
-    title: "Personalize it",
-    body: "Add your photos, words, and little secrets — no design skills, done in minutes.",
-  },
-  {
-    icon: Link2,
-    title: "Send a link",
-    body: "No app to install. Just one private link, sent exactly when it'll mean the most.",
-  },
-  {
-    icon: Sparkles,
-    title: "They live it",
-    body: "They don't read a card — they step inside a moment made just for them.",
-  },
-];
-
 export default async function ExperiencesPage() {
   const experiences = await getExperiencesView();
-  const liveCount = experiences.filter((e) => e.status === "live").length;
 
   return (
     <div className="relative overflow-hidden">
       <PageHeader
+        compact
         eyebrow="The experiences"
         title={
           <>
-            Not a card you read.
+            Pick a world.
             <br />
-            <span className="kyndl-text-warm">A world you step into.</span>
+            <span className="kyndl-text-warm">Make it yours.</span>
           </>
         }
-        subtitle="Every Kyndl is a little crafted place — turn the pages, trace the stars, walk the lane, open the jar. You make it yours, then send a link they'll never forget."
+        subtitle="Every Kyndl is a little crafted place — fill it with your story, then send a private link they'll never forget."
       >
-        <div className="space-y-8">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#7A6258]">
-            <span className="inline-flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-[#2fb672]" />
-              {liveCount} live to try right now
-            </span>
-            <span className="text-[#E3CDBE]">·</span>
-            <span>Personalized in minutes</span>
-            <span className="text-[#E3CDBE]">·</span>
-            <span>Shared by a private link</span>
-          </div>
-
-          {/* how every Kyndl works — the universal model, up front */}
-          <div className="rounded-[1.75rem] border border-[#F4DDD0] bg-white/70 p-6 backdrop-blur-sm md:p-8">
-            <p className="text-xs font-medium tracking-[0.22em] text-[#C75B39] uppercase">
-              How every Kyndl works
-            </p>
-            <div className="mt-5 grid gap-6 md:grid-cols-3 md:gap-8">
-              {STEPS.map((step, i) => (
-                <div key={step.title} className="flex gap-4">
-                  <span className="relative flex size-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7A59] to-[#F2596F] text-white kyndl-glow-warm">
-                    <step.icon className="size-5" />
-                    <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-[#F4DDD0] bg-white text-[11px] font-bold text-[#C75B39]">
-                      {i + 1}
-                    </span>
-                  </span>
-                  <div>
-                    <h3 className="font-display text-lg text-[#3A2A25]">
-                      {step.title}
-                    </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-[#7A6258]">
-                      {step.body}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <p className="inline-flex items-center gap-2 text-sm text-[#7A6258]">
+          <span className="size-1.5 rounded-full bg-[#2fb672]" />
+          {experiences.length} live to try right now
+        </p>
       </PageHeader>
 
-      {/* ── The catalog, grouped by what each one is ──────────────── */}
-      <section className="relative py-12 md:py-16">
+      <section className="relative py-10 md:py-14">
         <PageContainer size="xl" className="relative">
           <ExperiencesExplorer experiences={experiences} />
         </PageContainer>
       </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────── */}
-      <section className="relative pb-20 md:pb-28">
+      <section className="border-y border-[#F2DACE] bg-[#FFF7F1] py-12 md:py-16">
+        <PageContainer size="md" className="text-center">
+          <h2 className="font-display text-2xl text-[#3A2A25] md:text-3xl">
+            None of these is the one?
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-[#7A6258]">
+            If yours isn&apos;t on the shelf, tell us the moment you wanted.
+            We&apos;ll try to figure it out.
+          </p>
+          <Link
+            href={ideaHref({ source: "experiences" })}
+            className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#FF7A59] to-[#F2596F] px-8 text-base font-medium text-white kyndl-glow-warm transition-all duration-300 hover:-translate-y-0.5"
+          >
+            Tell us what you were hoping to find
+          </Link>
+        </PageContainer>
+      </section>
+
+      <section className="relative py-16 md:py-24">
         <PageContainer size="md">
           <div className="relative overflow-hidden rounded-[2.5rem] border border-[#F4DDD0] bg-gradient-to-br from-[#FFF1E9] via-[#FDEBE6] to-[#FCE3DC] px-6 py-14 text-center md:px-12 md:py-16">
             <div
@@ -113,10 +76,40 @@ export default async function ExperiencesPage() {
               }}
               aria-hidden
             />
+            {/* floating doodle accents in the CTA */}
+            <span
+              className="pointer-events-none absolute left-8 top-8 hidden size-8 opacity-40 md:block"
+              aria-hidden
+            >
+              <svg viewBox="0 0 24 22" className="size-full">
+                <path
+                  d="M12 20S3 14 3 8a4.5 4.5 0 0 1 9-1 4.5 4.5 0 0 1 9 1c0 6-9 12-9 12Z"
+                  fill="none"
+                  stroke="#C75B39"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span
+              className="pointer-events-none absolute bottom-10 right-10 hidden size-7 opacity-40 md:block"
+              aria-hidden
+            >
+              <svg viewBox="0 0 24 24" className="size-full">
+                <path
+                  d="M12 3v6M12 15v6M3 12h6M15 12h6"
+                  fill="none"
+                  stroke="#FF7A59"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
             <div className="relative">
               <h2 className="mx-auto max-w-xl font-display text-3xl leading-tight text-[#3A2A25] md:text-4xl">
-                Pick one and{" "}
-                <span className="kyndl-text-warm">make it yours.</span>
+                Ready when{" "}
+                <span className="kyndl-text-warm">the moment is.</span>
               </h2>
               <p className="mx-auto mt-5 max-w-md text-[#7A6258]">
                 Free to try, personalized in minutes, and sent exactly when it
@@ -133,7 +126,7 @@ export default async function ExperiencesPage() {
                   href={ROUTES.home}
                   className="inline-flex h-12 items-center justify-center rounded-full border border-[#F2DACE] bg-white/70 px-8 text-base font-medium text-[#3A2A25] transition-all duration-500 hover:border-[#FF7A59]/50 hover:bg-white"
                 >
-                  See how it works
+                  Back to home
                 </Link>
               </div>
             </div>

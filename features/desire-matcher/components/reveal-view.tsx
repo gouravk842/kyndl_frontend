@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { HeartHandshake, Sparkles } from "lucide-react";
 
 import { Flames } from "@/features/desire-deck/components/flames";
+import { MakeOneBackCta } from "@/features/recipient-aftermath/components/make-one-back-cta";
 
 import { HEAT_META, type Reveal } from "../config";
 
@@ -15,10 +16,13 @@ import { HEAT_META, type Reveal } from "../config";
 export function RevealView({
   reveal,
   intro,
+  shareToken,
 }: {
   reveal: Reveal;
   /** Optional line above the lists (e.g. "You and Sam both want…"). */
   intro?: string;
+  /** Public share token — enables soft "make one back" after the partner finishes. */
+  shareToken?: string;
 }) {
   const nothing = reveal.matches.length === 0 && reveal.maybes.length === 0;
 
@@ -59,6 +63,16 @@ export function RevealView({
           caption="at least one yes, no nos"
           items={reveal.maybes}
         />
+      )}
+
+      {shareToken && (
+        <div className="mt-8">
+          <MakeOneBackCta
+            experienceType="desire-matcher"
+            fromToken={shareToken}
+            tone="on-dark"
+          />
+        </div>
       )}
     </motion.div>
   );

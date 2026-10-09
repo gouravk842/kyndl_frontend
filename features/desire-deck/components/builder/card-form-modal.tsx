@@ -4,7 +4,11 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { type DeckCard, type Heat,HEAT_META, HEAT_ORDER } from "../../config";
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, lineText } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
+
+import { type DeckCard, type Heat, HEAT_META, HEAT_ORDER } from "../../config";
 import {
   cardDefaults,
   nextCardId,
@@ -16,11 +20,17 @@ interface FormState {
   prompt: string;
   heat: Heat;
   rotation: number;
+  image: { fileId: string } | null;
 }
 
 function initialState(card: DeckCard | null, defaults: FormState): FormState {
   if (!card) return defaults;
-  return { prompt: card.prompt, heat: card.heat, rotation: card.rotation };
+  return {
+    prompt: card.prompt,
+    heat: card.heat,
+    rotation: card.rotation,
+    image: card.image ?? null,
+  };
 }
 
 /**
@@ -41,12 +51,14 @@ export function CardFormModal({
 
   const defaults: FormState = {
     prompt: "",
+    image: null,
     ...cardDefaults(nextCardId(cards)),
   };
 
   const [form, setForm] = useState<FormState>(() =>
     initialState(card, defaults),
   );
+  const [bankOpen, setBankOpen] = useState(false);
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
 
   // Close on Escape.
@@ -67,6 +79,7 @@ export function CardFormModal({
       prompt: form.prompt.trim(),
       heat: form.heat,
       rotation: form.rotation,
+      image: form.image,
     };
     if (card) updateCard(card.id, data);
     else addCard(data);
@@ -99,6 +112,13 @@ export function CardFormModal({
 
         {/* Body */}
         <div className="space-y-5 overflow-y-auto px-5 py-5">
+          <button
+            type="button"
+            onClick={() => setBankOpen(true)}
+            className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+          >
+            Use a bank line
+          </button>
           <Field label="The card">
             <textarea
               className={`${inputCls} min-h-[140px] resize-y`}
@@ -165,6 +185,22 @@ export function CardFormModal({
           </button>
         </div>
       </div>
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const item = picked[0];
+          if (!item) return;
+          const image = fileRef(item);
+          setForm((current) => ({
+            ...current,
+            prompt: lineText(item),
+            heat: heatForType(item.type.slug),
+            image: image ?? null,
+          }));
+        }}
+      />
     </div>
   );
 }

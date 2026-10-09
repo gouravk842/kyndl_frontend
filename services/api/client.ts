@@ -4,6 +4,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
+import { reportError } from "@/lib/report-error";
 import { normalizeApiError } from "@/services/api/errors";
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -32,10 +33,15 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as RetryableConfig | undefined;
 
+    // Never refresh-and-retry the refresh call itself. A 401 from /auth/refresh
+    // means there is no session; waiting on another refresh deadlocks the
+    // original request and leaves the header stuck.
+    const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
     if (
       error.response?.status === 401 &&
       originalRequest &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !isRefreshCall
     ) {
       originalRequest._retry = true;
 
@@ -50,7 +56,19 @@ apiClient.interceptors.response.use(
       }
     }
 
-    return Promise.reject(normalizeApiError(error));
+    const normalized = normalizeApiError(error);
+    // Server faults only — avoid noise from expected 4xx (validation, 402, etc.).
+    if (normalized.status >= 500) {
+      reportError(new Error(normalized.message), {
+        boundary: "api",
+        status: normalized.status,
+        code: normalized.code,
+        url: originalRequest?.url,
+        method: originalRequest?.method,
+      });
+    }
+
+    return Promise.reject(normalized);
   },
 );
 

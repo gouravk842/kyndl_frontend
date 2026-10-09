@@ -3,7 +3,7 @@
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
-import { ExperienceIcon } from "@/components/shared/experience-icon";
+import { ExperienceCardMedia } from "@/components/shared/experience-card-media";
 import { hasBuilder, newCreationHref } from "@/lib/creations";
 import { featuredExperiences } from "@/lib/experiences";
 import { cn } from "@/lib/utils";
@@ -23,17 +23,14 @@ export function NewCreationGallery() {
           <Link
             key={exp.slug}
             href={newCreationHref(exp.slug)}
-            className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl bg-card p-4 ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-0.5 hover:ring-[#FF7A59]/45"
+            className="group relative flex flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10 transition-all duration-300 hover:-translate-y-0.5 hover:ring-[#FF7A59]/45"
           >
-            <span
-              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              style={{ background: exp.previewGradient }}
-              aria-hidden
+            <ExperienceCardMedia
+              slug={exp.slug}
+              media={exp}
+              className="aspect-[5/4] rounded-none"
             />
-            <span className="relative flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF7A59] to-[#F2596F] text-white shadow-sm">
-              <ExperienceIcon name={exp.icon} className="size-5" />
-            </span>
-            <div className="relative">
+            <div className="relative p-3">
               <p className="font-heading text-sm leading-snug font-medium text-foreground">
                 {exp.name}
               </p>

@@ -22,6 +22,11 @@ export interface CreationSync {
   enabled: boolean;
   creationId: string | null;
   /**
+   * Share token for `/v/<public_token>`, available after the first cloud save.
+   * Null while signed out or before the creation record exists.
+   */
+  publicToken: string | null;
+  /**
    * The signed-in user's standing on the loaded creation: `owner`, `admin`,
    * `contributor`, or null. A not-yet-saved draft has no record yet, so its
    * creator is treated as `owner`.
@@ -88,8 +93,10 @@ export function useCreationSync<TContent>(
     queryKey: queryKeys.creations.detail(creationId ?? undefined),
     queryFn: () => creationService.get<TContent>(creationId as string),
     enabled: enabled && !!creationId,
+    // The document is the source of truth once loaded; don't refetch on focus.
     staleTime: Infinity,
     refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -174,6 +181,8 @@ export function useCreationSync<TContent>(
   // A loaded creation reports the viewer's role; a brand-new draft (no record
   // yet) is being authored by its owner-to-be.
   const myRole = creationId ? (detailQuery.data?.my_role ?? null) : "owner";
+  const publicToken =
+    detailQuery.data?.public_token ?? createMutation.data?.public_token ?? null;
 
-  return { status, enabled, creationId, myRole, dirty, save };
+  return { status, enabled, creationId, publicToken, myRole, dirty, save };
 }

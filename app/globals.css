@@ -119,6 +119,25 @@
   --sidebar-accent-foreground: #c75b39;
   --sidebar-border: #f2dace;
   --sidebar-ring: #ff7a59;
+  --mb-solar-void: var(--kyndl-cream);
+  --mb-solar-ink: var(--kyndl-cocoa);
+  --mb-solar-muted: var(--kyndl-taupe);
+  --mb-solar-orbit: color-mix(in srgb, var(--kyndl-gold) 32%, transparent);
+  --mb-solar-orbit-strong: color-mix(
+    in srgb,
+    var(--kyndl-coral) 55%,
+    transparent
+  );
+  --mb-solar-line: var(--border);
+  --mb-solar-you: var(--kyndl-cocoa);
+  --mb-solar-you-fg: var(--kyndl-cream);
+  --mb-solar-wash: color-mix(in srgb, var(--kyndl-gold) 34%, transparent);
+  --mb-solar-vignette: rgba(58, 42, 37, 0.16);
+  --mb-solar-grain: rgba(58, 42, 37, 0.045);
+}
+
+.mb-evening {
+  --mb-solar-orbit: color-mix(in srgb, var(--kyndl-gold) 52%, transparent);
 }
 
 .dark {
@@ -153,17 +172,39 @@
   --sidebar-accent-foreground: #ffb59a;
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: #ff7a59;
+  --mb-solar-void: #1a1413;
+  --mb-solar-ink: #f7ece6;
+  --mb-solar-muted: #c4a99b;
+  --mb-solar-orbit: color-mix(in srgb, var(--kyndl-gold) 28%, transparent);
+  --mb-solar-orbit-strong: color-mix(
+    in srgb,
+    var(--kyndl-coral) 45%,
+    transparent
+  );
+  --mb-solar-line: oklch(1 0 0 / 14%);
+  --mb-solar-you: #f7ece6;
+  --mb-solar-you-fg: #1a1413;
+  --mb-solar-wash: color-mix(in srgb, var(--kyndl-gold) 28%, transparent);
+  --mb-solar-vignette: rgba(0, 0, 0, 0.42);
+  --mb-solar-grain: rgba(255, 247, 241, 0.035);
+}
+
+.dark .mb-evening,
+.dark.mb-evening {
+  --mb-solar-orbit: color-mix(in srgb, var(--kyndl-gold) 40%, transparent);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans scroll-smooth;
+    overflow-x: clip;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: clip;
   }
 }
 
@@ -575,8 +616,16 @@
       rgba(255, 252, 245, 0.92) 0%,
       transparent 64%
     ),
-    radial-gradient(circle at 10% 92%, rgba(255, 168, 138, 0.16) 0%, transparent 40%),
-    radial-gradient(circle at 92% 12%, rgba(212, 163, 115, 0.2) 0%, transparent 42%),
+    radial-gradient(
+      circle at 10% 92%,
+      rgba(255, 168, 138, 0.16) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 92% 12%,
+      rgba(212, 163, 115, 0.2) 0%,
+      transparent 42%
+    ),
     linear-gradient(165deg, #fdf3e6 0%, #f6e6cf 60%, #f0dcc0 100%);
 }
 
@@ -619,6 +668,30 @@
     linear-gradient(to right, rgba(58, 42, 37, 0.22) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(58, 42, 37, 0.22) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+@keyframes kynd-convey {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.kynd-convey {
+  animation: kynd-convey 32s linear infinite;
+}
+
+.kynd-lane:hover .kynd-convey,
+.kynd-lane:focus-within .kynd-convey {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kynd-convey {
+    animation: none;
+  }
 }
 
 /* ── Scrapbook: notebook writing surface (TipTap editor + static render) ──
@@ -688,4 +761,95 @@
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* Memory bank space — orbs drift in open air. Reduced motion freezes them. */
+@keyframes kyndl-mb-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(var(--mb-dx, 12px), var(--mb-dy, -16px));
+  }
+}
+@keyframes kyndl-mb-burst-ring {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.kyndl-mb-burst-ring {
+  animation: kyndl-mb-burst-ring 0.7s ease-out forwards;
+}
+@keyframes kyndl-mb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes kyndl-mb-pulse-ring {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.2;
+  }
+}
+.kyndl-mb-float {
+  animation: kyndl-mb-float 7s ease-in-out infinite;
+}
+.kyndl-mb-spin {
+  animation: kyndl-mb-spin 80s linear infinite;
+}
+.kyndl-mb-spin-slow {
+  animation: kyndl-mb-spin 140s linear infinite reverse;
+}
+.kyndl-mb-pulse-ring {
+  animation: kyndl-mb-pulse-ring 4.5s ease-in-out infinite;
+}
+@keyframes kyndl-mb-drift-wash {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(2.4%, -1.6%) scale(1.06);
+    opacity: 0.88;
+  }
+}
+@keyframes kyndl-mb-twinkle {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.55);
+  }
+}
+.kyndl-mb-drift-wash {
+  animation: kyndl-mb-drift-wash 18s ease-in-out infinite;
+}
+.kyndl-mb-twinkle {
+  animation: kyndl-mb-twinkle 5.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kyndl-mb-float,
+  .kyndl-mb-spin,
+  .kyndl-mb-spin-slow,
+  .kyndl-mb-pulse-ring,
+  .kyndl-mb-burst-ring,
+  .kyndl-mb-drift-wash,
+  .kyndl-mb-twinkle {
+    animation: none;
+  }
 }

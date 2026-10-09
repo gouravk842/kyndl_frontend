@@ -19,6 +19,8 @@ export type DeckCard = {
   prompt: string;
   /** Tilt of the card in the drawn pile, in degrees (-12 → 12). */
   rotation: number;
+  /** Optional catalog diagram copied from the activity bank. */
+  image?: { fileId: string } | null;
 };
 
 export type DeckConfig = {

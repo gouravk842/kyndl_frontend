@@ -57,8 +57,12 @@ function Motif({ exp }: { exp: SceneExp }) {
       return <MemoryJarMotif />;
     case "our-places":
       return <OurPlacesMotif />;
+    case "relationship-calendar":
+      return <RelationshipCalendarMotif />;
     case "ludo":
       return <LudoMotif />;
+    case "whack-a-mole":
+      return <WhackAMoleMotif />;
     case "countdown":
       return <CountdownMotif />;
     case "proposal":
@@ -93,7 +97,10 @@ function Polaroid({
       )}
       style={{ transform: `rotate(${rotate}deg)` }}
     >
-      <div className="h-full w-full rounded-[2px]" style={{ background: photo }} />
+      <div
+        className="h-full w-full rounded-[2px]"
+        style={{ background: photo }}
+      />
       <div className="mt-1 space-y-0.5">
         {Array.from({ length: lines }).map((_, i) => (
           <span
@@ -180,7 +187,11 @@ function ConstellationMotif() {
   const path = "M30,42 L38,30 L50,38 L62,30 L70,42 L50,64 Z";
   return (
     <div className="absolute inset-0">
-      <svg viewBox="0 0 100 88" className="h-full w-full" preserveAspectRatio="xMidYMid slice">
+      <svg
+        viewBox="0 0 100 88"
+        className="h-full w-full"
+        preserveAspectRatio="xMidYMid slice"
+      >
         {/* scattered faint stars */}
         {[
           [12, 20],
@@ -191,7 +202,13 @@ function ConstellationMotif() {
         ].map(([x, y], i) => (
           <circle key={i} cx={x} cy={y} r="0.7" fill="#ffffff" opacity="0.5" />
         ))}
-        <path d={path} fill="none" stroke="#ffd9a8" strokeWidth="0.7" opacity="0.75" />
+        <path
+          d={path}
+          fill="none"
+          stroke="#ffd9a8"
+          strokeWidth="0.7"
+          opacity="0.75"
+        />
         {stars.map((s, i) => (
           <g key={i}>
             <circle cx={s.x} cy={s.y} r="2.6" fill="#ffe9c4" opacity="0.25" />
@@ -246,7 +263,11 @@ function MemoryJarMotif() {
 function OurPlacesMotif() {
   return (
     <div className="absolute inset-0">
-      <svg viewBox="0 0 100 88" className="h-full w-full" preserveAspectRatio="xMidYMid slice">
+      <svg
+        viewBox="0 0 100 88"
+        className="h-full w-full"
+        preserveAspectRatio="xMidYMid slice"
+      >
         <path
           d="M16,64 C34,64 30,30 50,32 C70,34 64,20 84,22"
           fill="none"
@@ -274,7 +295,9 @@ function Pin({
 }) {
   const dim = size === "lg" ? "size-7" : "size-5";
   return (
-    <span className={cn("absolute -translate-x-1/2 -translate-y-full", className)}>
+    <span
+      className={cn("absolute -translate-x-1/2 -translate-y-full", className)}
+    >
       {glow && (
         <span className="absolute left-1/2 top-1/2 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#FF7A59]/35 blur-md" />
       )}
@@ -294,6 +317,35 @@ function Pin({
   );
 }
 
+/* ── Relationship Calendar — mini ornate month grid ───────────────── */
+
+function RelationshipCalendarMotif() {
+  const days = [null, null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  return (
+    <div className="absolute inset-0 flex items-center justify-center p-4">
+      <div className="relative w-[11.5rem] rounded-[4px] border border-[#D4A373]/70 bg-[#fbf6ee] p-2 shadow-[0_14px_28px_-16px_rgba(58,42,37,0.55)]">
+        <div className="mb-1.5 text-center font-serif text-[10px] tracking-wide text-[#8B6B4A]">
+          AUGUST
+        </div>
+        <div className="grid grid-cols-7 gap-px">
+          {days.map((d, i) => (
+            <span
+              key={i}
+              className="relative flex aspect-square items-start justify-start rounded-[1px] bg-[#f3e8d8]/80 p-[2px] text-[7px] text-[#5c4033]"
+            >
+              {d ?? ""}
+              {(d === 2 || d === 15 || d === 28) && (
+                <span className="absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-[#B11226]/70" />
+              )}
+            </span>
+          ))}
+        </div>
+        <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 bg-[#D4A373]/80" />
+      </div>
+    </div>
+  );
+}
+
 /* ── Ludo for Two — a die + four tokens ────────────────────────────── */
 
 function LudoMotif() {
@@ -308,7 +360,10 @@ function LudoMotif() {
       {tokens.map((t, i) => (
         <span
           key={i}
-          className={cn("absolute size-5 rounded-full border-2 border-white/80", t.cls)}
+          className={cn(
+            "absolute size-5 rounded-full border-2 border-white/80",
+            t.cls,
+          )}
           style={{
             background: t.c,
             boxShadow: "0 6px 12px -6px rgba(58,42,37,0.5)",
@@ -325,6 +380,36 @@ function LudoMotif() {
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function WhackAMoleMotif() {
+  return (
+    <div className="absolute inset-0">
+      {[
+        { cls: "left-[22%] top-[28%]", delay: "0s" },
+        { cls: "right-[24%] top-[32%]", delay: "0.15s" },
+        { cls: "left-[40%] bottom-[26%]", delay: "0.3s" },
+      ].map((h, i) => (
+        <span
+          key={i}
+          className={cn(
+            "absolute size-10 overflow-hidden rounded-full border-2 border-white/70 bg-[#c75b39]",
+            h.cls,
+          )}
+          style={{
+            boxShadow: "0 10px 18px -10px rgba(58,42,37,0.55)",
+            animation: `kyndl-mole-bob 1.6s ease-in-out ${h.delay} infinite`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes kyndl-mole-bob {
+          0%, 100% { transform: translateY(6px) scale(0.92); }
+          50% { transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -447,7 +532,14 @@ function TimeCapsuleMotif() {
             <path d="M14 10 H46 L31 36 Z" fill="#f0b06a" opacity="0.85" />
             {/* bottom sand */}
             <path d="M16 72 H44 L30 50 Z" fill="#e89f5a" opacity="0.9" />
-            <line x1="30" y1="38" x2="30" y2="50" stroke="#f0b06a" strokeWidth="1.5" />
+            <line
+              x1="30"
+              y1="38"
+              x2="30"
+              y2="50"
+              stroke="#f0b06a"
+              strokeWidth="1.5"
+            />
           </svg>
         </div>
         <span className="h-2 w-14 rounded-full bg-[#cfa06a]" />

@@ -1,11 +1,17 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
+import { queryKeys } from "@/constants/query-keys";
+import { ROUTES } from "@/constants/routes";
 import { useCreations } from "@/hooks/use-creations";
 import { cn } from "@/lib/utils";
+import { normalizeApiError } from "@/services/api/errors";
+import { memoryBankService } from "@/services/memory-bank/memory-bank.service";
 
 import {
   resolveWorkspaceTab,
@@ -41,6 +47,8 @@ function WorkspaceTabs({ id }: { id: string }) {
   const creation = creations?.find((c) => c.id === id);
   const title = creation?.title || "Untitled";
   const published = creation?.status === "published";
+  const conversion = creation?.conversion;
+  const queryClient = useQueryClient();
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -64,6 +72,45 @@ function WorkspaceTabs({ id }: { id: string }) {
           title={published ? "Published" : "Draft"}
         />
       </div>
+      {conversion ? (
+        <span className="inline-block min-w-0 max-w-[38%] truncate text-xs text-muted-foreground sm:max-w-[14rem]">
+          {conversion.source_circle_id ? (
+            <Link
+              href={ROUTES.memoryCircle(conversion.source_circle_id)}
+              className="underline decoration-current/30 underline-offset-2"
+            >
+              Converted from {conversion.source_bank_name}
+            </Link>
+          ) : (
+            <>Converted from {conversion.source_bank_name}</>
+          )}
+          {conversion.mode === "live" ? (
+            <>
+              <span className="mx-1">·</span>
+              <button
+                type="button"
+                className="underline decoration-current/30 underline-offset-2"
+                title="Edits in the builder won’t stick. Detach to edit."
+                onClick={() => {
+                  memoryBankService
+                    .detachConversion(conversion.id)
+                    .then(() => {
+                      queryClient.invalidateQueries({
+                        queryKey: queryKeys.creations.all,
+                      });
+                      toast.success("Detached from the bank.");
+                    })
+                    .catch((error: unknown) =>
+                      toast.error(normalizeApiError(error).message),
+                    );
+                }}
+              >
+                Detach
+              </button>
+            </>
+          ) : null}
+        </span>
+      ) : null}
 
       <nav
         aria-label="Workspace sections"

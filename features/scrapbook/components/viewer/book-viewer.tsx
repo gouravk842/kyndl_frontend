@@ -27,6 +27,7 @@ const SPREAD_AR = (2 * PAGE_W) / PAGE_H;
 const PORTRAIT_AR = PAGE_W / PAGE_H;
 const ZOOM_LEVELS = [1, 1.5, 2.2];
 const H_BUDGET = "(100svh - 13rem)";
+const H_BUDGET_MOBILE = "(100svh - 11rem)";
 const FLIP_MS = 1000;
 
 type FlipApi = {
@@ -320,7 +321,7 @@ export function BookViewer({
   }
 
   const bookWidth = isMobile
-    ? `min(94vw, calc(${H_BUDGET} * ${PORTRAIT_AR.toFixed(4)}))`
+    ? `min(100%, calc(100vw - 1.5rem), calc(${H_BUDGET_MOBILE} * ${PORTRAIT_AR.toFixed(4)}))`
     : `min(96vw, calc(${H_BUDGET} * ${SPREAD_AR.toFixed(4)}))`;
 
   const label = onCover
@@ -332,12 +333,12 @@ export function BookViewer({
         : leaves[page]?.label || leaves[page - 1]?.label || "";
 
   return (
-    <div className="flex w-full flex-col items-center">
+    <div className="flex w-full flex-col items-center px-1 sm:px-0">
       {/* No mat — the book floats directly on the page and keeps its own
           drop-shadow (so no overflow-hidden, which would clip that shadow). */}
       <div
         ref={stageRef}
-        className="relative flex w-full max-w-[1200px] items-center justify-center px-3 py-6 sm:px-6"
+        className="relative flex w-full max-w-[1200px] items-center justify-center px-2 py-4 sm:px-6 sm:py-6"
         style={{ perspective: "2600px" }}
       >
         {!ready && (
@@ -374,9 +375,9 @@ export function BookViewer({
               style={{}}
               width={PAGE_W}
               height={PAGE_H}
-              minWidth={280}
+              minWidth={240}
               maxWidth={760}
-              minHeight={380}
+              minHeight={320}
               maxHeight={1000}
               size="stretch"
               drawShadow
@@ -433,15 +434,15 @@ export function BookViewer({
       </div>
 
       {/* control bar */}
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 rounded-full border border-[#F2DACE] bg-white/80 px-2 py-1.5 backdrop-blur">
+      <div className="mt-3 flex max-w-[min(100%,36rem)] flex-wrap items-center justify-center gap-1 rounded-3xl border border-[#F2DACE] bg-white/80 px-2 py-2 backdrop-blur sm:mt-4 sm:gap-1.5 sm:rounded-full sm:px-2 sm:py-1.5">
         <Ctrl label="Close book" onClick={closeBook} disabled={onCover}>
           ⏮
         </Ctrl>
         <Ctrl label="Previous" onClick={goPrev} disabled={onCover}>
           ‹
         </Ctrl>
-        <div className="px-2 text-center">
-          <p className="font-hand text-sm leading-none text-[#C75B39]">
+        <div className="min-w-0 max-w-[7.5rem] px-1.5 text-center sm:max-w-none sm:px-2">
+          <p className="truncate font-hand text-sm leading-none text-[#C75B39]">
             {label}
           </p>
           <p className="text-[10px] text-[#92786C]">
@@ -459,7 +460,7 @@ export function BookViewer({
           ⏭
         </Ctrl>
 
-        <span className="mx-1 h-5 w-px bg-[#F2DACE]" />
+        <span className="mx-0.5 hidden h-5 w-px bg-[#F2DACE] sm:mx-1 sm:block" />
 
         <Ctrl
           label="Zoom out"
@@ -478,7 +479,7 @@ export function BookViewer({
           type="button"
           onClick={cycleZoom}
           disabled={single}
-          className="min-w-10 rounded-full px-2 text-xs text-[#7A6258] hover:text-[#3A2A25] disabled:opacity-40"
+          className="flex h-11 min-w-11 items-center justify-center rounded-full px-2 text-xs text-[#7A6258] hover:text-[#3A2A25] disabled:opacity-40"
         >
           {Math.round(zoom * 100)}%
         </button>
@@ -492,7 +493,7 @@ export function BookViewer({
           ＋
         </Ctrl>
 
-        <span className="mx-1 h-5 w-px bg-[#F2DACE]" />
+        <span className="mx-0.5 hidden h-5 w-px bg-[#F2DACE] sm:mx-1 sm:block" />
 
         <Ctrl
           label="Contents"
@@ -548,7 +549,7 @@ function Ctrl({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm transition-colors",
+        "flex h-11 min-w-11 items-center justify-center rounded-full px-2 text-sm transition-colors",
         active
           ? "bg-[#FFF1E9] text-[#C75B39]"
           : "text-[#7A6258] hover:bg-[#FFF7F1] hover:text-[#3A2A25]",

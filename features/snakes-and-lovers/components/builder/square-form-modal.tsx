@@ -4,6 +4,10 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, titled } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
+
 import {
   CLIMAX_SQUARE,
   type Heat,
@@ -25,10 +29,14 @@ interface FormState {
 
 /** A one-line hint about this square's role on the board. */
 function squareRole(id: number): string | null {
-  if (id === CLIMAX_SQUARE) return "👑 The finale — shown when someone reaches 100.";
-  if (LADDERS[id] !== undefined) return `🪜 Ladder — lands here and rushes up to ${LADDERS[id]}.`;
-  if (SNAKES[id] !== undefined) return `🐍 Snake — lands here and slides back to ${SNAKES[id]}.`;
-  if (SAFE_SQUARES.has(id)) return "🛡 Safe square — a check-in breather (its dare is skipped in play).";
+  if (id === CLIMAX_SQUARE)
+    return "👑 The finale — shown when someone reaches 100.";
+  if (LADDERS[id] !== undefined)
+    return `🪜 Ladder — lands here and rushes up to ${LADDERS[id]}.`;
+  if (SNAKES[id] !== undefined)
+    return `🐍 Snake — lands here and slides back to ${SNAKES[id]}.`;
+  if (SAFE_SQUARES.has(id))
+    return "🛡 Safe square — a check-in breather (its dare is skipped in play).";
   return null;
 }
 
@@ -45,6 +53,7 @@ export function SquareFormModal({
   onClose: () => void;
 }) {
   const updateSquare = useBuilderStore((s) => s.updateSquare);
+  const [bankOpen, setBankOpen] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     name: square.name,
@@ -103,6 +112,13 @@ export function SquareFormModal({
 
         {/* Body */}
         <div className="space-y-5 overflow-y-auto px-5 py-5">
+          <button
+            type="button"
+            onClick={() => setBankOpen(true)}
+            className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+          >
+            Use a bank line
+          </button>
           {role && (
             <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-white/55">
               {role}
@@ -174,6 +190,26 @@ export function SquareFormModal({
           </button>
         </div>
       </div>
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const item = picked[0];
+          if (!item) return;
+          const { title, body } = titled(item);
+          const heat = heatForType(item.type.slug);
+          setForm({ name: title, note: body, heat });
+          const image = fileRef(item);
+          updateSquare(square.id, {
+            name: title,
+            note: body,
+            heat,
+            image: image ?? null,
+          });
+        }}
+      />
     </div>
   );
 }
@@ -181,7 +217,13 @@ export function SquareFormModal({
 const inputCls =
   "w-full rounded-lg border border-white/12 bg-white/5 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4d6d] focus:ring-2 focus:ring-[#ff4d6d]/25";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs font-medium tracking-wide text-white/50">

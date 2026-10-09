@@ -1,19 +1,21 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import { useState } from "react";
 
 import {
+  PLACEHOLDER_FRAMES,
   type ReelFrame,
+  sceneFor,
   themeFor,
   TIMELESS_TREASURE_CONFIG,
   type TimelessTreasureConfig,
 } from "@/features/timeless-treasure/config";
+import { cn } from "@/lib/utils";
 
 import { BackgroundMusic } from "./background-music";
-import { KeepsakeLetter } from "./keepsake-letter";
-import { KeepsakeTag } from "./keepsake-tag";
-import { TreasureScene } from "./treasure-scene";
+import { SceneDecor } from "./scene-decor";
+import { KeepsakeAlbum } from "./treasure-scene";
 
 type TimelessTreasureExperienceProps = {
   config?: TimelessTreasureConfig;
@@ -28,12 +30,12 @@ type TimelessTreasureExperienceProps = {
 };
 
 /**
- * The live Timeless Treasure scene: a keepsake box the recipient opens once.
- * Tapping it lifts the lid to the top and extrudes a continuous accordion ribbon
- * of cardstock photo panels up out of the box — the centre panel locking flat as
- * the hero — then a folded letter and the engraved keepsake tag below. Self-
- * themed from `config.theme`, so the public viewer renders it with nothing but
- * content + assets.
+ * The live Timeless Treasure scene: a leather keepsake album the recipient opens
+ * once. It rests on linen, embossed in gold; pull the strap and the pocket opens
+ * onto a fixed stage where the memories are drawn out one card at a time — an
+ * opening note, each photo (with the sender's lines pencilled beside it), and a
+ * closing dedication. Self-themed from `config.theme`, so the public viewer
+ * renders it with nothing but content + assets.
  */
 export function TimelessTreasureExperience({
   config = TIMELESS_TREASURE_CONFIG,
@@ -44,23 +46,38 @@ export function TimelessTreasureExperience({
 }: TimelessTreasureExperienceProps) {
   const reduceMotion = useReducedMotion();
   const theme = themeFor(config.theme);
+  const scene = sceneFor(config.theme);
   const [open, setOpen] = useState(startOpen);
 
   const urlFor = (frame: ReelFrame): string | null =>
     frame.fileId ? (assets[frame.fileId] ?? null) : null;
 
   const musicUrl = config.music ? (assets[config.music.fileId] ?? null) : null;
-  const recipient = config.recipientName.trim();
+
+  // Fall back to gentle placeholder frames so the closed→open flow, the unfold
+  // and the marketing page all read before the sender adds their own photos.
+  const frames = config.frames.length ? config.frames : PLACEHOLDER_FRAMES;
 
   return (
     <div
-      className={`relative isolate flex w-full flex-col items-center overflow-hidden ${className}`}
+      className={cn(
+        "relative isolate flex w-full flex-col items-center overflow-hidden",
+        className,
+      )}
     >
-      {/* themed full-bleed background */}
+      {/* linen surface the album lies on */}
       <div
         aria-hidden
         className="absolute inset-0 -z-20"
-        style={{ background: theme.background }}
+        style={{ background: scene.linen }}
+      />
+      {/* woven linen texture */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.5]"
+        style={{
+          backgroundImage: `repeating-linear-gradient(0deg, ${scene.linenWeave} 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, ${scene.linenWeave} 0 1px, transparent 1px 3px)`,
+        }}
       />
       {/* soft grain for tactility */}
       <div
@@ -71,60 +88,39 @@ export function TimelessTreasureExperience({
             "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
         }}
       />
+      {/* warm vignette so the album is the light in the room */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 62% 58% at 50% 34%, transparent 46%, rgba(40,28,12,0.1) 100%)",
+        }}
+      />
 
-      {/* Box + fixed reel stage — always centred; the stage never grows the page. */}
-      <div className="flex w-full max-w-2xl grow flex-col items-center justify-center px-4 py-12">
-        {!open && recipient && (
-          <motion.p
-            initial={reduceMotion ? false : { opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-10 text-center"
-            style={{ color: theme.ink }}
-          >
-            <span className="block text-xs font-semibold tracking-[0.34em] uppercase opacity-70">
-              A treasure for
-            </span>
-            <span className="font-display mt-1 block text-3xl font-semibold sm:text-4xl">
-              {recipient}
-            </span>
-          </motion.p>
-        )}
+      {/* the keepsake spread the album rests in */}
+      <SceneDecor theme={theme} scene={scene} reduceMotion={reduceMotion} />
 
-        <TreasureScene
+      {/* the album + its pocket stage */}
+      <div className="flex w-full max-w-2xl flex-col items-center px-4 py-14 sm:py-20">
+        <KeepsakeAlbum
           open={open}
           onOpen={() => setOpen(true)}
+          onClose={() => setOpen(false)}
           theme={theme}
+          scene={scene}
           tag={config.tag}
+          letter={config.letter}
           senderName={config.senderName}
           recipientName={config.recipientName}
-          frames={config.frames}
+          frames={frames}
           urlFor={urlFor}
         />
       </div>
 
-      {/* The letter + tag, below the extended ribbon. */}
-      {open && (
-        <motion.div
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5 }}
-          className="flex w-full max-w-2xl flex-col items-center gap-14 px-4 pb-28"
-        >
-          <KeepsakeLetter letter={config.letter} theme={theme} />
-
-          <div className="w-full max-w-md">
-            <KeepsakeTag
-              tag={config.tag}
-              senderName={config.senderName}
-              recipientName={config.recipientName}
-              theme={theme}
-            />
-          </div>
-        </motion.div>
-      )}
-
-      {open && playMusic && musicUrl ? <BackgroundMusic src={musicUrl} /> : null}
+      {open && playMusic && musicUrl ? (
+        <BackgroundMusic src={musicUrl} />
+      ) : null}
     </div>
   );
 }

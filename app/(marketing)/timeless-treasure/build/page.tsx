@@ -6,7 +6,7 @@ import { createMetadata } from "@/lib/seo";
 export const metadata = createMetadata({
   title: "Make your Timeless Treasure",
   description:
-    "Pick a box finish, load the reel with your photos, engrave the keepsake tag, and tuck in a letter — then save it to share.",
+    "Pick the leather, write the opening note, fill the pocket with your photos and a line beside each, sign off the dedication — then save it to share.",
   path: "/timeless-treasure/build",
 });
 

@@ -4,14 +4,19 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Lock, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { hashAnswer } from "../answer-hash";
 import type { ModuleInteractionProps } from "../types";
 import type { CrosswordConfig, CrosswordEntry } from "./index";
 
 const key = (r: number, c: number) => `${r},${c}`;
 
 /** Cells an entry occupies, in answer order. */
+function entryLength(e: CrosswordEntry): number {
+  return e.answer?.length ?? e.letters ?? 1;
+}
+
 function entryCells(e: CrosswordEntry): { r: number; c: number }[] {
-  return Array.from({ length: e.answer.length }, (_, i) => ({
+  return Array.from({ length: entryLength(e) }, (_, i) => ({
     r: e.dir === "down" ? e.row + i : e.row,
     c: e.dir === "across" ? e.col + i : e.col,
   }));
@@ -58,22 +63,34 @@ export default function CrosswordInteraction({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const allCorrect = (vals: Record<string, string>) =>
-    entries.every((e) =>
-      entryCells(e).every(
-        ({ r, c }, i) =>
-          (vals[key(r, c)] ?? "").toUpperCase() === e.answer[i]!.toUpperCase(),
-      ),
-    );
+  const entryWord = (e: CrosswordEntry, vals: Record<string, string>) =>
+    entryCells(e)
+      .map(({ r, c }) => vals[key(r, c)] ?? "")
+      .join("");
 
-  // Completion is checked on each edit (not in an effect).
+  const allCorrect = async (vals: Record<string, string>) => {
+    for (const e of entries) {
+      const word = entryWord(e, vals);
+      if (e.answer) {
+        if (word.toUpperCase() !== e.answer.toUpperCase()) return false;
+      } else if (e.answerHash) {
+        if ((await hashAnswer(word)) !== e.answerHash) return false;
+      } else {
+        return false;
+      }
+    }
+    return true;
+  };
+
   const onCell = (k: string, raw: string) => {
     const next = { ...values, [k]: raw.slice(-1).toUpperCase() };
     setValues(next);
-    if (!done && allCorrect(next)) {
+    if (done) return;
+    void allCorrect(next).then((ok) => {
+      if (!ok) return;
       setDone(true);
       window.setTimeout(onSolve, 750);
-    }
+    });
   };
 
   const across = numbered.filter((x) => x.e.dir === "across");

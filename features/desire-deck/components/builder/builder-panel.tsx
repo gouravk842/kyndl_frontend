@@ -3,6 +3,9 @@
 import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, lineText } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
 import {
   BuilderShell,
   type BuilderTab,
@@ -10,7 +13,11 @@ import {
 import type { DesireDeckSync } from "@/hooks/use-desire-deck-sync";
 
 import { type DeckCard, HEAT_META } from "../../config";
-import { useBuilderStore } from "../../store/builder.store";
+import {
+  cardDefaults,
+  nextCardId,
+  useBuilderStore,
+} from "../../store/builder.store";
 import { Flames } from "../flames";
 import { CardFormModal } from "./card-form-modal";
 
@@ -27,9 +34,11 @@ export function BuilderPanel({
   const setMeta = useBuilderStore((s) => s.setMeta);
   const moveCard = useBuilderStore((s) => s.moveCard);
   const removeCard = useBuilderStore((s) => s.removeCard);
+  const addCard = useBuilderStore((s) => s.addCard);
 
   // Card form: closed (null) | adding (set, card=null) | editing (card set).
   const [form, setForm] = useState<{ card: DeckCard | null } | null>(null);
+  const [bankOpen, setBankOpen] = useState(false);
 
   const cards = doc.cards;
 
@@ -51,76 +60,85 @@ export function BuilderPanel({
 
           {/* Deck settings */}
           <Section title="The deck">
-          <Field label="For (recipient)">
-            <input
-              className={inputCls}
-              value={doc.recipientName}
-              onChange={(e) => setMeta({ recipientName: e.target.value })}
-              placeholder="you"
-            />
-          </Field>
-          <Field label="Deck title">
-            <input
-              className={inputCls}
-              value={doc.deckTitle}
-              onChange={(e) => setMeta({ deckTitle: e.target.value })}
-              placeholder="for us"
-            />
-          </Field>
-          <Field label="Cover message">
-            <textarea
-              className={`${inputCls} min-h-[80px] resize-y`}
-              value={doc.intro}
-              onChange={(e) => setMeta({ intro: e.target.value })}
-              placeholder="Shown on the cover, before the first card…"
-            />
-          </Field>
-          <Field label="Closing message">
-            <textarea
-              className={`${inputCls} min-h-[80px] resize-y`}
-              value={doc.outro}
-              onChange={(e) => setMeta({ outro: e.target.value })}
-              placeholder="Shown once every card has been drawn…"
-            />
-          </Field>
-        </Section>
+            <Field label="For (recipient)">
+              <input
+                className={inputCls}
+                value={doc.recipientName}
+                onChange={(e) => setMeta({ recipientName: e.target.value })}
+                placeholder="you"
+              />
+            </Field>
+            <Field label="Deck title">
+              <input
+                className={inputCls}
+                value={doc.deckTitle}
+                onChange={(e) => setMeta({ deckTitle: e.target.value })}
+                placeholder="for us"
+              />
+            </Field>
+            <Field label="Cover message">
+              <textarea
+                className={`${inputCls} min-h-[80px] resize-y`}
+                value={doc.intro}
+                onChange={(e) => setMeta({ intro: e.target.value })}
+                placeholder="Shown on the cover, before the first card…"
+              />
+            </Field>
+            <Field label="Closing message">
+              <textarea
+                className={`${inputCls} min-h-[80px] resize-y`}
+                value={doc.outro}
+                onChange={(e) => setMeta({ outro: e.target.value })}
+                placeholder="Shown once every card has been drawn…"
+              />
+            </Field>
+          </Section>
 
-        {/* Cards list */}
-        <Section
-          title={`Cards (${cards.length})`}
-          action={
-            <button
-              type="button"
-              onClick={() => setForm({ card: null })}
-              className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.04]"
-            >
-              <Plus className="size-3.5" /> Add card
-            </button>
-          }
-        >
-          <ul className="space-y-1.5">
-            {cards.map((c, i) => (
-              <li key={c.id}>
-                <CardRow
-                  card={c}
-                  isFirst={i === 0}
-                  isLast={i === cards.length - 1}
-                  onEdit={() => setForm({ card: c })}
-                  onUp={() => moveCard(c.id, -1)}
-                  onDown={() => moveCard(c.id, 1)}
-                  onRemove={() => removeCard(c.id)}
-                />
-              </li>
-            ))}
-            {cards.length === 0 && (
-              <li className="rounded-lg border border-dashed border-white/12 px-3 py-8 text-center text-sm text-white/40">
-                No cards yet — tap{" "}
-                <span className="font-semibold text-[#ff8fae]">Add card</span> to
-                deal your first one.
-              </li>
-            )}
-          </ul>
-        </Section>
+          {/* Cards list */}
+          <Section
+            title={`Cards (${cards.length})`}
+            action={
+              <span className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setBankOpen(true)}
+                  className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+                >
+                  From the bank
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ card: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.04]"
+                >
+                  <Plus className="size-3.5" /> Add card
+                </button>
+              </span>
+            }
+          >
+            <ul className="space-y-1.5">
+              {cards.map((c, i) => (
+                <li key={c.id}>
+                  <CardRow
+                    card={c}
+                    isFirst={i === 0}
+                    isLast={i === cards.length - 1}
+                    onEdit={() => setForm({ card: c })}
+                    onUp={() => moveCard(c.id, -1)}
+                    onDown={() => moveCard(c.id, 1)}
+                    onRemove={() => removeCard(c.id)}
+                  />
+                </li>
+              ))}
+              {cards.length === 0 && (
+                <li className="rounded-lg border border-dashed border-white/12 px-3 py-8 text-center text-sm text-white/40">
+                  No cards yet — tap{" "}
+                  <span className="font-semibold text-[#ff8fae]">Add card</span>{" "}
+                  to deal your first one.
+                </li>
+              )}
+            </ul>
+          </Section>
         </div>
       ),
     },
@@ -134,9 +152,26 @@ export function BuilderPanel({
         tabs={tabs}
         className={className}
       />
-      {form && (
-        <CardFormModal card={form.card} onClose={() => setForm(null)} />
-      )}
+      {form && <CardFormModal card={form.card} onClose={() => setForm(null)} />}
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        onClose={() => setBankOpen(false)}
+        onPick={(items) => {
+          let cards = useBuilderStore.getState().doc.cards;
+          for (const item of items) {
+            const defaults = cardDefaults(nextCardId(cards));
+            const image = fileRef(item);
+            addCard({
+              prompt: lineText(item),
+              heat: heatForType(item.type.slug),
+              rotation: defaults.rotation,
+              ...(image ? { image } : {}),
+            });
+            cards = useBuilderStore.getState().doc.cards;
+          }
+        }}
+      />
     </>
   );
 }
@@ -166,7 +201,11 @@ function CardRow({
         style={{ background: HEAT_META[card.heat].accent }}
         aria-hidden
       />
-      <button type="button" onClick={onEdit} className="min-w-0 flex-1 text-left">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="min-w-0 flex-1 text-left"
+      >
         <span className="block truncate text-sm font-medium text-white/90">
           {card.prompt || "Empty card"}
         </span>

@@ -83,6 +83,18 @@ export interface Creation<TContent = unknown> {
    * memory means the owner). Only populated for `memory-pages` reads.
    */
   authors?: Record<string, string>;
+  /**
+   * Set when this keepsake was made from a memory bank. Absent on creations
+   * authored from scratch.
+   */
+  conversion?: {
+    id: string;
+    mode: "live" | "snapshot";
+    feature: string;
+    source_circle_id: string | null;
+    source_bank_name: string;
+    follow_bank_name: boolean;
+  } | null;
   created_at: string;
   updated_at: string;
   /** Present on a single-creation read; resolved presigned URLs keyed by fileId. */
@@ -154,6 +166,25 @@ export interface MatcherRespondResult {
   reveal: MatcherReveal;
 }
 
+/** Mirror Match reveal item (mood instead of heat). */
+export interface MirrorRevealItem {
+  id: string;
+  label: string;
+  mood: string;
+}
+
+/** Mutual reveal after a Mirror Match partner responds. */
+export interface MirrorMatchReveal {
+  matches: MirrorRevealItem[];
+  softMatches: MirrorRevealItem[];
+  total: number;
+}
+
+export interface MirrorMatchRespondResult {
+  id: string;
+  reveal: MirrorMatchReveal;
+}
+
 /** What the partner sends to redeem a Love Coupon. */
 export interface CouponRedeemPayload {
   couponId: string;
@@ -174,6 +205,8 @@ export interface OwnedResponse {
     couponId?: string;
     message?: string;
     responderName?: string;
+    /** A line left in a Constellation sky. */
+    line?: string;
   };
   created_at: string;
 }

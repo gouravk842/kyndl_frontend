@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+import { applyLudoActivities } from "@/features/activity-bank/demo-content";
+import { useDemoCatalog } from "@/features/activity-bank/demo-gate";
 
 import {
   DEFAULT_ACTIVITIES,
@@ -40,12 +43,30 @@ const DEFAULT_DRAFTS: Draft[] = [
 
 export function SetupPanel() {
   const startGame = useLudoStore((s) => s.startGame);
+  const bank = useDemoCatalog(false);
+  const fromBank = useMemo(() => {
+    if (!bank.data) return null;
+    return structuredCloneConfig(
+      applyLudoActivities(
+        bank.data.items,
+        structuredCloneConfig(DEFAULT_ACTIVITIES),
+      ),
+    );
+  }, [bank.data]);
+  const [draft, setDraft] = useState<ActivityConfig | null>(null);
+  const activities =
+    draft ?? fromBank ?? structuredCloneConfig(DEFAULT_ACTIVITIES);
+
+  const updateActivities = (
+    recipe: (current: ActivityConfig) => ActivityConfig,
+  ) => {
+    setDraft((current) =>
+      recipe(current ?? fromBank ?? structuredCloneConfig(DEFAULT_ACTIVITIES)),
+    );
+  };
 
   const [count, setCount] = useState(2);
   const [drafts, setDrafts] = useState<Draft[]>(DEFAULT_DRAFTS);
-  const [activities, setActivities] = useState<ActivityConfig>(() =>
-    structuredCloneConfig(DEFAULT_ACTIVITIES),
-  );
 
   const updateDraft = (i: number, patch: Partial<Draft>) =>
     setDrafts((d) => d.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
@@ -62,13 +83,13 @@ export function SetupPanel() {
   };
 
   const setDeck = (key: ActivityIntensity, text: string) =>
-    setActivities((a) => ({
+    updateActivities((a) => ({
       ...a,
       decks: { ...a.decks, [key]: text.split("\n") },
     }));
 
   const toggleTrigger = (t: ActivityTrigger) =>
-    setActivities((a) => ({
+    updateActivities((a) => ({
       ...a,
       triggers: { ...a.triggers, [t]: !a.triggers[t] },
     }));
@@ -191,7 +212,7 @@ export function SetupPanel() {
             <Toggle
               on={activities.enabled}
               onClick={() =>
-                setActivities((a) => ({ ...a, enabled: !a.enabled }))
+                updateActivities((a) => ({ ...a, enabled: !a.enabled }))
               }
             />
           </div>
@@ -242,7 +263,7 @@ export function SetupPanel() {
                         key={key}
                         type="button"
                         onClick={() =>
-                          setActivities((a) => ({ ...a, intensity: key }))
+                          updateActivities((a) => ({ ...a, intensity: key }))
                         }
                         className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                           active

@@ -16,11 +16,13 @@ import {
   type CityMemory,
   DEFAULT_THEME,
   type DreamTechTheme,
+  LAYOUT_ENGINE_VERSION,
   type MemoryNode,
   type ModuleRef,
 } from "../types";
 import { generateLayout, type LayoutParams } from "./layout/generate";
 import { makeRng } from "./layout/prng";
+import { resolveMemoryImageUrl } from "./resolve-memory-image";
 
 /** Meaning-only city document — the shape the builder edits and the backend stores. */
 export interface CityDoc {
@@ -30,12 +32,17 @@ export interface CityDoc {
   to?: string;
   theme?: DreamTechTheme;
   memories: CityMemory[];
+  /** Optional pin so future layout bumps don't silently reshape shared gifts. */
+  layoutEngineVersion?: number;
 }
 
 const SHELL_KINDS = ["tower", "pavilion", "lantern", "vault"] as const;
 
 /** A default reward built from a memory's own fields when none is authored. */
-function defaultReward(m: CityMemory): ModuleRef {
+function defaultReward(
+  m: CityMemory,
+  assets: Record<string, string>,
+): ModuleRef {
   return {
     type: "message",
     config: {
@@ -44,7 +51,7 @@ function defaultReward(m: CityMemory): ModuleRef {
       body: m.body,
       person: m.person || undefined,
       mood: m.mood,
-      imageUrl: m.imageUrl || undefined,
+      imageUrl: resolveMemoryImageUrl(m, assets) || undefined,
     },
   };
 }
@@ -56,6 +63,7 @@ function defaultReward(m: CityMemory): ModuleRef {
 export function buildCityConfig(
   doc: CityDoc,
   params: Partial<LayoutParams> = {},
+  assets: Record<string, string> = {},
 ): CityConfig {
   const layout = generateLayout(
     doc.memories.map((m) => ({ id: m.id, date: m.date })),
@@ -69,13 +77,26 @@ export function buildCityConfig(
   const nodes: MemoryNode[] = layout.order.map((id) => {
     const m = byId.get(id)!;
     const place = layout.placed[id]!;
+    const reward = m.reward ?? defaultReward(m, assets);
+    // Ensure message rewards pick up the resolved photo URL.
+    if (
+      reward.type === "message" &&
+      reward.config &&
+      typeof reward.config === "object"
+    ) {
+      const cfg = reward.config as { imageUrl?: string };
+      const resolved = resolveMemoryImageUrl(m, assets);
+      if (resolved && !cfg.imageUrl) {
+        reward.config = { ...cfg, imageUrl: resolved };
+      }
+    }
     return {
       id,
       districtId: `era-${place.eraIndex}`,
       transform: { position: place.position, rotationY: place.rotationY },
       shell: { kind: m.shellKind ?? shellRng.pick(SHELL_KINDS) },
       gate: m.gate,
-      reward: m.reward ?? defaultReward(m),
+      reward,
       requires: m.requires,
     };
   });
@@ -94,7 +115,12 @@ export function buildCityConfig(
     theme: doc.theme ?? DEFAULT_THEME,
     layout: { spline: layout.path, districts },
     nodes,
-    fabric: { fillers: layout.fillers, roads: layout.roads, radius: layout.radius },
+    fabric: {
+      fillers: layout.fillers,
+      roads: layout.roads,
+      radius: layout.radius,
+    },
+    layoutEngineVersion: doc.layoutEngineVersion ?? LAYOUT_ENGINE_VERSION,
   });
 }
 

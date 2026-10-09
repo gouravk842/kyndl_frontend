@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ROUTES } from "@/constants/routes";
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, titled } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
 import {
   BuilderShell,
   type BuilderTab,
@@ -30,6 +33,8 @@ export function BuilderPanel({
   const removeCoupon = useBuilderStore((s) => s.removeCoupon);
 
   const [form, setForm] = useState<{ coupon: Coupon | null } | null>(null);
+  const [bankOpen, setBankOpen] = useState(false);
+  const addCoupon = useBuilderStore((s) => s.addCoupon);
   const coupons = doc.coupons;
 
   const tabs: BuilderTab[] = [
@@ -99,13 +104,22 @@ export function BuilderPanel({
           <Section
             title={`Coupons (${coupons.length})`}
             action={
-              <button
-                type="button"
-                onClick={() => setForm({ coupon: null })}
-                className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.04]"
-              >
-                <Plus className="size-3.5" /> Add coupon
-              </button>
+              <span className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setBankOpen(true)}
+                  className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+                >
+                  From the bank
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ coupon: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.04]"
+                >
+                  <Plus className="size-3.5" /> Add coupon
+                </button>
+              </span>
             }
           >
             <ul className="space-y-1.5">
@@ -149,6 +163,24 @@ export function BuilderPanel({
       {form && (
         <CouponFormModal coupon={form.coupon} onClose={() => setForm(null)} />
       )}
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          for (const item of picked) {
+            const image = fileRef(item);
+            const { title, body } = titled(item);
+            addCoupon({
+              title,
+              description: body,
+              heat: heatForType(item.type.slug),
+              ...(image ? { image } : {}),
+            });
+          }
+        }}
+      />
     </>
   );
 }
@@ -177,7 +209,11 @@ function CouponRow({
         style={{ background: HEAT_META[coupon.heat].accent }}
         aria-hidden
       />
-      <button type="button" onClick={onEdit} className="min-w-0 flex-1 text-left">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="min-w-0 flex-1 text-left"
+      >
         <span className="block truncate text-sm font-medium text-white/90">
           {coupon.title || "Untitled coupon"}
         </span>

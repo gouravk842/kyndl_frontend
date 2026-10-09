@@ -7,7 +7,7 @@ import { useMemoryCitySync } from "@/hooks/use-memory-city-sync";
 
 import { buildCityConfig } from "../../lib/city-from-memories";
 import { useBuilderStore } from "../../store/builder.store";
-import { type CityConfig,MOOD_COLORS } from "../../types";
+import { type CityConfig, MOOD_COLORS } from "../../types";
 import { MemoryCityExperience } from "../memory-city-experience";
 import { BuilderPanel } from "./builder-panel";
 
@@ -22,17 +22,24 @@ import { BuilderPanel } from "./builder-panel";
 export function MemoryCityBuilder() {
   const sync = useMemoryCitySync();
   const doc = useBuilderStore((s) => s.doc);
+  const assets = useBuilderStore((s) => s.assets);
+  const localPreviews = useBuilderStore((s) => s.localPreviews);
   const [previewing, setPreviewing] = useState(false);
+
+  const assetMap = useMemo(
+    () => ({ ...assets, ...localPreviews }),
+    [assets, localPreviews],
+  );
 
   // Derive the placed city from the meaning-only draft. Guarded: a half-typed
   // memory shouldn't blank the map.
   const city = useMemo<CityConfig | null>(() => {
     try {
-      return buildCityConfig(doc);
+      return buildCityConfig(doc, {}, assetMap);
     } catch {
       return null;
     }
-  }, [doc]);
+  }, [doc, assetMap]);
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] w-full flex-col-reverse sm:flex-row">
@@ -64,7 +71,12 @@ export function MemoryCityBuilder() {
       {previewing && (
         <div className="fixed inset-0 z-[80] bg-black">
           {/* key remounts the scene fresh from the current draft each open */}
-          <MemoryCityExperience key={previewing ? "on" : "off"} doc={doc} preview />
+          <MemoryCityExperience
+            key={previewing ? "on" : "off"}
+            doc={doc}
+            assets={assetMap}
+            preview
+          />
           <button
             type="button"
             onClick={() => setPreviewing(false)}
@@ -117,7 +129,13 @@ function CityMap({ city }: { city: CityConfig }) {
       ))}
 
       {/* central plaza */}
-      <circle cx={0} cy={0} r={1.1} fill={city.theme.accent} fillOpacity={0.5} />
+      <circle
+        cx={0}
+        cy={0}
+        r={1.1}
+        fill={city.theme.accent}
+        fillOpacity={0.5}
+      />
 
       {/* memory buildings */}
       {city.nodes.map((node) => {

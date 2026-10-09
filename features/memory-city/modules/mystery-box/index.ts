@@ -1,7 +1,7 @@
 /**
  * Mystery Box module — a reward. The memory arrives sealed in a crate the
- * recipient taps to shatter (real Rapier physics: the panels burst apart and
- * fall, a glowing memory orb rises), then the message inside is revealed.
+ * recipient taps to shatter (DOM/CSS burst — no nested WebGL canvas), then the
+ * message inside is revealed.
  *
  * Config is message-like — it *contains* the memory — so a box can wrap any
  * remembered moment.

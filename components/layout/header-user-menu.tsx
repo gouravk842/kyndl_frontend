@@ -1,7 +1,15 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
+import {
+  ChevronDown,
+  Feather,
+  Heart,
+  LayoutDashboard,
+  Library,
+  LogOut,
+  Package,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -17,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ROUTES } from "@/constants/routes";
+import { resetClientSession } from "@/lib/auth-session";
 import { authService } from "@/services/auth/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import type { User } from "@/types/user";
@@ -49,13 +58,11 @@ export function HeaderUserMenu() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const logout = useMutation({
     mutationFn: () => authService.logout(),
     onSettled: () => {
-      clearAuth();
-      queryClient.clear();
+      resetClientSession(queryClient);
       router.push(ROUTES.home);
       toast.success("Signed out");
     },
@@ -87,7 +94,9 @@ export function HeaderUserMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel>
-            <p className="font-medium">{user.full_name?.trim() || "Your account"}</p>
+            <p className="font-medium">
+              {user.full_name?.trim() || "Your account"}
+            </p>
             <p className="text-xs font-normal text-muted-foreground">
               {user.email}
             </p>
@@ -97,6 +106,22 @@ export function HeaderUserMenu() {
         <DropdownMenuItem render={<Link href={ROUTES.dashboard} />}>
           <LayoutDashboard className="mr-2 size-4" />
           Dashboard
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href={ROUTES.memories} />}>
+          <Library className="mr-2 size-4" />
+          Memory Bank
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href={ROUTES.kynd} />}>
+          <Feather className="mr-2 size-4" />
+          Kynd
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href={ROUTES.giftWishlist} />}>
+          <Heart className="mr-2 size-4" />
+          Wishlist
+        </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href={ROUTES.giftOrders} />}>
+          <Package className="mr-2 size-4" />
+          Orders
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

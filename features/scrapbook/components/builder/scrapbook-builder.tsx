@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ROUTES } from "@/constants/routes";
+import { OpenPublicViewButton } from "@/features/dashboard/components/open-public-view-button";
 import {
   type ScrapbookSync,
   useScrapbookSync,
@@ -150,6 +151,11 @@ export function ScrapbookBuilder() {
           <ToolbarButton onClick={() => setMode("preview")}>
             Preview book →
           </ToolbarButton>
+          <OpenPublicViewButton
+            publicToken={sync.publicToken}
+            dirty={sync.dirty}
+            compact
+          />
           {sync.enabled && (
             <ToolbarButton
               primary

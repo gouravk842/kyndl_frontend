@@ -42,7 +42,15 @@ export type Tag = {
 };
 
 /** Palette keys — mirrored in the backend's `THEMES` choice set. */
-export type TreasureThemeKey = "brass" | "rose" | "midnight" | "emerald";
+export type TreasureThemeKey =
+  | "sand"
+  | "sage"
+  | "rose"
+  | "denim"
+  | "plum"
+  | "brass"
+  | "emerald"
+  | "midnight";
 
 export type TimelessTreasureConfig = {
   /** Whose treasure this is — shown on the closed box and the tag. */
@@ -64,21 +72,9 @@ export type TimelessTreasureConfig = {
 export type TreasureTheme = {
   key: TreasureThemeKey;
   name: string;
-  /** Full-bleed page background (the soft surface the box rests on). */
-  background: string;
-  /** The box body (the walls of the box). */
-  boxBody: string;
-  /** The box lid. */
-  boxLid: string;
-  /** The dark interior seen once the lid lifts. */
-  boxInner: string;
-  /** The metal — clasp, sprocket holes, plate rim, light accents. */
+  /** The metal — plate rim, the stud on the pull-strap, light accents. */
   metal: string;
-  /** The bloom of light that spills out when the lid opens. */
-  glow: string;
-  /** The film strip base (the dark celluloid) — used on the box's inner leader. */
-  film: string;
-  /** The heavy cardstock the accordion panels are cut from. */
+  /** The heavy cardstock the cards + prints are cut from. */
   paper: string;
   /** The shadowed edge/crease tint where the cardstock folds. */
   paperEdge: string;
@@ -95,98 +91,253 @@ export type TreasureTheme = {
 };
 
 export const THEMES: Record<TreasureThemeKey, TreasureTheme> = {
-  brass: {
-    key: "brass",
-    name: "Antique Brass",
-    background:
-      "radial-gradient(ellipse 95% 75% at 50% 8%, #fbf3e6 0%, #f0e0c8 48%, #e2c9a6 100%)",
-    boxBody: "linear-gradient(150deg, #b6864f 0%, #8f622f 100%)",
-    boxLid: "linear-gradient(150deg, #c9975c 0%, #a06e37 100%)",
-    boxInner:
-      "radial-gradient(ellipse at 50% 30%, #3a2a15 0%, #241708 70%, #180f04 100%)",
-    metal: "#e8c583",
-    glow: "radial-gradient(circle, rgba(255,238,196,0.95) 0%, rgba(255,206,120,0.42) 45%, transparent 72%)",
-    film: "#141110",
-    paper: "#f6ecd6",
-    paperEdge: "rgba(90,63,28,0.16)",
-    plate: "linear-gradient(160deg, #f3dfae 0%, #d8b878 100%)",
-    plateInk: "#5a3f1c",
-    ink: "#4a3620",
-    accent: "#c07a2c",
+  sand: {
+    key: "sand",
+    name: "Warm Sand",
+    metal: "#e7cfa4",
+    paper: "#f8f1e5",
+    paperEdge: "rgba(120,92,50,0.15)",
+    plate: "linear-gradient(160deg, #f0e2c6 0%, #dcc59a 100%)",
+    plateInk: "#6b512c",
+    ink: "#574632",
+    accent: "#c1935a",
+    dark: false,
+  },
+  sage: {
+    key: "sage",
+    name: "Soft Sage",
+    metal: "#d8d2a8",
+    paper: "#f4f2e6",
+    paperEdge: "rgba(70,86,60,0.15)",
+    plate: "linear-gradient(160deg, #eef0d8 0%, #d4dab0 100%)",
+    plateInk: "#46543a",
+    ink: "#3f4a38",
+    accent: "#7a9668",
     dark: false,
   },
   rose: {
     key: "rose",
-    name: "Rose Gold",
-    background:
-      "radial-gradient(ellipse 95% 75% at 50% 8%, #fdeef0 0%, #f6d9dd 48%, #edb8bf 100%)",
-    boxBody: "linear-gradient(150deg, #c98a7f 0%, #a85f57 100%)",
-    boxLid: "linear-gradient(150deg, #dda093 0%, #bb7269 100%)",
-    boxInner:
-      "radial-gradient(ellipse at 50% 30%, #3a1e20 0%, #261214 70%, #190b0d 100%)",
-    metal: "#f0c3ae",
-    glow: "radial-gradient(circle, rgba(255,228,224,0.95) 0%, rgba(255,190,180,0.42) 45%, transparent 72%)",
-    film: "#181112",
-    paper: "#fbeae4",
-    paperEdge: "rgba(122,63,54,0.16)",
-    plate: "linear-gradient(160deg, #f7dccf 0%, #e6b39f 100%)",
-    plateInk: "#7a3f36",
-    ink: "#5a3630",
-    accent: "#c76c5e",
+    name: "Blush Rose",
+    metal: "#f0cabb",
+    paper: "#fbf0ee",
+    paperEdge: "rgba(140,80,80,0.14)",
+    plate: "linear-gradient(160deg, #f8ddd4 0%, #ecc0b4 100%)",
+    plateInk: "#7d4b45",
+    ink: "#6a4a48",
+    accent: "#cf8a86",
     dark: false,
   },
-  midnight: {
-    key: "midnight",
-    name: "Midnight Silver",
-    background:
-      "radial-gradient(ellipse 95% 75% at 50% 8%, #eef1f8 0%, #d9e0ef 48%, #c0cbe4 100%)",
-    boxBody: "linear-gradient(150deg, #2b3550 0%, #161d33 100%)",
-    boxLid: "linear-gradient(150deg, #3a486a 0%, #212a45 100%)",
-    boxInner:
-      "radial-gradient(ellipse at 50% 30%, #141a2e 0%, #0b0f1d 70%, #060811 100%)",
-    metal: "#c7d2e8",
-    glow: "radial-gradient(circle, rgba(224,235,255,0.95) 0%, rgba(150,185,255,0.42) 45%, transparent 72%)",
-    film: "#0f1320",
-    paper: "#eef2fa",
-    paperEdge: "rgba(43,53,82,0.16)",
-    plate: "linear-gradient(160deg, #e4ebf7 0%, #b9c6df 100%)",
-    plateInk: "#2b3552",
-    ink: "#2b3552",
-    accent: "#5a86d6",
+  denim: {
+    key: "denim",
+    name: "Dusty Denim",
+    metal: "#cdd8ea",
+    paper: "#eef1f6",
+    paperEdge: "rgba(60,80,110,0.14)",
+    plate: "linear-gradient(160deg, #e2e9f4 0%, #c4d1e6 100%)",
+    plateInk: "#3f5170",
+    ink: "#3a4a60",
+    accent: "#6f8fbf",
+    dark: false,
+  },
+  plum: {
+    key: "plum",
+    name: "Mauve Plum",
+    metal: "#ddc6dd",
+    paper: "#f5eef4",
+    paperEdge: "rgba(90,60,90,0.14)",
+    plate: "linear-gradient(160deg, #ecdcea 0%, #d3b8d0 100%)",
+    plateInk: "#5c4159",
+    ink: "#533f52",
+    accent: "#a67aa4",
+    dark: false,
+  },
+  brass: {
+    key: "brass",
+    name: "Cognac",
+    metal: "#ecca88",
+    paper: "#f7efdd",
+    paperEdge: "rgba(120,80,40,0.15)",
+    plate: "linear-gradient(160deg, #f2ddab 0%, #dcbb78 100%)",
+    plateInk: "#6a4a24",
+    ink: "#55402a",
+    accent: "#c98a45",
     dark: false,
   },
   emerald: {
     key: "emerald",
-    name: "Emerald & Gold",
-    background:
-      "radial-gradient(ellipse 95% 75% at 50% 8%, #f0f6ec 0%, #dcecd6 48%, #bfd8b6 100%)",
-    boxBody: "linear-gradient(150deg, #23503a 0%, #123021 100%)",
-    boxLid: "linear-gradient(150deg, #2f6349 0%, #1a412d 100%)",
-    boxInner:
-      "radial-gradient(ellipse at 50% 30%, #10261b 0%, #08160e 70%, #040d08 100%)",
+    name: "Forest Green",
     metal: "#e0c483",
-    glow: "radial-gradient(circle, rgba(255,240,200,0.95) 0%, rgba(210,220,150,0.42) 45%, transparent 72%)",
-    film: "#0c1610",
-    paper: "#f2ecd7",
-    paperEdge: "rgba(51,80,47,0.16)",
-    plate: "linear-gradient(160deg, #f0e0ad 0%, #d3b877 100%)",
+    paper: "#eef2e6",
+    paperEdge: "rgba(40,70,45,0.15)",
+    plate: "linear-gradient(160deg, #eee2b0 0%, #d2be7c 100%)",
     plateInk: "#33502f",
-    ink: "#2c4028",
+    ink: "#2f4a34",
     accent: "#4f9a6a",
+    dark: false,
+  },
+  midnight: {
+    key: "midnight",
+    name: "Ink Navy",
+    metal: "#c9d4ec",
+    paper: "#eef1f8",
+    paperEdge: "rgba(40,50,80,0.15)",
+    plate: "linear-gradient(160deg, #e6ecf8 0%, #c6d2ea 100%)",
+    plateInk: "#2f3a58",
+    ink: "#303a56",
+    accent: "#6a86d0",
     dark: false,
   },
 };
 
 export const THEME_ORDER: TreasureThemeKey[] = [
-  "brass",
+  "sand",
+  "sage",
   "rose",
-  "midnight",
+  "denim",
+  "plum",
+  "brass",
   "emerald",
+  "midnight",
 ];
 
 export function themeFor(key: string): TreasureTheme {
   return THEMES[key as TreasureThemeKey] ?? THEMES.brass;
 }
+
+/**
+ * Extra art-direction the *album* presentation needs on top of a {@link
+ * TreasureTheme}: the leather cover, the linen surface it rests on, the
+ * stitching thread and the gold foil the dedication is embossed in. Kept out of
+ * the backend-validated `TreasureTheme` (which only gates the `theme` key) so
+ * the wire contract is untouched — this is pure frontend presentation.
+ */
+export type SceneTokens = {
+  /** The fabric surface the open album lies on (the tablecloth). */
+  linen: string;
+  /** Faint woven texture tint layered over the linen. */
+  linenWeave: string;
+  /** The leather of the album cover / pocket. */
+  leather: string;
+  /** A darker leather used for the pull-strap and shadowed edges. */
+  leatherDark: string;
+  /** The waxed highlight that catches the light along a leather crease. */
+  leatherSheen: string;
+  /** The saddle-stitch thread running the inner border. */
+  stitch: string;
+  /** The gold/foil the script + nameplate are embossed in. */
+  foil: string;
+  /** Shadow cast into the open pocket mouth. */
+  pocketShadow: string;
+};
+
+const SCENE: Record<TreasureThemeKey, SceneTokens> = {
+  sand: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #faf3e8 0%, #efe2cd 46%, #ddcaad 100%)",
+    linenWeave: "rgba(120,92,50,0.045)",
+    leather: "linear-gradient(155deg, #cdaa7b 0%, #b28d5c 52%, #977542 100%)",
+    leatherDark: "linear-gradient(155deg, #b28d5c 0%, #8a6939 100%)",
+    leatherSheen: "rgba(248,232,200,0.55)",
+    stitch: "#f5ead0",
+    foil: "#f2ddac",
+    pocketShadow: "rgba(74,52,24,0.5)",
+  },
+  sage: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #f0f3e8 0%, #dfe6d2 46%, #c8d5ba 100%)",
+    linenWeave: "rgba(70,90,60,0.045)",
+    leather: "linear-gradient(155deg, #90a37d 0%, #74895f 52%, #5b7047 100%)",
+    leatherDark: "linear-gradient(155deg, #74895f 0%, #556842 100%)",
+    leatherSheen: "rgba(226,236,198,0.5)",
+    stitch: "#eef0d2",
+    foil: "#e9debf",
+    pocketShadow: "rgba(38,50,28,0.5)",
+  },
+  rose: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #fbeeee 0%, #f2d9d9 46%, #e6bec1 100%)",
+    linenWeave: "rgba(130,70,70,0.045)",
+    leather: "linear-gradient(155deg, #d3a19b 0%, #ba7d75 52%, #a06058 100%)",
+    leatherDark: "linear-gradient(155deg, #ba7d75 0%, #92544c 100%)",
+    leatherSheen: "rgba(250,220,208,0.55)",
+    stitch: "#f9e0d3",
+    foil: "#f3d1bd",
+    pocketShadow: "rgba(60,30,28,0.5)",
+  },
+  denim: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #eef2f8 0%, #dae3ef 46%, #c0cfe4 100%)",
+    linenWeave: "rgba(60,80,110,0.045)",
+    leather: "linear-gradient(155deg, #8398b8 0%, #647c9f 52%, #4c5f80 100%)",
+    leatherDark: "linear-gradient(155deg, #647c9f 0%, #46566f 100%)",
+    leatherSheen: "rgba(214,228,246,0.5)",
+    stitch: "#e9eff8",
+    foil: "#dde6f3",
+    pocketShadow: "rgba(28,40,60,0.52)",
+  },
+  plum: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #f5eef4 0%, #e8d9e6 46%, #d4bdd2 100%)",
+    linenWeave: "rgba(90,60,90,0.045)",
+    leather: "linear-gradient(155deg, #a283a0 0%, #836482 52%, #674c66 100%)",
+    leatherDark: "linear-gradient(155deg, #836482 0%, #5c435b 100%)",
+    leatherSheen: "rgba(238,220,238,0.5)",
+    stitch: "#f1dfee",
+    foil: "#ecd6e8",
+    pocketShadow: "rgba(44,28,44,0.52)",
+  },
+  brass: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #f9f1e0 0%, #eedcc1 46%, #dfc59f 100%)",
+    linenWeave: "rgba(120,86,42,0.05)",
+    leather: "linear-gradient(155deg, #b47f49 0%, #935f31 52%, #714722 100%)",
+    leatherDark: "linear-gradient(155deg, #935f31 0%, #653f1c 100%)",
+    leatherSheen: "rgba(240,204,150,0.5)",
+    stitch: "#f2d7a6",
+    foil: "#f0d094",
+    pocketShadow: "rgba(48,28,12,0.54)",
+  },
+  emerald: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #eef4e8 0%, #d9e7cf 46%, #bdd3ad 100%)",
+    linenWeave: "rgba(40,70,45,0.05)",
+    leather: "linear-gradient(155deg, #3c6d4f 0%, #26543a 52%, #163d27 100%)",
+    leatherDark: "linear-gradient(155deg, #26543a 0%, #143020 100%)",
+    leatherSheen: "rgba(212,226,164,0.42)",
+    stitch: "#ece0b2",
+    foil: "#e8d5a4",
+    pocketShadow: "rgba(8,24,14,0.55)",
+  },
+  midnight: {
+    linen:
+      "radial-gradient(ellipse 120% 90% at 50% -10%, #eff2fa 0%, #dde4f2 46%, #c4cfe8 100%)",
+    linenWeave: "rgba(40,50,80,0.05)",
+    leather: "linear-gradient(155deg, #3c4a73 0%, #283252 52%, #1a2338 100%)",
+    leatherDark: "linear-gradient(155deg, #283252 0%, #161d33 100%)",
+    leatherSheen: "rgba(184,204,244,0.42)",
+    stitch: "#ccd6ee",
+    foil: "#d4def3",
+    pocketShadow: "rgba(8,12,24,0.58)",
+  },
+};
+
+export function sceneFor(key: string): SceneTokens {
+  return SCENE[key as TreasureThemeKey] ?? SCENE.brass;
+}
+
+/**
+ * Gentle placeholder frames so the closed→open flow, the concertina unfold and
+ * the marketing page all read before any real photos are added. Captions echo
+ * the "a year of us" story the demo tells; the reel swaps to the sender's own
+ * frames the moment they upload.
+ */
+export const PLACEHOLDER_FRAMES: ReelFrame[] = [
+  { id: "ph-0", fileId: "", caption: "Where it began", date: "Jan" },
+  { id: "ph-1", fileId: "", caption: "The first trip", date: "Apr" },
+  { id: "ph-2", fileId: "", caption: "Us, unposed", date: "Jul" },
+  { id: "ph-3", fileId: "", caption: "The little things", date: "Oct" },
+  { id: "ph-4", fileId: "", caption: "Still here", date: "Dec" },
+];
 
 export const TIMELESS_TREASURE_CONFIG: TimelessTreasureConfig = {
   // ↓ Make it theirs.
@@ -194,7 +345,7 @@ export const TIMELESS_TREASURE_CONFIG: TimelessTreasureConfig = {
 
   senderName: "Kabir",
 
-  theme: "brass",
+  theme: "sand",
 
   tag: {
     title: "Made of Happy Memories",

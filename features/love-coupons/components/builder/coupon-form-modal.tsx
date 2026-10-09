@@ -4,6 +4,9 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ActivityBankPicker } from "@/features/activity-bank/components/activity-bank-picker";
+import { heatForType, titled } from "@/features/activity-bank/map";
+import { fileRef } from "@/features/activity-bank/previews";
 import { Flames } from "@/features/desire-deck/components/flames";
 
 import { type Coupon, type Heat, HEAT_META, HEAT_ORDER } from "../../config";
@@ -13,6 +16,7 @@ interface FormState {
   title: string;
   description: string;
   heat: Heat;
+  image: { fileId: string } | null;
 }
 
 /** Add / edit a coupon — its title, the fine print, and a heat tier. */
@@ -29,9 +33,20 @@ export function CouponFormModal({
 
   const [form, setForm] = useState<FormState>(() =>
     coupon
-      ? { title: coupon.title, description: coupon.description, heat: coupon.heat }
-      : { title: "", description: "", heat: couponHeatDefault(coupons.length) },
+      ? {
+          title: coupon.title,
+          description: coupon.description,
+          heat: coupon.heat,
+          image: coupon.image ?? null,
+        }
+      : {
+          title: "",
+          description: "",
+          heat: couponHeatDefault(coupons.length),
+          image: null,
+        },
   );
+  const [bankOpen, setBankOpen] = useState(false);
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
 
   useEffect(() => {
@@ -51,6 +66,7 @@ export function CouponFormModal({
       title: form.title.trim(),
       description: form.description.trim(),
       heat: form.heat,
+      image: form.image,
     };
     if (coupon) updateCoupon(coupon.id, data);
     else addCoupon(data);
@@ -81,6 +97,13 @@ export function CouponFormModal({
         </div>
 
         <div className="space-y-5 overflow-y-auto px-5 py-5">
+          <button
+            type="button"
+            onClick={() => setBankOpen(true)}
+            className="rounded-full border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10"
+          >
+            Use a bank line
+          </button>
           <Field label="Coupon title">
             <input
               className={inputCls}
@@ -143,6 +166,25 @@ export function CouponFormModal({
           </button>
         </div>
       </div>
+      <ActivityBankPicker
+        open={bankOpen}
+        includeAdult
+        initialKind="dare"
+        onClose={() => setBankOpen(false)}
+        onPick={(picked) => {
+          const item = picked[0];
+          if (!item) return;
+          const image = fileRef(item);
+          const { title, body } = titled(item);
+          setForm((current) => ({
+            ...current,
+            title,
+            description: body,
+            heat: heatForType(item.type.slug),
+            image: image ?? null,
+          }));
+        }}
+      />
     </div>
   );
 }

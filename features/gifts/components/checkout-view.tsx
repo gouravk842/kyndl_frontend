@@ -62,7 +62,9 @@ export function CheckoutView() {
   } = useForm<ShippingFormValues>({
     resolver: zodResolver(shippingSchema),
     defaultValues: {
-      full_name: user ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() : "",
+      full_name: user
+        ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim()
+        : "",
       phone: "",
       line1: "",
       line2: "",
@@ -81,7 +83,9 @@ export function CheckoutView() {
     return (
       <PageContainer size="md" className="py-24 text-center">
         <Gift className="mx-auto size-10 text-[#E3A78C]" />
-        <h1 className="mt-4 font-display text-2xl text-[#3A2A25]">Your gift bag is empty</h1>
+        <h1 className="mt-4 font-display text-2xl text-[#3A2A25]">
+          Your gift bag is empty
+        </h1>
         <p className="mt-2 text-[#7A6258]">Pick something lovely first.</p>
         <Link
           href={ROUTES.gifts}
@@ -101,10 +105,10 @@ export function CheckoutView() {
         prefill: { name: shippingData.full_name, email: user?.email },
       },
       {
-        onSuccess: () => {
+        onSuccess: (order) => {
           clear();
           toast.success("Order confirmed — a receipt is on its way 🎁");
-          router.push(ROUTES.giftOrders);
+          router.push(`${ROUTES.giftOrders}?recommend=${order.id}`);
         },
       },
     );
@@ -169,8 +173,12 @@ export function CheckoutView() {
 
   return (
     <PageContainer size="xl" className="py-12 md:py-16">
-      <h1 className="font-display text-3xl text-[#3A2A25] md:text-4xl">Checkout</h1>
-      <p className="mt-2 text-[#7A6258]">Almost there — tell us where it should land.</p>
+      <h1 className="font-display text-3xl text-[#3A2A25] md:text-4xl">
+        Checkout
+      </h1>
+      <p className="mt-2 text-[#7A6258]">
+        Almost there — tell us where it should land.
+      </p>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr]">
         {/* ── Address ───────────────────────────────────────────── */}
@@ -198,15 +206,18 @@ export function CheckoutView() {
                         : "border-[#E3CDBE]",
                     )}
                   >
-                    {effectiveSelected === addr.id && <Check className="size-3" />}
+                    {effectiveSelected === addr.id && (
+                      <Check className="size-3" />
+                    )}
                   </span>
                   <span className="text-sm text-[#3A2A25]">
-                    <span className="font-medium">{addr.full_name}</span> · {addr.phone}
+                    <span className="font-medium">{addr.full_name}</span> ·{" "}
+                    {addr.phone}
                     <br />
                     <span className="text-[#7A6258]">
                       {addr.line1}
-                      {addr.line2 ? `, ${addr.line2}` : ""}, {addr.city}, {addr.state}{" "}
-                      {addr.postal_code}
+                      {addr.line2 ? `, ${addr.line2}` : ""}, {addr.city},{" "}
+                      {addr.state} {addr.postal_code}
                     </span>
                   </span>
                 </button>
@@ -230,28 +241,64 @@ export function CheckoutView() {
           {isNew ? (
             <form onSubmit={handleSubmit(payNew)}>
               <div className="rounded-3xl border border-[#F4DDD0] bg-white p-6 md:p-8">
-                <h2 className="font-display text-xl text-[#3A2A25]">Shipping address</h2>
+                <h2 className="font-display text-xl text-[#3A2A25]">
+                  Shipping address
+                </h2>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <Field label="Full name" error={errors.full_name?.message} className="sm:col-span-2">
+                  <Field
+                    label="Full name"
+                    error={errors.full_name?.message}
+                    className="sm:col-span-2"
+                  >
                     <Input {...register("full_name")} autoComplete="name" />
                   </Field>
                   <Field label="Phone" error={errors.phone?.message}>
-                    <Input {...register("phone")} autoComplete="tel" inputMode="tel" />
+                    <Input
+                      {...register("phone")}
+                      autoComplete="tel"
+                      inputMode="tel"
+                    />
                   </Field>
-                  <Field label="Postal code" error={errors.postal_code?.message}>
-                    <Input {...register("postal_code")} autoComplete="postal-code" />
+                  <Field
+                    label="Postal code"
+                    error={errors.postal_code?.message}
+                  >
+                    <Input
+                      {...register("postal_code")}
+                      autoComplete="postal-code"
+                    />
                   </Field>
-                  <Field label="Address line 1" error={errors.line1?.message} className="sm:col-span-2">
-                    <Input {...register("line1")} autoComplete="address-line1" />
+                  <Field
+                    label="Address line 1"
+                    error={errors.line1?.message}
+                    className="sm:col-span-2"
+                  >
+                    <Input
+                      {...register("line1")}
+                      autoComplete="address-line1"
+                    />
                   </Field>
-                  <Field label="Address line 2 (optional)" error={errors.line2?.message} className="sm:col-span-2">
-                    <Input {...register("line2")} autoComplete="address-line2" />
+                  <Field
+                    label="Address line 2 (optional)"
+                    error={errors.line2?.message}
+                    className="sm:col-span-2"
+                  >
+                    <Input
+                      {...register("line2")}
+                      autoComplete="address-line2"
+                    />
                   </Field>
                   <Field label="City" error={errors.city?.message}>
-                    <Input {...register("city")} autoComplete="address-level2" />
+                    <Input
+                      {...register("city")}
+                      autoComplete="address-level2"
+                    />
                   </Field>
                   <Field label="State" error={errors.state?.message}>
-                    <Input {...register("state")} autoComplete="address-level1" />
+                    <Input
+                      {...register("state")}
+                      autoComplete="address-level1"
+                    />
                   </Field>
                 </div>
                 <label className="mt-5 flex items-center gap-2 text-sm text-[#7A6258]">
@@ -275,7 +322,9 @@ export function CheckoutView() {
                 type="button"
                 disabled={busy}
                 onClick={() => {
-                  const addr = addresses?.find((a) => a.id === effectiveSelected);
+                  const addr = addresses?.find(
+                    (a) => a.id === effectiveSelected,
+                  );
                   if (addr) paySaved(addr);
                 }}
                 className={cn(
@@ -286,7 +335,8 @@ export function CheckoutView() {
               >
                 {busy ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" /> Opening secure checkout…
+                    <Loader2 className="size-4 animate-spin" /> Opening secure
+                    checkout…
                   </>
                 ) : (
                   <>
@@ -311,14 +361,20 @@ export function CheckoutView() {
                   <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-[#FDEBE6]">
                     {item.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.image_url} alt={item.name} className="size-full object-cover" />
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="size-full object-cover"
+                      />
                     ) : null}
                     <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-[#3A2A25] text-[11px] font-bold text-white">
                       {item.quantity}
                     </span>
                   </span>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-[#3A2A25]">{item.name}</p>
+                    <p className="text-sm font-medium text-[#3A2A25]">
+                      {item.name}
+                    </p>
                   </div>
                   <span className="text-sm text-[#3A2A25]">
                     {formatPrice(item.price * item.quantity, item.currency)}
@@ -341,9 +397,23 @@ export function CheckoutView() {
                         : "—"
                 }
               />
+              {quote?.fee_lines
+                ?.filter((line) => line.mode === "additive")
+                .map((line) => (
+                  <Row
+                    key={line.code}
+                    label={line.label}
+                    value={
+                      line.component_type === "discount"
+                        ? `−${formatPrice(line.amount)}`
+                        : formatPrice(line.amount)
+                    }
+                  />
+                ))}
               {quote && quote.vendor_lines.length > 1 && (
                 <p className="pt-1 text-xs text-[#B08C7D]">
-                  Shipping is charged per shop ({quote.vendor_lines.length} shops in this order).
+                  Shipping is charged per shop ({quote.vendor_lines.length}{" "}
+                  shops in this order).
                 </p>
               )}
               <div className="flex items-center justify-between pt-2 font-display text-lg text-[#3A2A25]">

@@ -36,14 +36,14 @@ export function RegisterForm() {
 
   return (
     <AuthSheet
-      title="Create account"
-      description="Start turning thoughts into heartfelt gifts."
+      title="Start keeping"
+      description="Create an account to keep the days — then grow them into gifts."
     >
       <form
         onSubmit={handleSubmit((data) => signup(data))}
-        className="space-y-6"
+        className="space-y-4 lg:space-y-3"
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <AuthField
             id="first_name"
             label="First name"
@@ -83,14 +83,14 @@ export function RegisterForm() {
           error={errors.password_confirm?.message}
           {...register("password_confirm")}
         />
-        <MetalButton type="submit" disabled={isSigningUp} className="mt-2">
+        <MetalButton type="submit" disabled={isSigningUp}>
           {isSigningUp ? "Creating account…" : "Create account"}
         </MetalButton>
-        <p className="text-center font-cursive text-[19px] text-[#7A6258]">
+        <p className="text-center text-sm text-[#7A6258]">
           Already a member?{" "}
           <Link
             href={withCallbackUrl(ROUTES.login, callbackUrl)}
-            className="text-[#C75B39] underline underline-offset-2"
+            className="font-medium text-[#C75B39] underline-offset-4 hover:underline"
           >
             Sign in
           </Link>

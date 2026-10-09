@@ -30,8 +30,22 @@ export function ConstellationEntrance({
       exit={{ opacity: 0, transition: { duration: 1 } }}
       transition={{ duration: 1.4 }}
     >
+      <motion.span
+        aria-hidden
+        className="mb-8 block h-1.5 w-1.5 rounded-full bg-[#f7f1e4] shadow-[0_0_18px_6px_rgba(247,241,228,0.65)]"
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.4 }}
+        animate={
+          reduceMotion ? { opacity: 1 } : { opacity: [0.45, 1, 0.45], scale: 1 }
+        }
+        transition={
+          reduceMotion
+            ? { duration: 0.4 }
+            : { duration: 2.8, repeat: Infinity, ease: "easeInOut" }
+        }
+      />
+
       <motion.p
-        className="font-serif mb-3 text-sm tracking-[0.3em] text-[#9a96b8] uppercase"
+        className="font-serif mb-3 text-sm tracking-[0.3em] text-[#8b93a8] uppercase"
         initial={reduceMotion ? false : { opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 1 }}
@@ -40,7 +54,7 @@ export function ConstellationEntrance({
       </motion.p>
 
       <motion.h1
-        className="font-serif text-3xl leading-tight text-[#f6efdd] sm:text-4xl"
+        className="font-serif text-3xl leading-tight text-[#f2f4f8] sm:text-4xl"
         initial={reduceMotion ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 1.2 }}
@@ -49,7 +63,7 @@ export function ConstellationEntrance({
       </motion.h1>
 
       <motion.span
-        className="mt-8 inline-flex items-center gap-2 text-sm tracking-[0.2em] text-[#c8b88a] uppercase"
+        className="mt-8 inline-flex items-center gap-2 text-sm tracking-[0.2em] text-[#a8b0c4] uppercase"
         initial={{ opacity: 0 }}
         animate={reduceMotion ? { opacity: 1 } : { opacity: [0.4, 1, 0.4] }}
         transition={

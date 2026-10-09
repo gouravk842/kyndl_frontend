@@ -8,14 +8,44 @@ import {
   useReducedMotion,
   useTransform,
 } from "framer-motion";
-import { Flame, Lock, RotateCcw, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Drama,
+  Eye,
+  Flame,
+  Heart,
+  Lock,
+  type LucideIcon,
+  MessageCircleHeart,
+  Pause,
+  RotateCcw,
+  Sparkles,
+  Star,
+  Volume2,
+  VolumeX,
+  Zap,
+} from "lucide-react";
+import {
+  createElement,
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
+import { applyWheel } from "@/features/activity-bank/demo-content";
+import { DemoGate } from "@/features/activity-bank/demo-gate";
 import {
   type SpinCategory,
   WHEEL_CONFIG,
   type WheelConfig,
 } from "@/features/naughty-spins/config";
+import {
+  playPegTick,
+  primeTickAudio,
+} from "@/features/naughty-spins/lib/tick-sound";
 
 /**
  * The interactive Naughty Spins wheel. Reads its content from
@@ -39,12 +69,24 @@ type NaughtySpinsExperienceProps = {
 
 type Result = { category: SpinCategory; prompt: string | null };
 
-/** Geometry of the SVG wheel (a 0–320 viewBox, centred). */
-const CX = 160;
-const CY = 160;
-const WHEEL_R = 150; // wedge radius
-const RIM_R = 158; // metallic bezel
-const BULB_R = 150; // peg/bulb ring (sits on the rim seam)
+/**
+ * ViewBox is taller than the circle so the rim stroke and the pointer both
+ * live inside the stage. Ancestors (the product-page frame, the scaled embed)
+ * clip overflow, so nothing important may hang outside this box.
+ */
+const VB_W = 400;
+const VB_H = 468;
+const CX = 200;
+const CY = 256;
+const WHEEL_R = 152;
+const RIM_R = 160;
+const RIM_STROKE = 8;
+const BULB_R = 146; // pegs sit on the seam, inside the rim stroke
+const RIM_OUTER = RIM_R + RIM_STROKE / 2;
+
+/** Radial band the label may occupy, clear of the hub and the rim icon. */
+const LABEL_INNER = 58;
+const LABEL_OUTER = 136;
 
 // ── tiny colour helpers (lighten / darken for wedge depth) ───────────
 type RGB = { r: number; g: number; b: number };
@@ -63,7 +105,9 @@ function parseHex(hex: string): RGB {
 }
 function toHex(c: RGB): string {
   const h = (v: number) =>
-    Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+    Math.max(0, Math.min(255, Math.round(v)))
+      .toString(16)
+      .padStart(2, "0");
   return `#${h(c.r)}${h(c.g)}${h(c.b)}`;
 }
 function mix(hex: string, target: RGB, amt: number): string {
@@ -118,6 +162,148 @@ function ringPoint(angle: number, r: number): [number, number] {
   return [CX + r * Math.sin(a), CY - r * Math.cos(a)];
 }
 
+const INK_LIGHT = "#fffaf8";
+const INK_DARK = "#1a0a10";
+
+function relLuminance(hex: string): number {
+  const { r, g, b } = parseHex(hex);
+  const channel = (c: number) => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrastRatio(a: number, b: number): number {
+  const hi = Math.max(a, b);
+  const lo = Math.min(a, b);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Light or dark ink, whichever keeps WCAG AA against the wedge face.
+ * Samples the solid fill plus the highlight and the soft rim shade the
+ * gradient actually paints under the label.
+ */
+function inkFor(fill: string): string {
+  const samples = [fill, darken(fill, 0.1), lighten(fill, 0.22)].map(
+    relLuminance,
+  );
+  const lightL = relLuminance(INK_LIGHT);
+  const darkL = relLuminance(INK_DARK);
+  const worst = (inkL: number) =>
+    Math.min(...samples.map((sample) => contrastRatio(inkL, sample)));
+  return worst(lightL) >= worst(darkL) ? INK_LIGHT : INK_DARK;
+}
+
+/** Sample-pack names, plus a few obvious aliases. Custom names fall back to Sparkles. */
+const CATEGORY_ICONS: { test: RegExp; icon: LucideIcon }[] = [
+  { test: /talk|question/i, icon: MessageCircleHeart },
+  { test: /charade|mime|act/i, icon: Drama },
+  { test: /wild|bonus/i, icon: Star },
+  { test: /myster|secret|surprise/i, icon: Eye },
+  { test: /dare/i, icon: Zap },
+  { test: /heart|love|romance/i, icon: Heart },
+  { test: /action|touch|kiss/i, icon: Flame },
+];
+
+function iconForLabel(label: string): LucideIcon {
+  return (
+    CATEGORY_ICONS.find((entry) => entry.test.test(label))?.icon ?? Sparkles
+  );
+}
+
+/** Render a category Lucide icon without assigning a component during render. */
+function categoryIcon(
+  label: string,
+  props: { className?: string; style?: CSSProperties; strokeWidth?: number },
+) {
+  return createElement(iconForLabel(label), { ...props, "aria-hidden": true });
+}
+
+type WedgeMark = {
+  text: string;
+  fontSize: number;
+  showLabel: boolean;
+  /** Radius the label is centred on. */
+  textR: number;
+  /** Icon centre, as a radius and a clockwise tangent offset (viewBox units). */
+  iconR: number;
+  iconTangent: number;
+};
+
+/**
+ * Fit a radial label inside its wedge. The string runs along the bisector;
+ * the font shrinks until it fits, then ellipsizes. Very thin wedges drop the
+ * word and keep the icon — the legend still has the full name.
+ */
+function layoutWedge(label: string, segAngle: number): WedgeMark {
+  const iconOnly: WedgeMark = {
+    text: "",
+    fontSize: 14,
+    showLabel: false,
+    textR: WHEEL_R * 0.64,
+    iconR: WHEEL_R * 0.64,
+    iconTangent: 0,
+  };
+  if (segAngle < 16 || label.length === 0) return iconOnly;
+
+  const midR = (LABEL_INNER + LABEL_OUTER) / 2;
+  const halfW = midR * Math.sin((segAngle * Math.PI) / 360);
+  const icon = 13;
+  const gap = 3;
+  const sideFont = Math.min(17, (halfW - icon - gap) * 2 * 0.92);
+  const beside = sideFont >= 13;
+
+  let font = beside ? sideFont : Math.min(16, halfW * 1.55);
+  const textOuter = beside ? LABEL_OUTER : WHEEL_R - 34;
+  const maxLen = textOuter - LABEL_INNER;
+  const textR = (LABEL_INNER + textOuter) / 2;
+  if (font < 12 || maxLen < 28) return iconOnly;
+
+  const width = (text: string, size: number) => text.length * size * 0.58;
+  while (font - 0.5 >= 12 && width(label, font) > maxLen) font -= 0.5;
+
+  const iconR = beside
+    ? textR + (textOuter - LABEL_INNER) * 0.18
+    : WHEEL_R - 22;
+  const iconTangent = beside ? font / 2 + gap + icon / 2 : 0;
+  const placed = { fontSize: font, showLabel: true, textR, iconR, iconTangent };
+
+  if (width(label, font) <= maxLen) {
+    return { text: label, ...placed };
+  }
+
+  const maxChars = Math.floor(maxLen / (font * 0.58));
+  if (maxChars < 3) return iconOnly;
+  return {
+    text: `${label.slice(0, maxChars - 1).trimEnd()}…`,
+    ...placed,
+  };
+}
+
+function formatShare(probability: number): string {
+  const rounded = Math.round(probability * 1000) / 10;
+  return Number.isInteger(rounded) ? `${rounded}%` : `${rounded.toFixed(1)}%`;
+}
+
+/** A short tap when the wheel settles. Missing or blocked vibrate is ignored. */
+function landingBuzz() {
+  if (
+    typeof navigator === "undefined" ||
+    typeof navigator.vibrate !== "function"
+  ) {
+    return;
+  }
+  navigator.vibrate(18);
+}
+
+/** Do-overs from the open card. A normal spin after Done or Skip is separate. */
+const RE_SPINS = 3;
+/** Gentle countdown on the card. Off until the player turns the timer on. */
+const TIMER_SECONDS = 60;
+const EMPTY_PROMPT = "No more prompts here, spin again.";
+
 // A few fixed ember positions (% of the stage) so SSR and the client agree.
 const EMBERS = [
   { left: "12%", delay: 0, dur: 7, drift: 14 },
@@ -128,10 +314,23 @@ const EMBERS = [
   { left: "90%", delay: 4, dur: 7.4, drift: -8 },
 ];
 
-export function NaughtySpinsExperience({
-  config = WHEEL_CONFIG,
+export function NaughtySpinsExperience(props: NaughtySpinsExperienceProps) {
+  return (
+    <DemoGate
+      authored={props.config}
+      fallback={WHEEL_CONFIG}
+      includeAdult
+      apply={applyWheel}
+    >
+      {(config) => <NaughtySpinsPlay {...props} config={config} />}
+    </DemoGate>
+  );
+}
+
+function NaughtySpinsPlay({
+  config,
   skipGate = false,
-}: NaughtySpinsExperienceProps) {
+}: NaughtySpinsExperienceProps & { config: WheelConfig }) {
   const reduceMotion = useReducedMotion();
 
   const [entered, setEntered] = useState(skipGate);
@@ -140,6 +339,12 @@ export function NaughtySpinsExperience({
   const [spun, setSpun] = useState(false);
   // The landed segment index, so we can light up exactly the wedge that won.
   const [highlight, setHighlight] = useState<number | null>(null);
+  // Peg ticks stay off until the player asks for them.
+  const [soundOn, setSoundOn] = useState(false);
+  const [timerOn, setTimerOn] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [reSpinsLeft, setReSpinsLeft] = useState(RE_SPINS);
+  const [secondsLeft, setSecondsLeft] = useState(TIMER_SECONDS);
 
   // The wheel's rotation, driven imperatively so we can sequence wind-back →
   // spin and read it live to bounce the ticker.
@@ -147,6 +352,8 @@ export function NaughtySpinsExperience({
 
   // The segment chosen for the in-flight spin, revealed when the wheel settles.
   const pendingRef = useRef<{ seg: Segment; index: number } | null>(null);
+  // Bumped when the player pauses, so an in-flight spin does not reveal a card.
+  const spinGen = useRef(0);
   // Prompts already dealt per category this session, so we don't repeat until a
   // category's stack runs dry.
   const usedRef = useRef<Record<number, Set<number>>>({});
@@ -166,8 +373,28 @@ export function NaughtySpinsExperience({
     if (segCount < 2) return 0;
     const phase = (((r % segAngle) + segAngle) % segAngle) / segAngle; // 0..1
     const kick = Math.max(0, 1 - phase * 5);
-    return kick * 13;
+    return kick * 18;
   });
+  // Icons are painted on the wheel, then counter-rotated so the glyph stays upright.
+  const iconUpright = useTransform(rotation, (r) => -r);
+  const uid = useId().replace(/:/g, "");
+
+  // Chances mirror spin(): a uniform pick among segments whose category still
+  // has prompts. Repeats are equal, so each playable category shares the wheel.
+  const legend = useMemo(() => {
+    const prompted = segments.filter(
+      (s) =>
+        (config.categories.find((c) => c.id === s.categoryId)?.prompts.length ??
+          0) > 0,
+    );
+    const pool = prompted.length > 0 ? prompted : segments;
+    const total = pool.length || 1;
+    return config.categories.map((category) => ({
+      category,
+      probability:
+        pool.filter((s) => s.categoryId === category.id).length / total,
+    }));
+  }, [segments, config.categories]);
 
   useEffect(
     () => () => {
@@ -190,7 +417,11 @@ export function NaughtySpinsExperience({
         return;
       }
       const used = (usedRef.current[cat.id] ??= new Set());
-      if (used.size >= cat.prompts.length) used.clear();
+      // A prompt is not dealt again in this session once the stack is spent.
+      if (used.size >= cat.prompts.length) {
+        setResult({ category: cat, prompt: null });
+        return;
+      }
       let idx = Math.floor(Math.random() * cat.prompts.length);
       let guard = 0;
       while (used.has(idx) && guard < cat.prompts.length) {
@@ -203,11 +434,23 @@ export function NaughtySpinsExperience({
     [categoryById],
   );
 
+  const finishSpin = useCallback(
+    (winnerIndex: number, winner: Segment) => {
+      setSpinning(false);
+      setHighlight(winnerIndex);
+      if (!reduceMotion) landingBuzz();
+      reveal(winner);
+    },
+    [reduceMotion, reveal],
+  );
+
   const spin = useCallback(() => {
     if (spinning || segCount < 2) return;
     setResult(null);
     setSpun(true);
     setHighlight(null);
+    if (soundOn) primeTickAudio();
+    const gen = spinGen.current;
 
     // Prefer landing on a category that actually has prompts to deal.
     const withPrompts = segments.filter(
@@ -218,18 +461,26 @@ export function NaughtySpinsExperience({
     const winnerIndex = segments.indexOf(winner);
     pendingRef.current = { seg: winner, index: winnerIndex };
 
-    // Land the winning wedge's centre under the top pointer, plus full turns and
-    // a little jitter so it doesn't always stop dead-centre.
+    // Land the winning wedge's centre under the top pointer. Extra full turns
+    // only lengthen the spin — they do not change which wedge was chosen.
     const segCenter = winnerIndex * segAngle + segAngle / 2;
     const jitter = (Math.random() - 0.5) * segAngle * 0.6;
     const current = rotation.get();
     const base = current - (current % 360);
-    const target = base + 360 * 6 + (360 - segCenter) + jitter;
+    const extraTurns = 5 + Math.floor(Math.random() * 3);
+    const target = base + 360 * extraTurns + (360 - segCenter) + jitter;
 
     if (reduceMotion) {
-      rotation.set(target);
-      setHighlight(winnerIndex);
-      reveal(winner);
+      setSpinning(true);
+      const run = animate(rotation, target, {
+        duration: 0.4,
+        ease: "easeOut",
+      });
+      animsRef.current.push(run);
+      run.then(() => {
+        if (spinGen.current !== gen) return;
+        finishSpin(winnerIndex, winner);
+      });
       return;
     }
 
@@ -247,9 +498,19 @@ export function NaughtySpinsExperience({
       });
       animsRef.current.push(run);
       run.then(() => {
-        setSpinning(false);
-        setHighlight(winnerIndex);
-        if (pendingRef.current) reveal(pendingRef.current.seg);
+        // Rock past the landing, then rest on the chosen wedge. The amplitude
+        // stays inside that wedge so the highlight matches where it stops.
+        const amp = Math.min(6, segAngle * 0.16);
+        const settle = animate(rotation, [target, target + amp, target], {
+          duration: 0.42,
+          times: [0, 0.42, 1],
+          ease: "easeOut",
+        });
+        animsRef.current.push(settle);
+        settle.then(() => {
+          if (spinGen.current !== gen) return;
+          finishSpin(winnerIndex, winner);
+        });
       });
     });
   }, [
@@ -260,8 +521,70 @@ export function NaughtySpinsExperience({
     rotation,
     reduceMotion,
     categoryById,
-    reveal,
+    soundOn,
+    finishSpin,
   ]);
+
+  // A tick each time a peg boundary passes. Off unless the player turns it on.
+  useEffect(() => {
+    if (!soundOn || !spinning || reduceMotion || segAngle <= 0) return;
+    let lastPeg = Math.floor(rotation.get() / segAngle);
+    return rotation.on("change", (value) => {
+      const peg = Math.floor(value / segAngle);
+      if (peg === lastPeg) return;
+      lastPeg = peg;
+      playPegTick();
+    });
+  }, [soundOn, spinning, reduceMotion, rotation, segAngle]);
+
+  // Reset the countdown when a new card is dealt. Pausing does not reset it.
+  useEffect(() => {
+    if (!timerOn || !result) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restart the countdown for a new card
+    setSecondsLeft(TIMER_SECONDS);
+  }, [timerOn, result]);
+
+  useEffect(() => {
+    if (!timerOn || !result || paused) return;
+    const id = window.setInterval(() => {
+      setSecondsLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(id);
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [timerOn, result, paused]);
+
+  const closeCard = useCallback(() => setResult(null), []);
+
+  const spinAgain = useCallback(() => {
+    if (reSpinsLeft <= 0 || spinning) return;
+    setReSpinsLeft((n) => n - 1);
+    spin();
+  }, [reSpinsLeft, spinning, spin]);
+
+  const pauseGame = useCallback(() => {
+    spinGen.current += 1;
+    for (const anim of animsRef.current) anim.stop();
+    animsRef.current = [];
+    setSpinning(false);
+    setPaused(true);
+  }, []);
+
+  const resume = useCallback(() => setPaused(false), []);
+
+  const endSession = useCallback(() => {
+    spinGen.current += 1;
+    for (const anim of animsRef.current) anim.stop();
+    animsRef.current = [];
+    setSpinning(false);
+    setPaused(false);
+    setResult(null);
+    setHighlight(null);
+  }, []);
 
   // ── Act 1: the 18+ gate ───────────────────────────────────────────
   if (!entered) {
@@ -269,12 +592,29 @@ export function NaughtySpinsExperience({
   }
 
   const empty = segCount < 2;
-  const inviteSpin = !spun && !spinning && !result && !empty;
+  const marks = segments.map((seg) => layoutWedge(seg.label, segAngle));
+  const hubLeft = `${(CX / VB_W) * 100}%`;
+  const hubTop = `${(CY / VB_H) * 100}%`;
+  const cardOpen = result !== null;
+  const idle = !spinning && !empty && !cardOpen;
 
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-7">
-      {/* The wheel stage */}
-      <div className="relative grid aspect-square w-full max-w-[23rem] place-items-center">
+    <div className="relative flex w-full max-w-[34rem] flex-col items-center gap-5">
+      <p className="sr-only" aria-live="polite">
+        {spinning
+          ? "Spinning…"
+          : result
+            ? `${result.category.label}. ${result.prompt ?? EMPTY_PROMPT}`
+            : ""}
+      </p>
+      {/* The wheel stage — padding in the viewBox keeps the rim and pointer inside. */}
+      <div
+        className="@container relative w-full overflow-visible"
+        style={{
+          width: "min(100%, calc(100svh - 12rem), 34rem)",
+          aspectRatio: `${VB_W} / ${VB_H}`,
+        }}
+      >
         {/* drifting embers */}
         {!reduceMotion &&
           EMBERS.map((e, i) => (
@@ -294,71 +634,108 @@ export function NaughtySpinsExperience({
             />
           ))}
 
-        {/* ambient glow, tinted to the last result */}
-        <motion.div
+        {/* ambient glow, tinted to the last result, centred on the hub */}
+        <div
           aria-hidden
-          className="pointer-events-none absolute inset-2 rounded-full blur-3xl"
-          animate={{
-            background: result
-              ? `${result.category.color}66`
-              : "rgba(255,77,109,0.28)",
-            scale: highlight !== null ? [1, 1.12, 1] : 1,
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+          style={{
+            left: hubLeft,
+            top: hubTop,
+            width: `${((WHEEL_R * 2) / VB_W) * 100}%`,
           }}
-          transition={{ duration: 0.7 }}
-        />
+        >
+          <motion.div
+            className="aspect-square w-full rounded-full blur-3xl"
+            animate={{
+              background: result
+                ? `${result.category.color}66`
+                : "rgba(255,77,109,0.28)",
+              scale: highlight !== null ? [1, 1.12, 1] : 1,
+            }}
+            transition={{ duration: 0.7 }}
+          />
+        </div>
 
-        {/* pointer + ticker, pivoting from the top */}
+        {/* pointer, pinned just outside the rim; the ticker flicks it as pegs pass */}
         <motion.div
           aria-hidden
-          className="absolute -top-2 left-1/2 z-30 origin-top"
-          style={{ x: "-50%", rotate: ticker }}
+          className="pointer-events-none absolute z-30 flex origin-top flex-col items-center"
+          style={{
+            left: hubLeft,
+            top: `${((CY - RIM_OUTER) / VB_H) * 100}%`,
+            x: "-50%",
+            y: "-100%",
+            rotate: ticker,
+          }}
         >
+          <span className="relative z-10 size-[18px] rounded-full bg-gradient-to-br from-white to-[#ffb3c4] shadow-[0_2px_8px_rgba(0,0,0,0.55)]" />
           <div
-            className="relative"
+            className="-mt-1.5"
             style={{
               width: 0,
               height: 0,
-              borderLeft: "13px solid transparent",
-              borderRight: "13px solid transparent",
-              borderTop: "26px solid #ffe9ee",
-              filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.55))",
+              borderLeft: "16px solid transparent",
+              borderRight: "16px solid transparent",
+              borderTop: "40px solid #ffe9ee",
+              filter: "drop-shadow(0 8px 8px rgba(0,0,0,0.6))",
             }}
           />
-          <span className="absolute -top-1 left-1/2 size-3 -translate-x-1/2 rounded-full bg-gradient-to-br from-white to-[#ffb3c4] shadow" />
         </motion.div>
 
         {/* soft drop shadow under the wheel */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-4 rounded-full"
-          style={{ boxShadow: "0 30px 60px rgba(0,0,0,0.55)" }}
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            left: hubLeft,
+            top: hubTop,
+            width: `${((WHEEL_R * 2) / VB_W) * 100}%`,
+            aspectRatio: "1",
+            boxShadow: "0 30px 60px rgba(0,0,0,0.55)",
+          }}
         />
 
         {/* the spinning wheel */}
         <motion.div className="relative size-full" style={{ rotate: rotation }}>
-          <svg viewBox="0 0 320 320" className="size-full">
+          <svg
+            viewBox={`0 0 ${VB_W} ${VB_H}`}
+            className="size-full overflow-visible"
+            aria-hidden
+          >
             <defs>
               {/* a depth gradient per wedge */}
               {segments.map((seg, i) => (
                 <radialGradient
                   key={i}
-                  id={`ns-wedge-${i}`}
+                  id={`${uid}-wedge-${i}`}
                   cx="50%"
                   cy="50%"
                   r="75%"
                 >
-                  <stop offset="0%" stopColor={lighten(seg.color, 0.26)} />
-                  <stop offset="62%" stopColor={seg.color} />
-                  <stop offset="100%" stopColor={darken(seg.color, 0.32)} />
+                  <stop offset="0%" stopColor={lighten(seg.color, 0.22)} />
+                  <stop offset="52%" stopColor={seg.color} />
+                  <stop offset="100%" stopColor={darken(seg.color, 0.1)} />
                 </radialGradient>
               ))}
+              {segments.map((_, i) => {
+                const start = i * segAngle;
+                const end = (i + 1) * segAngle;
+                const inset = Math.min(1.1, segAngle * 0.07);
+                return (
+                  <clipPath key={i} id={`${uid}-clip-${i}`}>
+                    <path
+                      d={wedgePath(start + inset, end - inset, WHEEL_R - 3)}
+                    />
+                  </clipPath>
+                );
+              })}
               {/* metallic bezel */}
-              <linearGradient id="ns-bezel" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={`${uid}-bezel`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#ffd9e0" />
                 <stop offset="45%" stopColor="#c81d4e" />
                 <stop offset="100%" stopColor="#5a0a1f" />
               </linearGradient>
-              <radialGradient id="ns-gloss" cx="40%" cy="28%" r="60%">
+              <radialGradient id={`${uid}-gloss`} cx="40%" cy="28%" r="60%">
                 <stop offset="0%" stopColor="rgba(255,255,255,0.34)" />
                 <stop offset="55%" stopColor="rgba(255,255,255,0.05)" />
                 <stop offset="100%" stopColor="rgba(255,255,255,0)" />
@@ -371,8 +748,8 @@ export function NaughtySpinsExperience({
               cy={CY}
               r={RIM_R}
               fill="none"
-              stroke="url(#ns-bezel)"
-              strokeWidth={9}
+              stroke={`url(#${uid}-bezel)`}
+              strokeWidth={RIM_STROKE}
             />
 
             {/* wedges */}
@@ -380,44 +757,66 @@ export function NaughtySpinsExperience({
               const start = i * segAngle;
               const end = (i + 1) * segAngle;
               const mid = start + segAngle / 2;
-              const flip = mid > 90 && mid < 270;
-              const labelY = CY - WHEEL_R * 0.6;
+              const mark = marks[i] ?? layoutWedge(seg.label, segAngle);
+              const ink = inkFor(seg.color);
+              const textRot = mid > 180 ? 90 : -90;
               return (
                 <g key={i}>
                   <path
                     d={wedgePath(start, end)}
-                    fill={`url(#ns-wedge-${i})`}
+                    fill={`url(#${uid}-wedge-${i})`}
                     stroke="rgba(13,4,10,0.55)"
                     strokeWidth={1.25}
                   />
-                  <g transform={`rotate(${mid} ${CX} ${CY})`}>
-                    <text
-                      x={CX}
-                      y={labelY}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      transform={
-                        flip ? `rotate(180 ${CX} ${labelY})` : undefined
-                      }
-                      className="font-display"
-                      style={{
-                        fontSize: segAngle < 30 ? 11 : 13.5,
-                        fontWeight: 700,
-                        fill: "#fff",
-                        letterSpacing: "0.03em",
-                        paintOrder: "stroke",
-                        stroke: "rgba(13,4,10,0.45)",
-                        strokeWidth: 2.5,
-                      }}
-                    >
-                      {seg.label.length > 14
-                        ? `${seg.label.slice(0, 13)}…`
-                        : seg.label}
-                    </text>
-                  </g>
+                  {mark.showLabel && (
+                    <g clipPath={`url(#${uid}-clip-${i})`}>
+                      <title>{seg.label}</title>
+                      <g transform={`rotate(${mid} ${CX} ${CY})`}>
+                        <text
+                          x={CX}
+                          y={CY - mark.textR}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          transform={`rotate(${textRot} ${CX} ${CY - mark.textR})`}
+                          className="font-display"
+                          style={{
+                            fontSize: mark.fontSize,
+                            fontWeight: 700,
+                            fill: ink,
+                          }}
+                        >
+                          {mark.text}
+                        </text>
+                      </g>
+                    </g>
+                  )}
                 </g>
               );
             })}
+
+            {/* glossy specular sheen */}
+            <circle
+              cx={CX}
+              cy={CY}
+              r={WHEEL_R}
+              fill={`url(#${uid}-gloss)`}
+              pointerEvents="none"
+            />
+
+            {/* losing wedges dim once the wheel has settled */}
+            {highlight !== null &&
+              segments.map((_, i) => {
+                if (i === highlight) return null;
+                const start = i * segAngle;
+                return (
+                  <path
+                    key={`dim-${i}`}
+                    d={wedgePath(start, start + segAngle)}
+                    fill="rgba(13,4,10,0.62)"
+                    pointerEvents="none"
+                  />
+                );
+              })}
 
             {/* the winning wedge lights up */}
             {highlight !== null && segCount > 0 && (
@@ -427,18 +826,12 @@ export function NaughtySpinsExperience({
                 style={{ mixBlendMode: "overlay" }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: [0, 0.45, 0.18, 0.45] }}
-                transition={{ duration: 1.6, repeat: Infinity }}
+                transition={{
+                  duration: reduceMotion ? 0 : 1.6,
+                  repeat: reduceMotion ? 0 : Infinity,
+                }}
               />
             )}
-
-            {/* glossy specular sheen */}
-            <circle
-              cx={CX}
-              cy={CY}
-              r={WHEEL_R}
-              fill="url(#ns-gloss)"
-              pointerEvents="none"
-            />
 
             {/* peg "bulbs" around the seam */}
             {!empty &&
@@ -476,56 +869,163 @@ export function NaughtySpinsExperience({
               </text>
             )}
           </svg>
+
+          {!empty &&
+            segments.map((seg, i) => {
+              const mark = marks[i] ?? layoutWedge(seg.label, segAngle);
+              const mid = i * segAngle + segAngle / 2;
+              const [ix, iy] = ringPoint(mid, mark.iconR);
+              const rad = (mid * Math.PI) / 180;
+              const x = ix + mark.iconTangent * Math.cos(rad);
+              const y = iy + mark.iconTangent * Math.sin(rad);
+              const ink = inkFor(seg.color);
+              const iconSize = mark.showLabel
+                ? "clamp(14px, 4cqi, 20px)"
+                : "clamp(18px, 5.5cqi, 28px)";
+              return (
+                <span
+                  key={i}
+                  aria-hidden
+                  className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: `${(x / VB_W) * 100}%`,
+                    top: `${(y / VB_H) * 100}%`,
+                    opacity: highlight !== null && highlight !== i ? 0.35 : 1,
+                    transition: reduceMotion ? "none" : "opacity 0.4s ease",
+                  }}
+                >
+                  <motion.span
+                    className="grid place-items-center"
+                    style={{ rotate: iconUpright }}
+                  >
+                    {categoryIcon(seg.label, {
+                      strokeWidth: 2.25,
+                      style: { color: ink, width: iconSize, height: iconSize },
+                    })}
+                  </motion.span>
+                </span>
+              );
+            })}
         </motion.div>
 
         {/* centre hub — the spin trigger */}
-        <div className="absolute z-20 grid place-items-center">
-          {/* inviting pulse before the first spin */}
-          {inviteSpin && !reduceMotion && (
-            <motion.span
-              aria-hidden
-              className="absolute size-[4.5rem] rounded-full border-2 border-[#ff8fae]"
-              animate={{ scale: [1, 1.6], opacity: [0.6, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
-            />
-          )}
-          <motion.button
-            type="button"
-            onClick={spin}
-            disabled={spinning || empty}
-            aria-label="Spin the wheel"
-            whileTap={{ scale: 0.9 }}
-            className="relative grid size-[4.5rem] place-items-center rounded-full bg-gradient-to-br from-[#ff6f8b] via-[#ff4d6d] to-[#a8163f] text-white shadow-[0_8px_30px_rgba(200,29,78,0.55)] ring-4 ring-[#160913] transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-90"
-          >
-            {/* glossy cap highlight */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle at 38% 28%, rgba(255,255,255,0.55), rgba(255,255,255,0) 55%)",
-              }}
-            />
-            <span className="relative flex flex-col items-center leading-none">
+        <div
+          className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+          style={{ left: hubLeft, top: hubTop }}
+        >
+          <div className="relative grid place-items-center">
+            {idle && !reduceMotion && (
               <motion.span
-                animate={
-                  spinning && !reduceMotion ? { rotate: 360 } : { rotate: 0 }
-                }
-                transition={
-                  spinning
-                    ? { duration: 1.1, repeat: Infinity, ease: "linear" }
-                    : { duration: 0.3 }
-                }
-              >
-                <Sparkles className="size-5" />
-              </motion.span>
-              <span className="mt-1 text-[0.6rem] font-bold tracking-[0.15em] uppercase">
-                {spinning ? "…" : "Spin"}
+                aria-hidden
+                className="absolute size-[4.5rem] rounded-full bg-[#ff4d6d] sm:size-20"
+                animate={{ scale: [1, 1.12, 1], opacity: [0.38, 0, 0.38] }}
+                transition={{
+                  duration: 2.4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+            )}
+            <motion.button
+              type="button"
+              onClick={spin}
+              disabled={spinning || empty || cardOpen}
+              aria-label="Spin the wheel"
+              whileTap={{ scale: 0.94 }}
+              className="relative z-10 grid size-[4.5rem] place-items-center rounded-full bg-gradient-to-br from-[#ff6f8b] via-[#ff4d6d] to-[#a8163f] text-white shadow-[0_8px_30px_rgba(200,29,78,0.55)] ring-4 ring-[#160913] transition-transform hover:scale-105 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaf8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-90 sm:size-20"
+            >
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle at 38% 28%, rgba(255,255,255,0.55), rgba(255,255,255,0) 55%)",
+                }}
+              />
+              <span className="relative flex flex-col items-center leading-none">
+                <motion.span
+                  animate={
+                    spinning && !reduceMotion ? { rotate: 360 } : { rotate: 0 }
+                  }
+                  transition={
+                    spinning
+                      ? { duration: 1.1, repeat: Infinity, ease: "linear" }
+                      : { duration: 0.3 }
+                  }
+                >
+                  <Sparkles className="size-5 sm:size-6" />
+                </motion.span>
+                <span className="mt-1 text-xs font-bold tracking-[0.16em] uppercase">
+                  {spinning ? "…" : "Spin"}
+                </span>
               </span>
-            </span>
-          </motion.button>
+            </motion.button>
+          </div>
         </div>
       </div>
+
+      {!empty && (
+        <ul
+          aria-label="Categories and their chances"
+          className="flex w-full flex-wrap items-center justify-center gap-2"
+        >
+          {legend.map(({ category, probability }) => {
+            return (
+              <li key={category.id}>
+                <span className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-base text-white">
+                  {categoryIcon(category.label, {
+                    className: "size-4 shrink-0",
+                    style: { color: category.color },
+                  })}
+                  <span
+                    className="max-w-[12rem] truncate font-medium"
+                    title={category.label}
+                  >
+                    {category.label}
+                  </span>
+                  <span className="tabular-nums text-white/70">
+                    {formatShare(probability)}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {!empty && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            aria-pressed={soundOn}
+            onClick={() => setSoundOn((on) => !on)}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-base text-white/80 transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            {soundOn ? (
+              <Volume2 className="size-4" aria-hidden />
+            ) : (
+              <VolumeX className="size-4" aria-hidden />
+            )}
+            {soundOn ? "Sound on" : "Sound off"}
+          </button>
+          <button
+            type="button"
+            aria-pressed={timerOn}
+            onClick={() => setTimerOn((on) => !on)}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-base text-white/80 transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            {timerOn ? "Timer on" : "Timer off"}
+          </button>
+          <button
+            type="button"
+            onClick={pauseGame}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-base text-white/80 transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <Pause className="size-4" aria-hidden />
+            Pause
+          </button>
+        </div>
+      )}
 
       {/* Cover copy — only before the first spin. */}
       <AnimatePresence>
@@ -536,13 +1036,13 @@ export function NaughtySpinsExperience({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="-mt-1 max-w-sm text-center"
+            className="max-w-sm text-center"
           >
             <h2 className="font-display text-2xl text-white">
               {config.wheelTitle || "Naughty Spins"}
             </h2>
             {config.intro && (
-              <p className="mt-2 text-sm leading-relaxed text-white/60">
+              <p className="mt-2 text-base leading-relaxed text-white/80">
                 {config.intro}
               </p>
             )}
@@ -550,20 +1050,32 @@ export function NaughtySpinsExperience({
         )}
       </AnimatePresence>
 
-      {/* The reveal */}
-      <div className="flex min-h-[9rem] w-full items-start justify-center">
-        <AnimatePresence mode="wait">
-          {result && (
-            <ResultCard
-              key={`${result.category.id}-${result.prompt}`}
-              result={result}
-              onSpinAgain={spin}
-              canSpin={!spinning && !empty}
-              reduceMotion={!!reduceMotion}
-            />
-          )}
-        </AnimatePresence>
-      </div>
+      <AnimatePresence>
+        {result && (
+          <ResultCard
+            key={`${result.category.id}-${result.prompt ?? "empty"}`}
+            result={result}
+            reSpinsLeft={reSpinsLeft}
+            secondsLeft={timerOn ? secondsLeft : null}
+            reduceMotion={!!reduceMotion}
+            onDone={closeCard}
+            onSkip={closeCard}
+            onSpinAgain={spinAgain}
+            onPause={pauseGame}
+            suspended={paused}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {paused && (
+          <PauseScreen
+            reduceMotion={!!reduceMotion}
+            onResume={resume}
+            onEnd={endSession}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -571,78 +1083,209 @@ export function NaughtySpinsExperience({
 // ── The reveal card ──────────────────────────────────────────────────
 function ResultCard({
   result,
-  onSpinAgain,
-  canSpin,
+  reSpinsLeft,
+  secondsLeft,
   reduceMotion,
+  onDone,
+  onSkip,
+  onSpinAgain,
+  onPause,
+  suspended,
 }: {
   result: Result;
-  onSpinAgain: () => void;
-  canSpin: boolean;
+  reSpinsLeft: number;
+  /** Null hides the countdown. */
+  secondsLeft: number | null;
   reduceMotion: boolean;
+  onDone: () => void;
+  onSkip: () => void;
+  onSpinAgain: () => void;
+  onPause: () => void;
+  /** Pause sits on top, so this card should ignore keys until it returns. */
+  suspended: boolean;
 }) {
   const { category, prompt } = result;
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (suspended) return;
+    panelRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onDone();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onDone, suspended]);
+
+  const clock =
+    secondsLeft === null
+      ? null
+      : secondsLeft <= 0
+        ? "Time's up"
+        : `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+
   return (
     <motion.div
-      initial={
-        reduceMotion
-          ? { opacity: 0 }
-          : { opacity: 0, y: 18, rotateX: -55, scale: 0.92 }
-      }
-      animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-      exit={
-        reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10, scale: 0.98 }
-      }
-      transition={{ type: "spring", stiffness: 220, damping: 20 }}
-      style={{ transformPerspective: 900 }}
-      className="relative w-full max-w-sm overflow-hidden rounded-3xl border p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.55)] backdrop-blur"
+      className="absolute inset-0 z-40 flex items-end justify-center sm:items-center"
+      inert={suspended ? true : undefined}
+      aria-hidden={suspended}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0.15 : 0.25 }}
     >
-      {/* card surface tinted to the category */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10"
-        style={{
-          background: `linear-gradient(160deg, ${category.color}22 0%, rgba(255,255,255,0.03) 55%)`,
-        }}
-      />
-      {/* glow ring */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 rounded-3xl"
-        style={{ boxShadow: `inset 0 0 0 1px ${category.color}55` }}
-      />
-      {/* shimmer sweep */}
-      {!reduceMotion && (
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-12"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)",
-          }}
-          initial={{ x: 0 }}
-          animate={{ x: "420%" }}
-          transition={{ duration: 1.1, ease: "easeInOut", delay: 0.25 }}
-        />
-      )}
-
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.7rem] font-semibold tracking-wide uppercase"
-        style={{ color: category.color, background: `${category.color}1f` }}
-      >
-        <Flame className="size-3.5" />
-        {category.label}
-      </span>
-      <p className="mt-4 font-display text-xl leading-relaxed text-white">
-        {prompt ?? "This one's a blank — add some prompts to this category."}
-      </p>
       <button
         type="button"
-        onClick={onSpinAgain}
-        disabled={!canSpin}
-        className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-5 py-2 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 disabled:opacity-40"
+        aria-label="Close the card"
+        className="absolute inset-0 bg-[#0d040a]/75"
+        onClick={onDone}
+      />
+      <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 48 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 32 }}
+        transition={
+          reduceMotion
+            ? { duration: 0.15 }
+            : { type: "spring", stiffness: 280, damping: 28 }
+        }
+        className="relative z-10 m-0 w-full rounded-t-[1.6rem] border border-white/10 bg-[#160910]/95 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_24px_70px_rgba(0,0,0,0.55)] outline-none backdrop-blur-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:m-4 sm:max-w-md sm:rounded-[1.6rem] sm:pb-6"
       >
-        <RotateCcw className="size-3.5" /> Spin again
-      </button>
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-1 rounded-t-[1.6rem] sm:rounded-t-[1.6rem]"
+          style={{ background: category.color }}
+        />
+        <div className="flex items-start justify-between gap-3">
+          <span
+            id={titleId}
+            className="inline-flex min-h-11 items-center gap-2 text-base font-semibold text-white"
+          >
+            {categoryIcon(category.label, {
+              className: "size-5 shrink-0",
+              style: { color: category.color },
+            })}
+            {category.label}
+          </span>
+          {clock && (
+            <span className="pt-2 text-base tabular-nums text-white/70">
+              {clock}
+            </span>
+          )}
+        </div>
+        <p className="mt-4 font-display text-2xl leading-snug text-white sm:text-[1.75rem]">
+          {prompt ?? EMPTY_PROMPT}
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onDone}
+            className="col-span-2 inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-r from-[#ff4d6d] to-[#c81d4e] px-5 text-base font-semibold text-white shadow-[0_8px_30px_rgba(200,29,78,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            Done
+          </button>
+          <button
+            type="button"
+            onClick={onSpinAgain}
+            disabled={reSpinsLeft <= 0}
+            className="col-span-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-white/15 px-3 text-base font-medium text-white/85 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <RotateCcw className="size-4" aria-hidden />
+            {reSpinsLeft > 0
+              ? `Spin again · ${reSpinsLeft} left`
+              : "No re-spins left"}
+          </button>
+          <button
+            type="button"
+            onClick={onSkip}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/15 px-3 text-base font-medium text-white/85 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            onClick={onPause}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-white/15 px-3 text-base font-medium text-white/80 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <Pause className="size-4" aria-hidden />
+            Pause
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function PauseScreen({
+  reduceMotion,
+  onResume,
+  onEnd,
+}: {
+  reduceMotion: boolean;
+  onResume: () => void;
+  onEnd: () => void;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    panelRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onResume();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onResume]);
+
+  return (
+    <motion.div
+      className="absolute inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0.12 : 0.25 }}
+    >
+      <div aria-hidden className="absolute inset-0 bg-[#0d040a]/88" />
+      <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ns-pause-title"
+        tabIndex={-1}
+        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        className="relative z-10 w-full max-w-sm rounded-3xl border border-white/10 bg-[#14080e] px-7 py-10 text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+      >
+        <h2 id="ns-pause-title" className="font-display text-3xl text-white">
+          Paused
+        </h2>
+        <p className="mt-3 text-base leading-relaxed text-white/75">
+          Take a breath. The wheel will wait until you&apos;re ready.
+        </p>
+        <div className="mt-8 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onResume}
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-7 text-base font-semibold text-[#7e1426] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            Resume
+          </button>
+          <button
+            type="button"
+            onClick={onEnd}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/15 px-7 text-base font-medium text-white/80 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            End
+          </button>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }

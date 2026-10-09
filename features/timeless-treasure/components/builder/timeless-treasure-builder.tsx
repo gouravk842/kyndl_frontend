@@ -11,10 +11,10 @@ import { BuilderPanel } from "./builder-panel";
 
 /**
  * The Timeless Treasure customization panel: an editor rail beside a live scene
- * that re-renders from the draft as you type. The preview opens the box up front
- * (`startOpen`) so every edit — reel, letter, tag — is always visible without
- * having to re-open. A "Full preview" button plays the whole thing full-screen,
- * from the closed box, music included.
+ * that re-renders from the draft as you type. The preview opens the album up
+ * front (`startOpen`) so every edit — note, photos, dedication — is visible
+ * without having to re-open. A "Full preview" button plays the whole thing
+ * full-screen, from the closed album, music included.
  */
 export function TimelessTreasureBuilder() {
   const sync = useTimelessTreasureSync();

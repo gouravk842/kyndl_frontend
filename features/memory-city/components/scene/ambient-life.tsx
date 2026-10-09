@@ -11,6 +11,7 @@ import {
 
 import { makeRng } from "../../lib/layout/prng";
 import { emptySample, makePath, type Path } from "../../lib/spline-path";
+import { useMemoryCityStore } from "../../store";
 import type { CityConfig } from "../../types";
 
 /**
@@ -29,17 +30,27 @@ import type { CityConfig } from "../../types";
 export function AmbientLife({ city }: { city: CityConfig }) {
   const accent = city.theme.accent;
   const avenue = city.fabric?.roads?.[0];
+  const reducedMotion = useMemoryCityStore((s) => s.reducedMotion);
+  const quality = useMemoryCityStore((s) => s.quality);
 
   return (
     <group>
-      {avenue && avenue.length > 1 && (
+      {avenue && avenue.length > 1 && quality !== "low" && (
         <Traffic seed={city.id} avenue={avenue} accent={accent} />
       )}
       {city.fabric && (
-        <WindowGlow seed={city.id} fillers={city.fabric.fillers} accent={accent} />
+        <WindowGlow
+          seed={city.id}
+          fillers={city.fabric.fillers}
+          accent={accent}
+        />
       )}
-      <Birds seed={city.id} radius={city.fabric?.radius ?? 40} />
-      <ShootingStars accent={accent} />
+      {!reducedMotion && (
+        <Birds seed={city.id} radius={city.fabric?.radius ?? 40} />
+      )}
+      {!reducedMotion && quality === "high" && (
+        <ShootingStars accent={accent} />
+      )}
     </group>
   );
 }
@@ -113,7 +124,11 @@ function Traffic({
 
       dummy.position.set(sample.x + ox, CAR_H / 2 + 0.05, sample.z + oz);
       // A car travelling backwards along the path faces the other way.
-      dummy.rotation.set(0, car.dir === 1 ? sample.yaw : sample.yaw + Math.PI, 0);
+      dummy.rotation.set(
+        0,
+        car.dir === 1 ? sample.yaw : sample.yaw + Math.PI,
+        0,
+      );
       dummy.updateMatrix();
 
       bodyRef.current?.setMatrixAt(i, dummy.matrix);

@@ -1,14 +1,16 @@
 export { AmbientBackground } from "./ambient-background";
+export { CreateKeepsakeFab } from "./create-keepsake-fab";
 export { EmotionalShowcase } from "./emotional-showcase";
 export { ExperienceGallery } from "./experience-gallery";
 export { ExperienceStrip } from "./experience-strip";
-export { FinalCta } from "./final-cta";
 export { GiftCatalog } from "./gift-catalog";
 export { HeroSection } from "./hero-section";
 export { HowItWorks } from "./how-it-works";
 export { InteractiveShowcase } from "./interactive-showcase";
 export { KyndlButton } from "./kyndl-button";
 export { KyndlLogoMark } from "./kyndl-logo-mark";
+export { MemoryBankSpotlight } from "./memory-bank-spotlight";
 export { PageLoader } from "./page-loader";
+export { PlayAndNight } from "./play-and-night";
 export { Testimonials } from "./testimonials";
 export { KYNDL_LOGO_SRC, KyndlLogo } from "@/components/shared/kyndl-logo";

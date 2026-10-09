@@ -10,7 +10,11 @@
  * reads as one world.
  */
 
-import { type Heat, HEAT_META, HEAT_ORDER } from "@/features/desire-deck/config";
+import {
+  type Heat,
+  HEAT_META,
+  HEAT_ORDER,
+} from "@/features/desire-deck/config";
 
 export { type Heat, HEAT_META, HEAT_ORDER };
 
@@ -21,6 +25,7 @@ export type MatcherItem = {
   id: string;
   heat: Heat;
   label: string;
+  image?: { fileId: string } | null;
 };
 
 export type MatcherContent = {
@@ -46,10 +51,7 @@ export type Reveal = {
 };
 
 /** Presentation for each answer (used by the swipe controls and builder). */
-export const ANSWER_META: Record<
-  Answer,
-  { label: string; color: string }
-> = {
+export const ANSWER_META: Record<Answer, { label: string; color: string }> = {
   yes: { label: "Yes", color: "#3ad17f" },
   maybe: { label: "Maybe", color: "#f0b53d" },
   no: { label: "No", color: "#ff5a6a" },
@@ -73,13 +75,29 @@ export const MATCHER_CONFIG: MatcherContent = {
     i8: "maybe",
   },
   items: [
-    { id: "i1", heat: "sweet", label: "A long, unhurried makeout — nothing else allowed" },
-    { id: "i2", heat: "flirty", label: "Send each other a daring photo during the day" },
+    {
+      id: "i1",
+      heat: "sweet",
+      label: "A long, unhurried makeout — nothing else allowed",
+    },
+    {
+      id: "i2",
+      heat: "flirty",
+      label: "Send each other a daring photo during the day",
+    },
     { id: "i3", heat: "flirty", label: "Give a full-body massage with oil" },
     { id: "i4", heat: "spicy", label: "Try a blindfold" },
-    { id: "i5", heat: "spicy", label: "One of us is fully in charge for the night" },
+    {
+      id: "i5",
+      heat: "spicy",
+      label: "One of us is fully in charge for the night",
+    },
     { id: "i6", heat: "wild", label: "Bring a new toy into the mix" },
     { id: "i7", heat: "sweet", label: "Shower together, no agenda" },
-    { id: "i8", heat: "wild", label: "Act out a fantasy we've never said out loud" },
+    {
+      id: "i8",
+      heat: "wild",
+      label: "Act out a fantasy we've never said out loud",
+    },
   ],
 };

@@ -5,8 +5,8 @@ import "../../modules"; // ensure every module is registered before we map surfa
 import type { ComponentType } from "react";
 import { createElement, lazy, Suspense } from "react";
 
-import { listModules } from "../../modules";
 import type { ModuleInteractionProps } from "../../modules";
+import { listModules } from "../../modules";
 import { useMemoryCityStore } from "../../store";
 import type { CityConfig } from "../../types";
 
