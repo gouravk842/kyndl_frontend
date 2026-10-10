@@ -9,6 +9,11 @@
   NODE_VERSION = "20"
   # Skip husky git hooks on CI installs (see package.json "prepare").
   HUSKY = "0"
+  # If NODE_ENV=production is set in the Netlify UI, npm skips
+  # devDependencies (tsx, typescript, eslint, …) and prebuild fails with
+  # exit 127. Always install them for the build; Next sets production
+  # mode itself during `next build`.
+  NPM_FLAGS = "--include=dev"
 
 # Optional: uncomment once the custom domain is on Netlify.
 # [[redirects]]
