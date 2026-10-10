@@ -18,7 +18,7 @@
     "test": "vitest run",
     "validate": "npm run typecheck && npm run lint && npm run format:check",
     "kits:compress": "node scripts/compress-city-kits.mjs",
-    "prepare": "husky"
+    "prepare": "node -e \"if(process.env.CI||process.env.NETLIFY||process.env.HUSKY==='0')process.exit(0);require('child_process').execSync('husky',{stdio:'inherit'})\""
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs}": [

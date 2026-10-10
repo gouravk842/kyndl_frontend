@@ -1,0 +1,18 @@
+# Kyndl frontend — Netlify (Next.js App Router via OpenNext adapter).
+# Netlify auto-installs @netlify/plugin-nextjs; do not pin it unless required.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Skip husky git hooks on CI installs (see package.json "prepare").
+  HUSKY = "0"
+
+# Optional: uncomment once the custom domain is on Netlify.
+# [[redirects]]
+#   from = "https://www.kyndl.in/*"
+#   to = "https://kyndl.in/:splat"
+#   status = 301
+#   force = true

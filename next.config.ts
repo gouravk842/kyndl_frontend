@@ -45,15 +45,42 @@ function storageOrigin(): string | null {
 const STORAGE_ORIGIN = storageOrigin();
 
 /**
+ * WebSocket origin for live chat / notifications. CSP treats `wss:` separately
+ * from `https:`, so the API host alone is not enough in production.
+ */
+function wsOrigin(): string | null {
+  const explicit = process.env.NEXT_PUBLIC_WS_URL?.trim();
+  if (explicit) {
+    try {
+      return new URL(explicit).origin;
+    } catch {
+      return null;
+    }
+  }
+  try {
+    const u = new URL(API_ORIGIN);
+    u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
+
+const WS_ORIGIN = wsOrigin();
+
+/**
  * External origins the browser is allowed to fetch from (CSP `connect-src`).
  * Our Places searches locations via OpenStreetMap's key-less Nominatim API.
  * GA4 beacons hit Google Analytics / gtag endpoints when measurement id is set.
+ * Razorpay checkout talks to their API + telemetry hosts from the browser.
  */
 const CONNECT_ALLOWLIST = [
   "https://nominatim.openstreetmap.org",
   "https://www.google-analytics.com",
   "https://analytics.google.com",
   "https://www.googletagmanager.com",
+  "https://api.razorpay.com",
+  "https://lumberjack.razorpay.com",
 ];
 
 /**
@@ -70,6 +97,7 @@ function contentSecurityPolicy(): string {
       "'unsafe-inline'",
       "https://www.googletagmanager.com",
       "https://www.google-analytics.com",
+      "https://checkout.razorpay.com",
       ...(isDev ? ["'unsafe-eval'"] : []),
     ],
     "style-src": ["'self'", "'unsafe-inline'"],
@@ -84,9 +112,16 @@ function contentSecurityPolicy(): string {
     "connect-src": [
       "'self'",
       API_ORIGIN,
+      ...(WS_ORIGIN ? [WS_ORIGIN] : []),
       ...(STORAGE_ORIGIN ? [STORAGE_ORIGIN] : []),
       ...CONNECT_ALLOWLIST,
       ...(isDev ? ["ws:", "wss:"] : []),
+    ],
+    // Razorpay Checkout opens its payment UI in a frame.
+    "frame-src": [
+      "'self'",
+      "https://api.razorpay.com",
+      "https://checkout.razorpay.com",
     ],
     "frame-ancestors": ["'none'"],
     "base-uri": ["'self'"],
@@ -136,7 +171,17 @@ const nextConfig: NextConfig = {
     // Scope the optimizer to known hosts only — `hostname: "**"` would let it
     // proxy arbitrary URLs (an SSRF/abuse vector). Add CDN hosts here as needed.
     remotePatterns: [
-      { protocol: "https", hostname: new URL(API_ORIGIN).hostname },
+      { protocol: "https" as const, hostname: new URL(API_ORIGIN).hostname },
+      ...(STORAGE_ORIGIN
+        ? [
+            {
+              protocol: (STORAGE_ORIGIN.startsWith("http:")
+                ? "http"
+                : "https") as "http" | "https",
+              hostname: new URL(STORAGE_ORIGIN).hostname,
+            },
+          ]
+        : []),
       ...(isDev ? [{ protocol: "http" as const, hostname: "localhost" }] : []),
     ],
   },
