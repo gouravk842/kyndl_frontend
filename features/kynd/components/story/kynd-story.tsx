@@ -152,8 +152,9 @@ function HeroOrbit() {
             : { duration: 6, repeat: Infinity, ease: "easeInOut" }
         }
       >
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative story art; fixed height, not LCP */}
         <img
-          src="/couple.png"
+          src="/couple.webp"
           alt="A couple sitting together"
           className="h-56 w-auto drop-shadow-[0_16px_28px_rgba(242,89,111,0.28)] sm:h-[15.5rem]"
         />

@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import {
   type ExperienceMedia,
@@ -31,6 +33,8 @@ type ExperienceCardMediaProps = {
   children?: React.ReactNode;
   /** Show a soft bottom fade into the card body. */
   fade?: boolean;
+  /** Mark as LCP candidate (above-fold hero/feature cards only). */
+  priority?: boolean;
 };
 
 /**
@@ -44,6 +48,7 @@ export function ExperienceCardMedia({
   imgClassName,
   children,
   fade = false,
+  priority = false,
 }: ExperienceCardMediaProps) {
   const resolved = resolveExperienceMedia({ slug, ...media });
 
@@ -60,15 +65,14 @@ export function ExperienceCardMedia({
       aria-hidden={children ? undefined : true}
     >
       {resolved.previewImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={resolved.previewImage}
           alt=""
-          className={cn(
-            "absolute inset-0 size-full object-contain",
-            imgClassName,
-          )}
+          fill
+          sizes="(max-width: 640px) 92vw, (max-width: 1024px) 45vw, 28vw"
+          className={cn("object-contain", imgClassName)}
           draggable={false}
+          priority={priority}
         />
       ) : (
         <div

@@ -85,7 +85,7 @@ export const experiences: Experience[] = [
     accent: "from-[#FF7A59]/22 via-[#F2596F]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fffdf6 0%, #f7e6cf 55%, #efd6b8 100%)",
-    previewImage: "/digital_scrapbook.png",
+    previewImage: "/digital_scrapbook.webp",
     span: "feature",
     highlights: [
       {
@@ -135,7 +135,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F0A13D]/22 via-[#FF7A59]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fffdf6 0%, #f0dcc0 55%, #d8b88f 100%)",
-    previewImage: "/memories.png",
+    previewImage: "/memories.webp",
     span: "wide",
     highlights: [
       {
@@ -185,7 +185,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F0A13D]/22 via-[#FF7A59]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 70% 25%, #2a2350 0%, #161033 60%, #0d0a22 100%)",
-    previewImage: "/constellations.jpg",
+    previewImage: "/constellations.webp",
     span: "wide",
     highlights: [
       {
@@ -235,7 +235,7 @@ export const experiences: Experience[] = [
     accent: "from-[#7FD9FF]/22 via-[#A98BFF]/10 to-transparent",
     previewGradient:
       "linear-gradient(160deg, #2a2f6b 0%, #4a4a8a 45%, #f0a868 100%)",
-    previewImage: "/memory_city.png",
+    previewImage: "/memory_city.webp",
     span: "wide",
     highlights: [
       {
@@ -336,7 +336,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F0C48A]/22 via-[#E07A5F]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 58% at 50% 62%, #6e2438 0%, #2a1018 46%, #0a0710 100%)",
-    previewImage: "/memory_lantern.png",
+    previewImage: "/memory_lantern.webp",
     span: "wide",
     highlights: [
       {
@@ -391,7 +391,7 @@ export const experiences: Experience[] = [
     accent: "from-[#FF9A7B]/22 to-transparent",
     previewGradient:
       "linear-gradient(160deg, #fdf3e7 0%, #f5e0c3 60%, #ead5b0 100%)",
-    previewImage: "/memory_jar.png",
+    previewImage: "/memory_jar.webp",
     span: "small",
     highlights: [
       {
@@ -441,7 +441,7 @@ export const experiences: Experience[] = [
     accent: "from-[#FF7A59]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 40% 35%, #ffe9d2 0%, #f6c9a3 55%, #e89f74 100%)",
-    previewImage: "/our_places.jpg",
+    previewImage: "/our_places.webp",
     span: "small",
     highlights: [
       {
@@ -491,7 +491,7 @@ export const experiences: Experience[] = [
     accent: "from-[#D4A373]/30 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 20%, #fffaf3 0%, #f3e6d4 55%, #e0c9ae 100%)",
-    previewImage: "/relationship_calender.png",
+    previewImage: "/relationship_calender.webp",
     span: "small",
     highlights: [
       {
@@ -541,7 +541,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #fffaf4 0%, #fbeede 55%, #f4e0cb 100%)",
-    previewImage: "/ludo.png",
+    previewImage: "/ludo.webp",
     span: "small",
     highlights: [
       {
@@ -912,7 +912,7 @@ export const experiences: Experience[] = [
     accent: "from-[#D4A373]/25 via-[#B11226]/12 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 80% 65% at 50% 25%, #fdf6ee 0%, #f3e4d4 50%, #ead7c4 100%)",
-    previewImage: "/24_reason.png",
+    previewImage: "/24_reason.webp",
     span: "wide",
     highlights: [
       {
@@ -964,7 +964,7 @@ export const experiences: Experience[] = [
     accent: "from-[#FF9A7B]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 35%, #ffe7e0 0%, #f7b9ac 60%, #ec8f86 100%)",
-    previewImage: "/countdown.jpg",
+    previewImage: "/countdown.webp",
     span: "small",
     highlights: [
       {
@@ -1014,7 +1014,7 @@ export const experiences: Experience[] = [
     accent: "from-[#1db954]/22 via-[#FF7A59]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fbf4ea 0%, #f3e7d6 55%, #e7d3bd 100%)",
-    previewImage: "/spotify.png",
+    previewImage: "/spotify.webp",
     span: "wide",
     highlights: [
       {
@@ -1116,7 +1116,7 @@ export const experiences: Experience[] = [
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 30%, #fbf3e6 0%, #efdcbe 55%, #dcbc90 100%)",
     span: "wide",
-    previewImage: "/timeless_treasure.png",
+    previewImage: "/timeless_treasure.webp",
     highlights: [
       {
         icon: "Gift",
@@ -1166,7 +1166,7 @@ export const experiences: Experience[] = [
     accent: "from-[#7c6cff]/22 via-[#f4768e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 80% 65% at 50% 20%, #2a2350 0%, #171331 55%, #0a0820 100%)",
-    previewImage: "/big_question.png",
+    previewImage: "/big_question.webp",
     span: "wide",
     highlights: [
       {
@@ -1316,7 +1316,7 @@ export const experiences: Experience[] = [
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
-    previewImage: "/dark_zone/desire_deck.png",
+    previewImage: "/dark_zone/desire_deck.webp",
     span: "small",
     highlights: [
       {
@@ -1367,7 +1367,7 @@ export const experiences: Experience[] = [
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
-    previewImage: "/dark_zone/desire_matcher.png",
+    previewImage: "/dark_zone/desire_matcher.webp",
     span: "small",
     highlights: [
       {
@@ -1418,7 +1418,7 @@ export const experiences: Experience[] = [
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
-    previewImage: "/dark_zone/dice_desire.png",
+    previewImage: "/dark_zone/dice_desire.webp",
     span: "small",
     highlights: [
       {
@@ -1469,7 +1469,7 @@ export const experiences: Experience[] = [
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
-    previewImage: "/dark_zone/snake_lovers.png",
+    previewImage: "/dark_zone/snake_lovers.webp",
     span: "small",
     highlights: [
       {
@@ -1520,7 +1520,7 @@ export const experiences: Experience[] = [
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
-    previewImage: "/dark_zone/desire_coupon.png",
+    previewImage: "/dark_zone/desire_coupon.webp",
     span: "small",
     highlights: [
       {
@@ -1571,7 +1571,7 @@ export const experiences: Experience[] = [
     accent: "from-[#ff4d6d]/22 via-[#c81d4e]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 60% at 50% 25%, #2a0a18 0%, #1a0710 55%, #0d040a 100%)",
-    previewImage: "/dark_zone/naughty_spins.png",
+    previewImage: "/dark_zone/naughty_spins.webp",
     span: "small",
     highlights: [
       {

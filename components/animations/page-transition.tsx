@@ -1,29 +1,25 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-
-import { pageTransition } from "@/lib/animations";
 
 interface PageTransitionProps {
   children: ReactNode;
 }
 
+/**
+ * Light route enter fade — keeps marketing feel without AnimatePresence
+ * mode="wait" (which blocks the next page until the previous exits).
+ */
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={pageTransition}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <div
+      key={pathname}
+      className="animate-in fade-in slide-in-from-bottom-1 duration-300 fill-mode-both"
+    >
+      {children}
+    </div>
   );
 }

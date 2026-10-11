@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Heart, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 // Tiny deterministic starfield for the constellation keepsake — no Math.random
 // so server and client render identically.
@@ -36,13 +37,15 @@ export function EmotionalShowcase() {
         <span className="kyndl-tape absolute -top-3 left-1/2 h-6 w-20 -translate-x-1/2 rounded-[3px] bg-white/40" />
         {/* polaroid */}
         <div className="mx-auto w-[82%] rounded-[6px] bg-white p-2 pb-7 shadow-[0_8px_20px_-12px_rgba(58,42,37,0.5)]">
-          <div className="aspect-[4/3] w-full overflow-hidden rounded-[3px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/scrapbook.png"
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[3px]">
+            <Image
+              src="/scrapbook.webp"
               alt=""
-              className="size-full object-cover"
+              fill
+              sizes="(max-width: 1024px) 60vw, 320px"
+              className="object-cover"
               draggable={false}
+              priority
             />
           </div>
         </div>

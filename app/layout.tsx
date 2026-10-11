@@ -5,7 +5,6 @@ import {
   Caveat,
   Dancing_Script,
   EB_Garamond,
-  Geist_Mono,
   Plus_Jakarta_Sans,
   Syne,
 } from "next/font/google";
@@ -26,14 +25,8 @@ const syne = Syne({
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-// Scrapbook handwriting voices: Caveat for casual notes, Dancing Script for
-// flowing cursive love-letter passages.
+// Hero + keepsakes use handwriting voices on marketing too — keep available,
+// but don't preload serif (constellation / plaques) on every route.
 const caveat = Caveat({
   variable: "--font-hand",
   subsets: ["latin"],
@@ -46,13 +39,12 @@ const dancingScript = Dancing_Script({
   display: "swap",
 });
 
-// Constellation: a classical serif for star labels and memory text — starlight
-// in type. Loaded with its italic so the constellation name can whisper.
 const ebGaramond = EB_Garamond({
   variable: "--font-serif",
   subsets: ["latin"],
   style: ["normal", "italic"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = createMetadata();
@@ -76,7 +68,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakarta.variable} ${syne.variable} ${geistMono.variable} ${caveat.variable} ${dancingScript.variable} ${ebGaramond.variable} h-full antialiased`}
+      className={`${plusJakarta.variable} ${syne.variable} ${caveat.variable} ${dancingScript.variable} ${ebGaramond.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
         <GoogleAnalytics />

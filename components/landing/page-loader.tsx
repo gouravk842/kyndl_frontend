@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { type ReactNode, useEffect, useState } from "react";
 
 const LOADER_KEY = "kyndl-loader-seen";
-/** Matches assets/logo.svg animation (~1.6s) plus a short hold */
-const LOADER_DURATION_MS = 2800;
+/** Logo animation (~1s) plus a short brand hold — never a multi-second gate. */
+const LOADER_DURATION_MS = 1100;
 
 interface PageLoaderProps {
   intro: ReactNode;
@@ -18,6 +18,8 @@ export function PageLoader({ intro }: PageLoaderProps) {
   useEffect(() => {
     if (sessionStorage.getItem(LOADER_KEY)) return;
 
+    // Defer setState out of the effect body (async) so return visits never
+    // mount an overlay, while first visits still get the brand intro.
     const showTimer = window.setTimeout(() => {
       setVisible(true);
       setPlayKey((k) => k + 1);
@@ -41,7 +43,7 @@ export function PageLoader({ intro }: PageLoaderProps) {
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#090909]"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           aria-live="polite"
           aria-label="Loading Kyndl"
         >

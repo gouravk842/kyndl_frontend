@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   type ComponentType,
   createContext,
@@ -7,43 +8,181 @@ import {
   useContext,
 } from "react";
 
-import { ChocolateBouquetExperience } from "@/features/chocolate-bouquet/components/chocolate-bouquet-experience";
-import { ConstellationExperience } from "@/features/constellation/components/constellation-experience";
-import { CountdownExperience } from "@/features/countdown/components/countdown-experience";
-import { DeluluMeterExperience } from "@/features/delulu-meter/components/delulu-meter-experience";
-import { DesireDeckExperience } from "@/features/desire-deck/components/desire-deck-experience";
-import { MatcherExperience } from "@/features/desire-matcher/components/matcher-experience";
-import { DiceOfDesireExperience } from "@/features/dice-of-desire/components/dice-of-desire-experience";
-import { FlamesExperience } from "@/features/flames/components/flames-experience";
-import { FoldedNoteExperience } from "@/features/folded-note/components/folded-note-experience";
-import { LoveCalculatorExperience } from "@/features/love-calculator/components/love-calculator-experience";
-import { CouponBookExperience } from "@/features/love-coupons/components/coupon-book-experience";
-import { LudoExperience } from "@/features/ludo/components/ludo-experience";
-import { MemoryCityExperience } from "@/features/memory-city/components/memory-city-experience";
-import { MemoryJarExperience } from "@/features/memory-jar/components/memory-jar-experience";
-import { MemoryLanternExperience } from "@/features/memory-lantern/components/memory-lantern-experience";
-import { MemoryPagesExperience } from "@/features/memory-pages/components/memory-pages-experience";
 import {
   previewAlbum,
   previewAssets,
 } from "@/features/memory-pages/data/marketing-preview";
-import { MirrorExperience } from "@/features/mirror-match/components/mirror-experience";
-import { MomentPlayer } from "@/features/moment/components/moment-player";
 import { SAMPLE_DATE_ASK, SAMPLE_PROPOSAL } from "@/features/moment/config";
-import { NaughtySpinsExperience } from "@/features/naughty-spins/components/naughty-spins-experience";
-import { OurPlacesExperience } from "@/features/our-places/components/our-places-experience";
-import { RelationshipCalendarExperience } from "@/features/relationship-calendar/components/relationship-calendar-experience";
-import { ScrapbookExperience } from "@/features/scrapbook/components/scrapbook-experience";
-import { SnakesAndLoversExperience } from "@/features/snakes-and-lovers/components/snakes-and-lovers-experience";
-import { SpotifyPlaqueExperience } from "@/features/spotify-plaque/components/spotify-plaque-experience";
-import { StringFrameExperience } from "@/features/string-frame/components/string-frame-experience";
-import { ThisOrThatExperience } from "@/features/this-or-that/components/this-or-that-experience";
-import { TimeCapsuleExperience } from "@/features/time-capsule/components/time-capsule-experience";
-import { TimelessTreasureExperience } from "@/features/timeless-treasure/components/timeless-treasure-experience";
-import { ReasonsExperience } from "@/features/twenty-four-reasons/components/reasons-experience";
 import { getDemoContent } from "@/features/twenty-four-reasons/config";
-import { WhackAMoleExperience } from "@/features/whack-a-mole/components/whack-a-mole-experience";
 import { cn } from "@/lib/utils";
+
+/** Soft brand wash while a heavy experience chunk loads. */
+function EmbedPlaceholder({ dark = false }: { dark?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 animate-pulse",
+        dark ? "bg-[#1a0f14]" : "bg-[#FCEEE3]",
+      )}
+      aria-hidden
+    />
+  );
+}
+
+function lazyExperience(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- per-experience prop shapes differ
+  loader: () => Promise<Record<string, ComponentType<any>>>,
+  exportName: string,
+  dark = false,
+) {
+  return dynamic(
+    () =>
+      loader().then((m) => {
+        const Comp = m[exportName];
+        if (!Comp) throw new Error(`Missing export: ${exportName}`);
+        return Comp;
+      }),
+    {
+      loading: () => <EmbedPlaceholder dark={dark} />,
+      ssr: false,
+    },
+  );
+}
+
+const ScrapbookExperience = lazyExperience(
+  () => import("@/features/scrapbook/components/scrapbook-experience"),
+  "ScrapbookExperience",
+);
+const ChocolateBouquetExperience = lazyExperience(
+  () =>
+    import("@/features/chocolate-bouquet/components/chocolate-bouquet-experience"),
+  "ChocolateBouquetExperience",
+);
+const ConstellationExperience = lazyExperience(
+  () => import("@/features/constellation/components/constellation-experience"),
+  "ConstellationExperience",
+);
+const CountdownExperience = lazyExperience(
+  () => import("@/features/countdown/components/countdown-experience"),
+  "CountdownExperience",
+);
+const DeluluMeterExperience = lazyExperience(
+  () => import("@/features/delulu-meter/components/delulu-meter-experience"),
+  "DeluluMeterExperience",
+);
+const DesireDeckExperience = lazyExperience(
+  () => import("@/features/desire-deck/components/desire-deck-experience"),
+  "DesireDeckExperience",
+  true,
+);
+const MatcherExperience = lazyExperience(
+  () => import("@/features/desire-matcher/components/matcher-experience"),
+  "MatcherExperience",
+  true,
+);
+const DiceOfDesireExperience = lazyExperience(
+  () =>
+    import("@/features/dice-of-desire/components/dice-of-desire-experience"),
+  "DiceOfDesireExperience",
+  true,
+);
+const FlamesExperience = lazyExperience(
+  () => import("@/features/flames/components/flames-experience"),
+  "FlamesExperience",
+);
+const FoldedNoteExperience = lazyExperience(
+  () => import("@/features/folded-note/components/folded-note-experience"),
+  "FoldedNoteExperience",
+);
+const LoveCalculatorExperience = lazyExperience(
+  () =>
+    import("@/features/love-calculator/components/love-calculator-experience"),
+  "LoveCalculatorExperience",
+);
+const CouponBookExperience = lazyExperience(
+  () => import("@/features/love-coupons/components/coupon-book-experience"),
+  "CouponBookExperience",
+  true,
+);
+const LudoExperience = lazyExperience(
+  () => import("@/features/ludo/components/ludo-experience"),
+  "LudoExperience",
+);
+const MemoryCityExperience = lazyExperience(
+  () => import("@/features/memory-city/components/memory-city-experience"),
+  "MemoryCityExperience",
+);
+const MemoryJarExperience = lazyExperience(
+  () => import("@/features/memory-jar/components/memory-jar-experience"),
+  "MemoryJarExperience",
+);
+const MemoryLanternExperience = lazyExperience(
+  () =>
+    import("@/features/memory-lantern/components/memory-lantern-experience"),
+  "MemoryLanternExperience",
+);
+const MemoryPagesExperience = lazyExperience(
+  () => import("@/features/memory-pages/components/memory-pages-experience"),
+  "MemoryPagesExperience",
+);
+const MirrorExperience = lazyExperience(
+  () => import("@/features/mirror-match/components/mirror-experience"),
+  "MirrorExperience",
+);
+const MomentPlayer = lazyExperience(
+  () => import("@/features/moment/components/moment-player"),
+  "MomentPlayer",
+);
+const NaughtySpinsExperience = lazyExperience(
+  () => import("@/features/naughty-spins/components/naughty-spins-experience"),
+  "NaughtySpinsExperience",
+  true,
+);
+const OurPlacesExperience = lazyExperience(
+  () => import("@/features/our-places/components/our-places-experience"),
+  "OurPlacesExperience",
+);
+const RelationshipCalendarExperience = lazyExperience(
+  () =>
+    import("@/features/relationship-calendar/components/relationship-calendar-experience"),
+  "RelationshipCalendarExperience",
+);
+const SnakesAndLoversExperience = lazyExperience(
+  () =>
+    import("@/features/snakes-and-lovers/components/snakes-and-lovers-experience"),
+  "SnakesAndLoversExperience",
+  true,
+);
+const SpotifyPlaqueExperience = lazyExperience(
+  () =>
+    import("@/features/spotify-plaque/components/spotify-plaque-experience"),
+  "SpotifyPlaqueExperience",
+);
+const StringFrameExperience = lazyExperience(
+  () => import("@/features/string-frame/components/string-frame-experience"),
+  "StringFrameExperience",
+);
+const ThisOrThatExperience = lazyExperience(
+  () => import("@/features/this-or-that/components/this-or-that-experience"),
+  "ThisOrThatExperience",
+);
+const TimeCapsuleExperience = lazyExperience(
+  () => import("@/features/time-capsule/components/time-capsule-experience"),
+  "TimeCapsuleExperience",
+);
+const TimelessTreasureExperience = lazyExperience(
+  () =>
+    import("@/features/timeless-treasure/components/timeless-treasure-experience"),
+  "TimelessTreasureExperience",
+);
+const ReasonsExperience = lazyExperience(
+  () => import("@/features/twenty-four-reasons/components/reasons-experience"),
+  "ReasonsExperience",
+);
+const WhackAMoleExperience = lazyExperience(
+  () => import("@/features/whack-a-mole/components/whack-a-mole-experience"),
+  "WhackAMoleExperience",
+);
 
 /** Product-page frame vs fullscreen public-style demo (`/preview/[slug]`). */
 export type EmbedVariant = "embed" | "public-demo";
@@ -443,6 +582,8 @@ function NaughtySpinsEmbed() {
  * - `embedded` types (scrapbook) replace the hero with the full experience.
  * - `inlineEmbed` types play inside the right-hand hero card.
  * - `public-demo` variant fills `/preview/[slug]` at natural size (publish look).
+ *
+ * Each experience is `next/dynamic` so only the active slug's chunk loads.
  */
 const embeds: Record<string, ComponentType> = {
   scrapbook: ScrapbookExperience,

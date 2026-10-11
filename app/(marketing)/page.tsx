@@ -1,15 +1,21 @@
-import {
-  CreateKeepsakeFab,
-  ExperienceGallery,
-  HeroSection,
-  HowItWorks,
-  MemoryBankSpotlight,
-  PlayAndNight,
-  Testimonials,
-} from "@/components/landing";
+import dynamic from "next/dynamic";
+
+import { CreateKeepsakeFab } from "@/components/landing/create-keepsake-fab";
+import { ExperienceGallery } from "@/components/landing/experience-gallery";
+import { HeroSection } from "@/components/landing/hero-section";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { MemoryBankSpotlight } from "@/components/landing/memory-bank-spotlight";
 import { createMetadata } from "@/lib/seo";
 import { getFeaturedExperiencesView } from "@/lib/server/experiences";
 import { getApprovedTestimonials } from "@/lib/server/testimonials";
+
+const PlayAndNight = dynamic(() =>
+  import("@/components/landing/play-and-night").then((m) => m.PlayAndNight),
+);
+
+const Testimonials = dynamic(() =>
+  import("@/components/landing/testimonials").then((m) => m.Testimonials),
+);
 
 export const metadata = createMetadata({
   title: "Moments made to be felt",

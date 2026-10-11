@@ -18,7 +18,7 @@ export type ExperienceMedia = {
   slug: string;
   name: string;
   icon: string;
-  /** Absolute public path, e.g. `/memory_jar.png`. Null when no still is set. */
+  /** Absolute public path, e.g. `/memory_jar.webp`. Null when no still is set. */
   previewImage: string | null;
   /** Gradient used behind the image (and as the sole cover when no image). */
   previewGradient: string;

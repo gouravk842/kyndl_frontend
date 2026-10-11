@@ -193,6 +193,11 @@ const nextConfig: NextConfig = {
       "lucide-react",
       "framer-motion",
       "@tanstack/react-query",
+      "@react-three/drei",
+      "@tiptap/react",
+      "leaflet",
+      "react-leaflet",
+      "@base-ui/react",
     ],
   },
 };
