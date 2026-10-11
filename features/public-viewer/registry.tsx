@@ -313,6 +313,7 @@ const PUBLIC_VIEWERS: Record<string, PublicRenderer> = {
     <TimelessTreasureExperience
       config={content as TimelessTreasureConfig}
       assets={assets}
+      claimViewerChrome
     />
   ),
   // Sealed until its unlock date, then opens to the letter; photos/music resolve

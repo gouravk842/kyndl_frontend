@@ -42,7 +42,7 @@ export function BackgroundMusic({ src }: { src: string }) {
         type="button"
         onClick={toggle}
         aria-label={playing ? "Pause music" : "Play music"}
-        className="fixed right-5 bottom-5 z-[95] grid size-11 place-items-center rounded-full bg-black/45 text-white shadow-lg backdrop-blur transition-colors hover:bg-black/65"
+        className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-[95] grid size-10 place-items-center rounded-full bg-black/45 text-white shadow-lg backdrop-blur transition-colors hover:bg-black/65 sm:right-5 sm:bottom-5 sm:left-auto sm:size-11"
       >
         {playing ? (
           <Music className="size-5 animate-pulse" />

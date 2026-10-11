@@ -319,7 +319,7 @@ export function MemoryStage({
           }}
           onPointerDown={(e) => e.stopPropagation()}
           aria-label={show.playing ? "Pause slideshow" : "Play slideshow"}
-          className="absolute right-4 bottom-[max(0.85rem,env(safe-area-inset-bottom))] z-40 grid size-11 place-items-center rounded-full border border-white/35 bg-white/12 text-[#f6efdd] shadow-[0_8px_24px_rgba(0,0,0,0.4)] backdrop-blur-md hover:bg-white/20"
+          className="absolute bottom-[max(0.85rem,env(safe-area-inset-bottom))] left-4 z-40 grid size-11 place-items-center rounded-full border border-white/35 bg-white/12 text-[#f6efdd] shadow-[0_8px_24px_rgba(0,0,0,0.4)] backdrop-blur-md hover:bg-white/20 sm:right-4 sm:left-auto"
         >
           {show.playing ? (
             <Pause className="size-4" />

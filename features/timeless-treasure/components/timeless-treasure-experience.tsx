@@ -1,8 +1,9 @@
 "use client";
 
 import { useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { setPublicBottomChrome } from "@/features/public-viewer/public-bottom-chrome";
 import {
   PLACEHOLDER_FRAMES,
   type ReelFrame,
@@ -27,6 +28,12 @@ type TimelessTreasureExperienceProps = {
   className?: string;
   /** Start already opened (used by the builder so edits are always visible). */
   startOpen?: boolean;
+  /**
+   * Public `/v/<token>` only: while the album is open, claim the bottom chrome
+   * (hide Make yours, lock page scroll) so transport + music don't fight the FAB
+   * or cover Leave a note on small screens.
+   */
+  claimViewerChrome?: boolean;
 };
 
 /**
@@ -43,6 +50,7 @@ export function TimelessTreasureExperience({
   playMusic = true,
   className = "min-h-dvh",
   startOpen = false,
+  claimViewerChrome = false,
 }: TimelessTreasureExperienceProps) {
   const reduceMotion = useReducedMotion();
   const theme = themeFor(config.theme);
@@ -53,6 +61,24 @@ export function TimelessTreasureExperience({
     frame.fileId ? (assets[frame.fileId] ?? null) : null;
 
   const musicUrl = config.music ? (assets[config.music.fileId] ?? null) : null;
+
+  // Yield the shared Make yours FAB while the transport bar is up.
+  useEffect(() => {
+    if (!claimViewerChrome) return;
+    setPublicBottomChrome(open);
+    return () => setPublicBottomChrome(false);
+  }, [claimViewerChrome, open]);
+
+  // Keep Leave a note / aftermath from scrolling under the fixed transport.
+  useEffect(() => {
+    if (!claimViewerChrome || !open) return;
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = "hidden";
+    return () => {
+      root.style.overflow = previous;
+    };
+  }, [claimViewerChrome, open]);
 
   // Fall back to gentle placeholder frames so the closed→open flow, the unfold
   // and the marketing page all read before the sender adds their own photos.

@@ -42,7 +42,9 @@ export function BackgroundMusic({ src }: { src: string }) {
         type="button"
         onClick={toggle}
         aria-label={playing ? "Pause music" : "Play music"}
-        className="fixed right-5 bottom-5 z-[80] grid size-11 place-items-center rounded-full bg-black/45 text-white shadow-lg backdrop-blur transition-colors hover:bg-black/65"
+        // Phones: sit above the transport on the left so it never stacks on the
+        // bar. sm+: back to the familiar bottom-right corner.
+        className="fixed bottom-[4.75rem] left-4 z-[80] grid size-10 place-items-center rounded-full bg-black/45 text-white shadow-lg backdrop-blur transition-colors hover:bg-black/65 sm:right-5 sm:bottom-5 sm:left-auto sm:size-11"
       >
         {playing ? (
           <Music className="size-5 animate-pulse" />

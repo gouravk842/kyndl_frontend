@@ -229,13 +229,13 @@ export function MemoryRibbon({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.45, duration: 0.5 }}
-        className="fixed bottom-6 left-1/2 z-[70] flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center gap-1 rounded-full py-1.5 pr-2 pl-2 shadow-2xl sm:gap-1.5"
+        className="fixed bottom-3 left-1/2 z-[70] flex max-w-[calc(100vw-1rem)] -translate-x-1/2 items-center gap-0.5 rounded-full py-1 pr-1.5 pl-1.5 shadow-2xl sm:bottom-6 sm:max-w-[calc(100vw-1.5rem)] sm:gap-1.5 sm:py-1.5 sm:pr-2 sm:pl-2"
         style={{
           background: scene.leather,
           border: `1px solid ${scene.stitch}66`,
           boxShadow:
             "0 16px 30px -14px rgba(30,20,8,0.5), inset 0 1px 0 rgba(255,255,255,0.16)",
-          paddingBottom: "max(0.375rem, env(safe-area-inset-bottom))",
+          paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))",
         }}
       >
         <TransportButton
@@ -244,12 +244,12 @@ export function MemoryRibbon({
           disabled={false}
           onClick={onClose}
         >
-          <X className="size-[18px]" />
+          <X className="size-4 sm:size-[18px]" />
         </TransportButton>
 
         <span
           aria-hidden
-          className="mx-0.5 h-6 w-px shrink-0"
+          className="mx-0.5 h-5 w-px shrink-0 sm:h-6"
           style={{ background: `${scene.stitch}44` }}
         />
 
@@ -259,7 +259,7 @@ export function MemoryRibbon({
           disabled={atStart}
           onClick={prev}
         >
-          <ChevronLeft className="size-5" />
+          <ChevronLeft className="size-4 sm:size-5" />
         </TransportButton>
 
         <TransportButton
@@ -274,11 +274,11 @@ export function MemoryRibbon({
           theme={theme}
         >
           {atEnd ? (
-            <RotateCcw className="size-5" />
+            <RotateCcw className="size-4 sm:size-5" />
           ) : playing ? (
-            <Pause className="size-5" />
+            <Pause className="size-4 sm:size-5" />
           ) : (
-            <Play className="size-5 translate-x-[1px]" />
+            <Play className="size-4 translate-x-[1px] sm:size-5" />
           )}
         </TransportButton>
 
@@ -288,17 +288,17 @@ export function MemoryRibbon({
           disabled={atEnd}
           onClick={next}
         >
-          <ChevronRight className="size-5" />
+          <ChevronRight className="size-4 sm:size-5" />
         </TransportButton>
 
         <span
           aria-hidden
-          className="mx-0.5 h-6 w-px shrink-0"
+          className="mx-0.5 h-5 w-px shrink-0 sm:h-6"
           style={{ background: `${scene.stitch}44` }}
         />
 
         <div
-          className="flex min-w-[54px] items-center justify-center gap-1.5 px-1 pr-1.5 text-center text-xs font-semibold tracking-[0.14em] tabular-nums"
+          className="flex min-w-[44px] items-center justify-center gap-1 px-0.5 pr-1 text-center text-[11px] font-semibold tracking-[0.12em] tabular-nums sm:min-w-[54px] sm:gap-1.5 sm:px-1 sm:pr-1.5 sm:text-xs sm:tracking-[0.14em]"
           style={{ color: scene.foil }}
         >
           {current.kind === "photo" ? (
@@ -350,7 +350,7 @@ function TransportButton({
           ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
           : undefined
       }
-      className="grid size-11 place-items-center rounded-full transition-opacity disabled:opacity-30"
+      className="grid size-9 place-items-center rounded-full transition-opacity disabled:opacity-30 sm:size-11"
       style={
         primary
           ? {

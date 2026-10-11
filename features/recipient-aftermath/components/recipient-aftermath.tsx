@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { Conversation } from "@/features/comments/components/conversation";
+import { RECIPIENT_AFTERMATH_ID } from "@/features/public-viewer/public-bottom-chrome";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
 import { track } from "@/services/analytics/analytics.service";
 
@@ -48,7 +49,10 @@ export function RecipientAftermath({
   if (!showAnything) return null;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-12 px-6 py-14">
+    <div
+      id={RECIPIENT_AFTERMATH_ID}
+      className="mx-auto w-full max-w-2xl space-y-12 px-6 pt-14 pb-[max(7rem,calc(env(safe-area-inset-bottom)+5.5rem))] sm:pb-24"
+    >
       {showReaction && (
         <div className="space-y-3">
           <p className="font-display text-2xl text-foreground">
