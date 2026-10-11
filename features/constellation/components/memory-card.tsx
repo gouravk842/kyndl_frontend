@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef } from "react";
 
 import type { Star } from "@/features/constellation/config";
+import { formatInUserTz } from "@/lib/datetime";
 
 type MemoryCardProps = {
   star: Star;
@@ -12,10 +13,7 @@ type MemoryCardProps = {
 };
 
 function formatMemoryDate(iso?: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, {
+  return formatInUserTz(iso, {
     day: "numeric",
     month: "long",
     year: "numeric",

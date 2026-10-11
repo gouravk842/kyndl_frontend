@@ -24,6 +24,7 @@ import {
   previewLine,
 } from "@/features/memory-bank/lib/preview";
 import { polaroidTilt } from "@/features/memory-bank/solar/solar-caption";
+import { formatDateLocal } from "@/lib/datetime";
 import type { BankMemory, MemoryCircle } from "@/types/memory-bank";
 
 function matchBank(circle: MemoryCircle, needle: string) {
@@ -44,16 +45,6 @@ function sortMemories(memories: BankMemory[]) {
     const ad = a.occurred_on || a.created_at;
     const bd = b.occurred_on || b.created_at;
     return bd.localeCompare(ad);
-  });
-}
-
-function formatUpdated(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
   });
 }
 
@@ -236,7 +227,7 @@ function BankRow({
                   ? "1 memory"
                   : `${bank.memory_count} memories`}
               {streak ? ` · ${streak}` : ""}
-              {bank.updated_at ? ` · ${formatUpdated(bank.updated_at)}` : ""}
+              {bank.updated_at ? ` · ${formatDateLocal(bank.updated_at)}` : ""}
             </span>
           </span>
         </button>

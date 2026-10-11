@@ -9,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatInUserTz, parseApiDate } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/types/notification";
 
@@ -17,7 +18,9 @@ import { NotificationIcon } from "./notification-icon";
 
 /** Relative "2h ago" without pulling in a date library. */
 function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+  const then = parseApiDate(iso)?.getTime();
+  if (then == null) return "";
+  const diff = Date.now() - then;
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m`;
@@ -25,7 +28,7 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d`;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return formatInUserTz(iso, { month: "short", day: "numeric" });
 }
 
 /**
@@ -37,7 +40,8 @@ function timeAgo(iso: string): string {
 export function NotificationBell() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { list, unread, unseen, markSeen, markAllRead, markOneRead } = useNotifications();
+  const { list, unread, unseen, markSeen, markAllRead, markOneRead } =
+    useNotifications();
 
   const onOpenChange = (next: boolean) => {
     setOpen(next);
@@ -52,7 +56,8 @@ export function NotificationBell() {
       // Internal links stay client-side; absolute app URLs open directly.
       try {
         const parsed = new URL(url, window.location.origin);
-        if (parsed.origin === window.location.origin) router.push(parsed.pathname + parsed.search);
+        if (parsed.origin === window.location.origin)
+          router.push(parsed.pathname + parsed.search);
         else window.location.assign(url);
       } catch {
         router.push(url);
@@ -66,7 +71,9 @@ export function NotificationBell() {
         render={
           <button
             type="button"
-            aria-label={unseen > 0 ? `Notifications, ${unseen} new` : "Notifications"}
+            aria-label={
+              unseen > 0 ? `Notifications, ${unseen} new` : "Notifications"
+            }
             className="relative inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-expanded:bg-muted"
           />
         }
@@ -111,14 +118,22 @@ export function NotificationBell() {
                 )}
               >
                 <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <NotificationIcon name={typeof n.payload.icon === "string" ? n.payload.icon : undefined} />
+                  <NotificationIcon
+                    name={
+                      typeof n.payload.icon === "string"
+                        ? n.payload.icon
+                        : undefined
+                    }
+                  />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium leading-snug text-foreground">
                       {n.payload.title}
                       {n.count > 1 && (
-                        <span className="ml-1 text-xs text-muted-foreground">×{n.count}</span>
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          ×{n.count}
+                        </span>
                       )}
                     </span>
                     <span className="shrink-0 text-[11px] text-muted-foreground">
@@ -132,7 +147,10 @@ export function NotificationBell() {
                   ) : null}
                 </span>
                 {!n.is_read && (
-                  <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" aria-hidden />
+                  <span
+                    className="mt-1.5 size-2 shrink-0 rounded-full bg-primary"
+                    aria-hidden
+                  />
                 )}
               </button>
             ))

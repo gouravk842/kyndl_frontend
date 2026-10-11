@@ -1,5 +1,7 @@
 /** Pure time math for the countdown clock — no React, easy to reason about. */
 
+import { formatInUserTz, parseApiDate } from "@/lib/datetime";
+
 export type Remaining = {
   /** Whole days/hours/minutes/seconds left, each already floored & clamped. */
   days: number;
@@ -23,7 +25,7 @@ const ZERO: Remaining = {
 
 /** Break the gap between `now` (ms epoch) and `targetIso` into clock units. */
 export function remainingFrom(targetIso: string, now: number): Remaining {
-  const target = new Date(targetIso).getTime();
+  const target = parseApiDate(targetIso)?.getTime() ?? NaN;
   if (Number.isNaN(target)) return ZERO;
 
   const total = target - now;
@@ -42,9 +44,7 @@ export function remainingFrom(targetIso: string, now: number): Remaining {
 
 /** A friendly absolute stamp for the target, e.g. "Sun, 14 Feb 2027, 7:00 PM". */
 export function formatTarget(targetIso: string): string {
-  const date = new Date(targetIso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString(undefined, {
+  return formatInUserTz(targetIso, {
     weekday: "short",
     day: "numeric",
     month: "short",

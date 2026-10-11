@@ -19,6 +19,7 @@ import {
   useReferralLinks,
   useReferralProfile,
 } from "@/hooks/use-referrals";
+import { formatDateLocal } from "@/lib/datetime";
 import { formatPrice } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
 import { track } from "@/services/analytics/analytics.service";
@@ -174,14 +175,7 @@ export function ReferralsView() {
                         </p>
                         <p className="mt-0.5 text-xs text-[#B08C7D]">
                           {formatPrice(row.amount_paise)} ·{" "}
-                          {new Date(row.created_at).toLocaleDateString(
-                            undefined,
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            },
-                          )}
+                          {formatDateLocal(row.created_at)}
                         </p>
                       </div>
                       <div className="text-right text-sm">

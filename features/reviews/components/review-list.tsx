@@ -2,22 +2,11 @@
 
 import { BadgeCheck, Trash2 } from "lucide-react";
 
+import { formatDateLocal } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import type { Review } from "@/types/review";
 
 import { StarRating } from "./star-rating";
-
-function formatDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(new Date(iso));
-  } catch {
-    return "";
-  }
-}
 
 function initials(name: string): string {
   return name
@@ -49,7 +38,9 @@ export function ReviewList({ reviews, onDelete, deletingId }: ReviewListProps) {
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-sm font-medium text-foreground">{review.author_name}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {review.author_name}
+                </span>
                 {review.is_verified && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                     <BadgeCheck className="size-3" /> Verified
@@ -64,11 +55,15 @@ export function ReviewList({ reviews, onDelete, deletingId }: ReviewListProps) {
 
               <div className="mt-1 flex items-center gap-2">
                 <StarRating value={review.rating} size="sm" />
-                <span className="text-xs text-muted-foreground">{formatDate(review.created_at)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDateLocal(review.created_at)}
+                </span>
               </div>
 
               {review.title && (
-                <p className="mt-2 text-sm font-medium text-foreground">{review.title}</p>
+                <p className="mt-2 text-sm font-medium text-foreground">
+                  {review.title}
+                </p>
               )}
               {review.body && (
                 <p className="mt-1 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">

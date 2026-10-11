@@ -3,18 +3,16 @@ import { notFound } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { MarkdownBody } from "@/components/legal/markdown-body";
 import { PageHeader } from "@/components/shared/page-header";
+import { formatInUserTz } from "@/lib/datetime";
 import { getLegalPage, type LegalPageSlug } from "@/lib/server/legal";
 
 function formatUpdatedAt(iso: string): string | null {
-  try {
-    return new Intl.DateTimeFormat("en-IN", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(iso));
-  } catch {
-    return null;
-  }
+  const stamped = formatInUserTz(
+    iso,
+    { day: "numeric", month: "long", year: "numeric" },
+    "en-IN",
+  );
+  return stamped || null;
 }
 
 export async function LegalDocumentPage({ slug }: { slug: LegalPageSlug }) {

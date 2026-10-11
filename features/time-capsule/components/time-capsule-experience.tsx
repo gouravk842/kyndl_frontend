@@ -5,6 +5,7 @@ import { Lock, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useMounted } from "@/hooks/use-mounted";
+import { formatInUserTz } from "@/lib/datetime";
 
 import {
   themeFor,
@@ -27,9 +28,7 @@ function partsFor(ms: number): Parts {
 }
 
 function formatUnlockDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, {
+  return formatInUserTz(iso, {
     year: "numeric",
     month: "long",
     day: "numeric",

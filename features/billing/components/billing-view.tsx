@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { useInvoices } from "@/hooks/use-invoices";
+import { formatDateLocal } from "@/lib/datetime";
 import { formatPrice } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
 import { paymentService } from "@/services/payments/payment.service";
@@ -73,14 +74,7 @@ export function BillingView() {
                         ? ` · order #${invoice.order_id.slice(0, 8)}`
                         : ""}
                       {" · "}
-                      {new Date(invoice.issued_at).toLocaleDateString(
-                        undefined,
-                        {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        },
-                      )}
+                      {formatDateLocal(invoice.issued_at)}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">

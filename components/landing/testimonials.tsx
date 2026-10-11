@@ -9,20 +9,11 @@ import { FadeIn } from "@/components/animations/fade-in";
 import { PageContainer } from "@/components/layout/page-container";
 import { ROUTES } from "@/constants/routes";
 import { StarRating } from "@/features/reviews/components/star-rating";
+import { formatDateLocal } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import type { Testimonial } from "@/types/testimonial";
 
 const AUTO_MS = 4200;
-
-function formatWhen(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 /**
  * Light auto-scrolling carousel of approved testimonials.
@@ -212,7 +203,7 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
                   <div className="relative flex items-center justify-between gap-3">
                     <StarRating value={item.rating} size="md" />
                     <span className="text-xs text-[#92786C]">
-                      {formatWhen(item.created_at)}
+                      {formatDateLocal(item.created_at)}
                     </span>
                   </div>
 

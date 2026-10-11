@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/constants/routes";
 import { CompanionRecommendations } from "@/features/recommendations/components/companion-recommendations";
 import { useGiftOrders } from "@/hooks/use-gifts";
+import { formatDateLocal } from "@/lib/datetime";
 import { formatPrice } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
 import { paymentService } from "@/services/payments/payment.service";
@@ -105,14 +106,7 @@ export function OrdersView() {
                           Order #{order.id.slice(0, 8)}
                         </p>
                         <p className="text-xs text-[#B08C7D]">
-                          {new Date(order.created_at).toLocaleDateString(
-                            undefined,
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            },
-                          )}
+                          {formatDateLocal(order.created_at)}
                         </p>
                       </div>
                     </div>

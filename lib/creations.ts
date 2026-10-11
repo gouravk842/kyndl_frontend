@@ -5,6 +5,7 @@
  * icon, and preview gradient to render a creation card — and resolve where the
  * builder lives so a card can be opened back up for editing.
  */
+import { parseApiDate } from "@/lib/datetime";
 import { experienceHref, getExperience } from "@/lib/experiences";
 import type { Creation } from "@/types/creation";
 
@@ -103,7 +104,7 @@ export function creationMeta(type: string) {
 
 /** Compact "2 days ago" style stamp. Pure, locale-light, good enough for cards. */
 export function formatRelativeTime(iso: string, now: number = Date.now()) {
-  const then = new Date(iso).getTime();
+  const then = parseApiDate(iso)?.getTime() ?? NaN;
   const seconds = Math.round((now - then) / 1000);
   if (Number.isNaN(seconds)) return "";
   if (seconds < 45) return "just now";

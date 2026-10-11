@@ -21,6 +21,7 @@ import {
   monogram,
 } from "@/features/kynd/lib/catalog";
 import { useKyndChat, useKyndPerson } from "@/hooks/use-kynd";
+import { formatTimeLocal, parseApiDate } from "@/lib/datetime";
 import { kyndService } from "@/services/kynd/kynd.service";
 import type { KyndChatMessage, KyndChatOffer, KyndItem } from "@/types/kynd";
 
@@ -44,7 +45,7 @@ function suggestionsFor(name?: string) {
 }
 
 function savedLabel(iso: string) {
-  const then = new Date(iso).getTime();
+  const then = parseApiDate(iso)?.getTime() ?? NaN;
   if (Number.isNaN(then)) return "Saved";
   const days = Math.floor((Date.now() - then) / 86_400_000);
   if (days <= 0) return "Saved today";
@@ -441,10 +442,7 @@ export function Conversation({
 }
 
 function bubbleTime(iso: string) {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return formatTimeLocal(iso);
 }
 
 function PaneThread({

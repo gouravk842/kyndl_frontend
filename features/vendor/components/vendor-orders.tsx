@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useCarriers } from "@/hooks/use-gifts";
 import { useUpdateVendorOrder, useVendorOrders } from "@/hooks/use-vendor";
+import { formatDateTimeLocal } from "@/lib/datetime";
 import { formatPrice } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
 import type { OrderStatus } from "@/types/gift";
@@ -22,12 +23,30 @@ const FILTERS: { label: string; value?: string }[] = [
 ];
 
 const STATUS_META: Record<OrderStatus, { label: string; className: string }> = {
-  pending_payment: { label: "Unpaid", className: "bg-muted text-muted-foreground" },
-  paid: { label: "To fulfill", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  processing: { label: "Packing", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  shipped: { label: "Shipped", className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-  delivered: { label: "Delivered", className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-  cancelled: { label: "Cancelled", className: "bg-destructive/15 text-destructive" },
+  pending_payment: {
+    label: "Unpaid",
+    className: "bg-muted text-muted-foreground",
+  },
+  paid: {
+    label: "To fulfill",
+    className: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  },
+  processing: {
+    label: "Packing",
+    className: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  },
+  shipped: {
+    label: "Shipped",
+    className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  },
+  delivered: {
+    label: "Delivered",
+    className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  },
+  cancelled: {
+    label: "Cancelled",
+    className: "bg-destructive/15 text-destructive",
+  },
 };
 
 export function VendorOrders() {
@@ -38,8 +57,12 @@ export function VendorOrders() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">Orders</h1>
-        <p className="mt-1 text-muted-foreground">Pack and ship what your customers bought.</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight">
+          Orders
+        </h1>
+        <p className="mt-1 text-muted-foreground">
+          Pack and ship what your customers bought.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -68,7 +91,9 @@ export function VendorOrders() {
         <Card className="flex flex-col items-center gap-2 py-16 text-center">
           <PackageCheck className="size-9 text-muted-foreground" />
           <p className="font-display text-lg">Nothing here</p>
-          <p className="text-sm text-muted-foreground">No orders in this view.</p>
+          <p className="text-sm text-muted-foreground">
+            No orders in this view.
+          </p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -101,17 +126,19 @@ function OrderRow({ order, carriers }: { order: VOrder; carriers: Carrier[] }) {
     <Card className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">Order #{order.order_id.slice(0, 8)}</p>
+          <p className="text-sm font-medium">
+            Order #{order.order_id.slice(0, 8)}
+          </p>
           <p className="text-xs text-muted-foreground">
-            {new Date(order.placed_at).toLocaleString(undefined, {
-              day: "numeric",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatDateTimeLocal(order.placed_at)}
           </p>
         </div>
-        <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", meta.className)}>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-1 text-xs font-medium",
+            meta.className,
+          )}
+        >
           {meta.label}
         </span>
       </div>
@@ -150,9 +177,12 @@ function OrderRow({ order, carriers }: { order: VOrder; carriers: Carrier[] }) {
           <p className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             Your earning
           </p>
-          <p className="font-display text-lg font-bold">{formatPrice(order.net_amount, order.currency)}</p>
+          <p className="font-display text-lg font-bold">
+            {formatPrice(order.net_amount, order.currency)}
+          </p>
           <p className="text-xs text-muted-foreground">
-            {formatPrice(order.subtotal, order.currency)} − {order.commission_percent}% fee
+            {formatPrice(order.subtotal, order.currency)} −{" "}
+            {order.commission_percent}% fee
           </p>
         </div>
       </div>
@@ -161,7 +191,12 @@ function OrderRow({ order, carriers }: { order: VOrder; carriers: Carrier[] }) {
       {(order.status === "paid" || order.status === "processing") && (
         <div className="mt-4 space-y-3 border-t pt-4">
           {order.status === "paid" && (
-            <Button variant="outline" size="sm" onClick={() => advance("processing")} disabled={update.isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => advance("processing")}
+              disabled={update.isPending}
+            >
               Start packing
             </Button>
           )}
@@ -182,7 +217,9 @@ function OrderRow({ order, carriers }: { order: VOrder; carriers: Carrier[] }) {
               </select>
             </div>
             <div className="grid gap-1">
-              <label className="text-xs text-muted-foreground">Tracking #</label>
+              <label className="text-xs text-muted-foreground">
+                Tracking #
+              </label>
               <Input
                 value={tracking}
                 onChange={(e) => setTracking(e.target.value)}
@@ -195,7 +232,11 @@ function OrderRow({ order, carriers }: { order: VOrder; carriers: Carrier[] }) {
               onClick={() => advance("shipped")}
               disabled={update.isPending || !courier || !tracking.trim()}
             >
-              {update.isPending ? <Loader2 className="size-4 animate-spin" /> : <Truck className="size-4" />}
+              {update.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Truck className="size-4" />
+              )}
               Mark shipped
             </Button>
           </div>
@@ -220,7 +261,12 @@ function OrderRow({ order, carriers }: { order: VOrder; carriers: Carrier[] }) {
               </a>
             )}
           </div>
-          <Button variant="outline" size="sm" onClick={() => advance("delivered")} disabled={update.isPending}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => advance("delivered")}
+            disabled={update.isPending}
+          >
             <PackageCheck className="size-4" /> Mark delivered
           </Button>
         </div>

@@ -3,21 +3,9 @@
 import { Flag, Pencil, Reply, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { formatDateTimeLocal } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types/comment";
-
-function formatTime(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return "";
-  }
-}
 
 function initials(name: string): string {
   return name
@@ -62,19 +50,29 @@ export function MessageItem({
   }
 
   return (
-    <div className={cn("group flex items-start gap-3 py-3", isReply && "ml-11")}>
+    <div
+      className={cn("group flex items-start gap-3 py-3", isReply && "ml-11")}
+    >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
         {initials(message.author_name)}
       </span>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2">
-          <span className="text-sm font-medium text-foreground">{message.author_name}</span>
+          <span className="text-sm font-medium text-foreground">
+            {message.author_name}
+          </span>
           {message.is_mine && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">You</span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+              You
+            </span>
           )}
-          <span className="text-xs text-muted-foreground">{formatTime(message.created_at)}</span>
-          {message.edited_at && <span className="text-xs text-muted-foreground">· edited</span>}
+          <span className="text-xs text-muted-foreground">
+            {formatDateTimeLocal(message.created_at)}
+          </span>
+          {message.edited_at && (
+            <span className="text-xs text-muted-foreground">· edited</span>
+          )}
         </div>
 
         {editing ? (

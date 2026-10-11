@@ -1,3 +1,6 @@
+import { formatInUserTz } from "@/lib/datetime";
+
+/** Date stamp in the viewer's local timezone (UTC from the API). */
 export function formatDate(
   date: string | Date,
   locale = "en-US",
@@ -7,9 +10,7 @@ export function formatDate(
     day: "numeric",
   },
 ): string {
-  return new Intl.DateTimeFormat(locale, options).format(
-    typeof date === "string" ? new Date(date) : date,
-  );
+  return formatInUserTz(date, options, locale);
 }
 
 export function formatCurrency(

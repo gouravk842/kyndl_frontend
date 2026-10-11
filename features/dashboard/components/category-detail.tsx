@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { GiftCard } from "@/features/gifts/components/gift-card";
 import { creationMeta, newCreationHref } from "@/lib/creations";
+import { formatDateLocal } from "@/lib/datetime";
 import { formatPrice } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
 import type { Creation } from "@/types/creation";
@@ -119,11 +120,7 @@ export function CategoryDetail({
                       Order #{order.id.slice(0, 8)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(order.created_at).toLocaleDateString(undefined, {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {formatDateLocal(order.created_at)}
                     </p>
                   </div>
                 </div>

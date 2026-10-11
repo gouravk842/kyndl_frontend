@@ -29,6 +29,7 @@ import {
 } from "@/features/constellation/lib/gates";
 import { edgesOf } from "@/features/constellation/lib/sky";
 import { attachSkyPan } from "@/features/constellation/lib/sky-pan";
+import { formatInUserTz } from "@/lib/datetime";
 
 import { ConstellationCanvas } from "./constellation-canvas";
 import { ConstellationControls } from "./constellation-controls";
@@ -83,13 +84,10 @@ function placeLabel(stars: Star[], camera: FieldCamera): string {
   if (!best) return "";
   if (best.stretch?.trim()) return best.stretch.trim();
   if (best.timestamp) {
-    const d = new Date(best.timestamp);
-    if (!Number.isNaN(d.getTime())) {
-      return d.toLocaleDateString(undefined, {
-        month: "long",
-        year: "numeric",
-      });
-    }
+    return formatInUserTz(best.timestamp, {
+      month: "long",
+      year: "numeric",
+    });
   }
   return "";
 }

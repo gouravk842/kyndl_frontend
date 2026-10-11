@@ -8,13 +8,7 @@ export const HEARTH_BOARDS: { id: HearthBoardId; label: string }[] = [
   { id: "week", label: "This week" },
 ];
 
-export function clientTimezone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
-  } catch {
-    return "Asia/Kolkata";
-  }
-}
+export { clientTimezone } from "@/lib/datetime";
 
 export function flameCopy(
   state: Warmth,
