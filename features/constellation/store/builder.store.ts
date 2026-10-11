@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   type GroundKind,
   type GroupGrain,
@@ -154,7 +156,12 @@ export const useBuilderStore = create<BuilderState>()(
         set((s) => ({ doc: { ...s.doc, scene: { ...s.doc.scene, ground } } })),
 
       setSong: (song) =>
-        set((s) => ({ doc: { ...s.doc, sound: { ...s.doc.sound, song } } })),
+        set((s) => {
+          const prev = s.doc.sound.song?.fileId;
+          const next = song?.fileId;
+          if (prev && prev !== next) fileService.release(prev);
+          return { doc: { ...s.doc, sound: { ...s.doc.sound, song } } };
+        }),
 
       setWish: (message) =>
         set((s) => ({
@@ -217,6 +224,8 @@ export const useBuilderStore = create<BuilderState>()(
 
       removeStar: (id) =>
         set((s) => {
+          const doomed = s.doc.stars.find((st) => st.id === id);
+          fileService.release(doomed?.image?.fileId);
           const stars = s.doc.stars
             .filter((st) => st.id !== id)
             .map((st) =>

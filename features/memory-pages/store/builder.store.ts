@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import { packPages } from "../lib/paginate";
 import type {
   MemoryEntry,
@@ -192,9 +194,14 @@ export const useBuilderStore = create<BuilderState>()(
           ),
 
         removeMemory: (id) =>
-          set((s) =>
-            sync({ ...s, memories: s.memories.filter((m) => m.id !== id) }),
-          ),
+          set((s) => {
+            const doomed = s.memories.find((m) => m.id === id);
+            fileService.release(doomed?.photo?.fileId);
+            return sync({
+              ...s,
+              memories: s.memories.filter((m) => m.id !== id),
+            });
+          }),
 
         moveMemory: (id, dir) =>
           set((s) => {
@@ -211,36 +218,47 @@ export const useBuilderStore = create<BuilderState>()(
           }),
 
         setPhoto: (id, fileId, previewUrl) =>
-          set((s) => ({
-            ...sync({
-              ...s,
-              memories: s.memories.map((m) =>
-                m.id === id ? { ...m, photo: { fileId } } : m,
-              ),
-            }),
-            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-          })),
+          set((s) => {
+            const prev = s.memories.find((m) => m.id === id)?.photo?.fileId;
+            if (prev && prev !== fileId) fileService.release(prev);
+            return {
+              ...sync({
+                ...s,
+                memories: s.memories.map((m) =>
+                  m.id === id ? { ...m, photo: { fileId } } : m,
+                ),
+              }),
+              localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+            };
+          }),
 
         removePhoto: (id) =>
-          set((s) =>
-            sync({
+          set((s) => {
+            const prev = s.memories.find((m) => m.id === id)?.photo?.fileId;
+            fileService.release(prev);
+            return sync({
               ...s,
               memories: s.memories.map((m) =>
                 m.id === id ? { ...m, photo: undefined } : m,
               ),
-            }),
-          ),
+            });
+          }),
 
         setCoverPhoto: (fileId, previewUrl) =>
-          set((s) => ({
-            ...sync({ ...s, album: { ...s.album, coverPhoto: { fileId } } }),
-            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-          })),
+          set((s) => {
+            const prev = s.album.coverPhoto?.fileId;
+            if (prev && prev !== fileId) fileService.release(prev);
+            return {
+              ...sync({ ...s, album: { ...s.album, coverPhoto: { fileId } } }),
+              localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+            };
+          }),
 
         removeCoverPhoto: () =>
-          set((s) =>
-            sync({ ...s, album: { ...s.album, coverPhoto: undefined } }),
-          ),
+          set((s) => {
+            fileService.release(s.album.coverPhoto?.fileId);
+            return sync({ ...s, album: { ...s.album, coverPhoto: undefined } });
+          }),
 
         photoUrl: (fileId) => {
           if (!fileId) return null;

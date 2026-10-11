@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   type HiddenMessage,
   PLAQUE_CONFIG,
@@ -76,7 +78,9 @@ export const useBuilderStore = create<BuilderState>()(
       setTheme: (theme) => set((s) => ({ doc: { ...s.doc, theme } })),
 
       setHidden: (patch) =>
-        set((s) => ({ doc: { ...s.doc, hidden: { ...s.doc.hidden, ...patch } } })),
+        set((s) => ({
+          doc: { ...s.doc, hidden: { ...s.doc.hidden, ...patch } },
+        })),
 
       addPhoto: (fileId, previewUrl) =>
         set((s) => ({
@@ -88,9 +92,13 @@ export const useBuilderStore = create<BuilderState>()(
         })),
 
       removePhoto: (id) =>
-        set((s) => ({
-          doc: { ...s.doc, photos: s.doc.photos.filter((p) => p.id !== id) },
-        })),
+        set((s) => {
+          const prev = s.doc.photos.find((p) => p.id === id)?.fileId;
+          fileService.release(prev);
+          return {
+            doc: { ...s.doc, photos: s.doc.photos.filter((p) => p.id !== id) },
+          };
+        }),
 
       movePhoto: (id, dir) =>
         set((s) => {
@@ -107,12 +115,20 @@ export const useBuilderStore = create<BuilderState>()(
         }),
 
       setMusic: (fileId, previewUrl) =>
-        set((s) => ({
-          doc: { ...s.doc, music: { fileId } },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.music?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: { ...s.doc, music: { fileId } },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
-      removeMusic: () => set((s) => ({ doc: { ...s.doc, music: undefined } })),
+      removeMusic: () =>
+        set((s) => {
+          fileService.release(s.doc.music?.fileId);
+          return { doc: { ...s.doc, music: undefined } };
+        }),
 
       urlFor: (ref) => {
         if (!ref) return null;

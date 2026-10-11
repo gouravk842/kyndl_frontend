@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   type Letter,
   type ReelFrame,
@@ -11,7 +13,10 @@ import {
 } from "../config";
 
 /** The plain text fields edited directly in the panel (no media). */
-type TreasureMeta = Pick<TimelessTreasureConfig, "recipientName" | "senderName">;
+type TreasureMeta = Pick<
+  TimelessTreasureConfig,
+  "recipientName" | "senderName"
+>;
 
 /** A fresh, unique id for a new film frame. */
 function newFrameId(): string {
@@ -41,14 +46,20 @@ interface BuilderState {
   /** Object URLs for just-uploaded media, so they preview before a reload. */
   localPreviews: Record<string, string>;
 
-  loadDoc: (doc: TimelessTreasureConfig, assets?: Record<string, string>) => void;
+  loadDoc: (
+    doc: TimelessTreasureConfig,
+    assets?: Record<string, string>,
+  ) => void;
   setMeta: (patch: Partial<TreasureMeta>) => void;
   setTheme: (theme: TreasureThemeKey) => void;
   setTag: (patch: Partial<Tag>) => void;
   setLetter: (patch: Partial<Letter>) => void;
 
   addFrame: (fileId: string, previewUrl: string) => void;
-  updateFrame: (id: string, patch: Partial<Pick<ReelFrame, "caption" | "date">>) => void;
+  updateFrame: (
+    id: string,
+    patch: Partial<Pick<ReelFrame, "caption" | "date">>,
+  ) => void;
   removeFrame: (id: string) => void;
   moveFrame: (id: string, dir: -1 | 1) => void;
 
@@ -78,7 +89,9 @@ export const useBuilderStore = create<BuilderState>()(
         set((s) => ({ doc: { ...s.doc, tag: { ...s.doc.tag, ...patch } } })),
 
       setLetter: (patch) =>
-        set((s) => ({ doc: { ...s.doc, letter: { ...s.doc.letter, ...patch } } })),
+        set((s) => ({
+          doc: { ...s.doc, letter: { ...s.doc.letter, ...patch } },
+        })),
 
       addFrame: (fileId, previewUrl) =>
         set((s) => ({
@@ -103,9 +116,12 @@ export const useBuilderStore = create<BuilderState>()(
         })),
 
       removeFrame: (id) =>
-        set((s) => ({
-          doc: { ...s.doc, frames: s.doc.frames.filter((f) => f.id !== id) },
-        })),
+        set((s) => {
+          fileService.release(s.doc.frames.find((f) => f.id === id)?.fileId);
+          return {
+            doc: { ...s.doc, frames: s.doc.frames.filter((f) => f.id !== id) },
+          };
+        }),
 
       moveFrame: (id, dir) =>
         set((s) => {
@@ -122,12 +138,20 @@ export const useBuilderStore = create<BuilderState>()(
         }),
 
       setMusic: (fileId, previewUrl) =>
-        set((s) => ({
-          doc: { ...s.doc, music: { fileId } },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.music?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: { ...s.doc, music: { fileId } },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
-      removeMusic: () => set((s) => ({ doc: { ...s.doc, music: undefined } })),
+      removeMusic: () =>
+        set((s) => {
+          fileService.release(s.doc.music?.fileId);
+          return { doc: { ...s.doc, music: undefined } };
+        }),
 
       urlFor: (ref) => {
         if (!ref) return null;

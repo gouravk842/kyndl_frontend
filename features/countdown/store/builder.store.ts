@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   COUNTDOWN_CONFIG,
   type CountdownConfig,
@@ -55,7 +57,9 @@ interface BuilderState {
 
   loadDoc: (doc: CountdownConfig, assets?: Record<string, string>) => void;
   setMeta: (patch: Partial<CountdownMeta>) => void;
-  setReveal: (patch: Partial<Pick<CountdownReveal, "headline" | "message">>) => void;
+  setReveal: (
+    patch: Partial<Pick<CountdownReveal, "headline" | "message">>,
+  ) => void;
   setTheme: (theme: CountdownThemeKey) => void;
 
   addNote: (note: NoteInput) => number;
@@ -90,7 +94,9 @@ export const useBuilderStore = create<BuilderState>()(
       setMeta: (patch) => set((s) => ({ doc: { ...s.doc, ...patch } })),
 
       setReveal: (patch) =>
-        set((s) => ({ doc: { ...s.doc, reveal: { ...s.doc.reveal, ...patch } } })),
+        set((s) => ({
+          doc: { ...s.doc, reveal: { ...s.doc.reveal, ...patch } },
+        })),
 
       setTheme: (theme) => set((s) => ({ doc: { ...s.doc, theme } })),
 
@@ -107,7 +113,9 @@ export const useBuilderStore = create<BuilderState>()(
         set((s) => ({
           doc: {
             ...s.doc,
-            notes: s.doc.notes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
+            notes: s.doc.notes.map((n) =>
+              n.id === id ? { ...n, ...patch } : n,
+            ),
           },
         })),
 
@@ -134,23 +142,38 @@ export const useBuilderStore = create<BuilderState>()(
       selectNote: (id) => set({ selectedId: id }),
 
       setRevealImage: (fileId, previewUrl) =>
-        set((s) => ({
-          doc: { ...s.doc, reveal: { ...s.doc.reveal, image: { fileId } } },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.reveal.image?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: { ...s.doc, reveal: { ...s.doc.reveal, image: { fileId } } },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
       removeRevealImage: () =>
-        set((s) => ({
-          doc: { ...s.doc, reveal: { ...s.doc.reveal, image: undefined } },
-        })),
+        set((s) => {
+          fileService.release(s.doc.reveal.image?.fileId);
+          return {
+            doc: { ...s.doc, reveal: { ...s.doc.reveal, image: undefined } },
+          };
+        }),
 
       setMusic: (fileId, previewUrl) =>
-        set((s) => ({
-          doc: { ...s.doc, music: { fileId } },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.music?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: { ...s.doc, music: { fileId } },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
-      removeMusic: () => set((s) => ({ doc: { ...s.doc, music: undefined } })),
+      removeMusic: () =>
+        set((s) => {
+          fileService.release(s.doc.music?.fileId);
+          return { doc: { ...s.doc, music: undefined } };
+        }),
 
       urlFor: (ref) => {
         if (!ref) return null;

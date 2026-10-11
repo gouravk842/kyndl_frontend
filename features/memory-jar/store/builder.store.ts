@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import { JAR_CONFIG, type JarConfig, type JarNote } from "../config";
 
 /** Per-note paper warmths, offered as swatches in the note form so a freshly
@@ -26,7 +28,9 @@ function tiltFor(id: number): number {
 
 /** Sensible art-direction defaults for a brand-new note, seeded by the next id
  *  so successive notes don't all look identical. */
-export function noteDefaults(nextId: number): Pick<JarNote, "rotation" | "paperTone"> {
+export function noteDefaults(
+  nextId: number,
+): Pick<JarNote, "rotation" | "paperTone"> {
   return {
     rotation: tiltFor(nextId),
     paperTone: PAPER_TONES[nextId % PAPER_TONES.length]!,
@@ -156,23 +160,35 @@ export const useBuilderStore = create<BuilderState>()(
         })),
 
       removeNoteImage: (id) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            notes: s.doc.notes.map((n) =>
-              n.id === id ? { ...n, image: undefined } : n,
-            ),
-          },
-        })),
+        set((s) => {
+          fileService.release(
+            s.doc.notes.find((n) => n.id === id)?.image?.fileId,
+          );
+          return {
+            doc: {
+              ...s.doc,
+              notes: s.doc.notes.map((n) =>
+                n.id === id ? { ...n, image: undefined } : n,
+              ),
+            },
+          };
+        }),
 
       setMusic: (fileId, previewUrl) =>
-        set((s) => ({
-          doc: { ...s.doc, music: { fileId } },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.music?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: { ...s.doc, music: { fileId } },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
       removeMusic: () =>
-        set((s) => ({ doc: { ...s.doc, music: undefined } })),
+        set((s) => {
+          fileService.release(s.doc.music?.fileId);
+          return { doc: { ...s.doc, music: undefined } };
+        }),
 
       urlFor: (ref) => {
         if (!ref) return null;

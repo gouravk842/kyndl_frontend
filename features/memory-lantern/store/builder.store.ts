@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   DEFAULT_MATERIAL,
   DEFAULT_MOTION,
@@ -14,10 +16,7 @@ import {
 } from "../config";
 
 /** The plain text fields edited directly in the panel (no media). */
-type LanternMeta = Pick<
-  LanternConfig,
-  "recipientName" | "title" | "subtitle"
->;
+type LanternMeta = Pick<LanternConfig, "recipientName" | "title" | "subtitle">;
 
 /** A fresh, unique id for a new facet. */
 function newPaneId(): string {
@@ -101,7 +100,10 @@ export const useBuilderStore = create<BuilderState>()(
         set((s) => ({
           doc: {
             ...s.doc,
-            ambience: { ...(s.doc.ambience ?? { timeOfDayAware: true }), ...patch },
+            ambience: {
+              ...(s.doc.ambience ?? { timeOfDayAware: true }),
+              ...patch,
+            },
           },
         })),
 
@@ -109,7 +111,10 @@ export const useBuilderStore = create<BuilderState>()(
         set((s) => ({
           doc: {
             ...s.doc,
-            finale: { ...(s.doc.finale ?? { heading: "", body: "" }), ...patch },
+            finale: {
+              ...(s.doc.finale ?? { heading: "", body: "" }),
+              ...patch,
+            },
           },
         })),
 
@@ -129,14 +134,19 @@ export const useBuilderStore = create<BuilderState>()(
         set((s) => ({
           doc: {
             ...s.doc,
-            panes: s.doc.panes.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+            panes: s.doc.panes.map((p) =>
+              p.id === id ? { ...p, ...patch } : p,
+            ),
           },
         })),
 
       removePane: (id) =>
-        set((s) => ({
-          doc: { ...s.doc, panes: s.doc.panes.filter((p) => p.id !== id) },
-        })),
+        set((s) => {
+          fileService.release(s.doc.panes.find((p) => p.id === id)?.fileId);
+          return {
+            doc: { ...s.doc, panes: s.doc.panes.filter((p) => p.id !== id) },
+          };
+        }),
 
       movePane: (id, dir) =>
         set((s) => {

@@ -129,10 +129,15 @@ function MemoryForm({
           canUpload={canUpload}
           url={url ?? null}
           onPick={(id, previewUrl) => {
+            const prev = draft.photo?.fileId;
+            if (prev && prev !== id) fileService.release(prev);
             setUploads((u) => ({ ...u, [id]: previewUrl }));
             patch({ photo: { fileId: id } });
           }}
-          onClear={() => patch({ photo: undefined })}
+          onClear={() => {
+            fileService.release(draft.photo?.fileId);
+            patch({ photo: undefined });
+          }}
         />
         <Field label="Title">
           <input

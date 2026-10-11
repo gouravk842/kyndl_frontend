@@ -31,10 +31,22 @@ function loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
+function asciiSafeBase(name: string): string {
+  // Defense in depth — backend sanitizes too. Strip non-ASCII (e.g. macOS
+  // U+202F in screenshot names) so the declared upload filename stays clean.
+  const base = name.replace(/\.[^.]+$/, "");
+  const ascii = base
+    .normalize("NFKD")
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/[^A-Za-z0-9._\- ]+/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+  return ascii || "file";
+}
+
 function renamed(file: File, type: string): string {
-  const base = file.name.replace(/\.[^.]+$/, "");
   const ext = type === "image/webp" ? "webp" : "jpg";
-  return `${base}.${ext}`;
+  return `${asciiSafeBase(file.name)}.${ext}`;
 }
 
 /**

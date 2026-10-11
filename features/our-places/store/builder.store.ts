@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import { MAP_CONFIG } from "../config";
 import type { OurPlacesDoc, PlaceDoc, TileStyleKey } from "../types";
 
@@ -134,19 +136,28 @@ export const useBuilderStore = create<BuilderState>()(
         })),
 
       removePhoto: (id) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            places: s.doc.places.map((p) =>
-              p.id === id ? { ...p, photo: undefined } : p,
-            ),
-          },
-        })),
+        set((s) => {
+          fileService.release(
+            s.doc.places.find((p) => p.id === id)?.photo?.fileId,
+          );
+          return {
+            doc: {
+              ...s.doc,
+              places: s.doc.places.map((p) =>
+                p.id === id ? { ...p, photo: undefined } : p,
+              ),
+            },
+          };
+        }),
 
       photoUrl: (place) => {
         if (!place.photo) return null;
         const { localPreviews, assets } = get();
-        return localPreviews[place.photo.fileId] ?? assets[place.photo.fileId] ?? null;
+        return (
+          localPreviews[place.photo.fileId] ??
+          assets[place.photo.fileId] ??
+          null
+        );
       },
     }),
     {

@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   TIME_CAPSULE_CONFIG,
   type TimeCapsuleConfig,
@@ -64,7 +66,9 @@ export const useBuilderStore = create<BuilderState>()(
       setMeta: (patch) => set((s) => ({ doc: { ...s.doc, ...patch } })),
 
       setLetter: (patch) =>
-        set((s) => ({ doc: { ...s.doc, letter: { ...s.doc.letter, ...patch } } })),
+        set((s) => ({
+          doc: { ...s.doc, letter: { ...s.doc.letter, ...patch } },
+        })),
 
       setTheme: (theme) => set((s) => ({ doc: { ...s.doc, theme } })),
 
@@ -75,20 +79,31 @@ export const useBuilderStore = create<BuilderState>()(
         })),
 
       removePhoto: (fileId) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            photos: s.doc.photos.filter((p) => p.fileId !== fileId),
-          },
-        })),
+        set((s) => {
+          fileService.release(fileId);
+          return {
+            doc: {
+              ...s.doc,
+              photos: s.doc.photos.filter((p) => p.fileId !== fileId),
+            },
+          };
+        }),
 
       setMusic: (fileId, previewUrl) =>
-        set((s) => ({
-          doc: { ...s.doc, music: { fileId } },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.music?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: { ...s.doc, music: { fileId } },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
-      removeMusic: () => set((s) => ({ doc: { ...s.doc, music: undefined } })),
+      removeMusic: () =>
+        set((s) => {
+          fileService.release(s.doc.music?.fileId);
+          return { doc: { ...s.doc, music: undefined } };
+        }),
 
       urlFor: (ref) => {
         if (!ref) return null;

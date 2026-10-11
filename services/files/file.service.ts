@@ -8,6 +8,10 @@ import { compressImage } from "@/services/files/compress";
  *   3. confirm with the BFF (`/files/{id}/confirm`) so the file becomes
  *      referenceable.
  * Returns the `fileId` to drop into a creation document as `{ fileId }`.
+ *
+ * Confirmed uploads are staged server-side until a creation/memory/product save
+ * attaches them. Clearing a photo before save should call :meth:`release` so
+ * bytes don't wait for the staged TTL sweep.
  */
 
 interface PresignedUpload {
@@ -69,5 +73,21 @@ export const fileService = {
     await postToStorage(presigned, toUpload);
     await confirmUpload(presigned.file_id);
     return presigned.file_id;
+  },
+
+  /** Soft-delete an owned file (S3 reaped asynchronously). */
+  async delete(fileId: string): Promise<void> {
+    await apiRequest({ method: "DELETE", url: `/files/${fileId}` });
+  },
+
+  /**
+   * Best-effort delete when the user clears media before/without a save.
+   * Swallows errors (404, network) — the staged TTL sweep is the backstop.
+   */
+  release(fileId: string | null | undefined): void {
+    if (!fileId) return;
+    void fileService.delete(fileId).catch(() => {
+      /* staged sweep will reclaim */
+    });
   },
 };

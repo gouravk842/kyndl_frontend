@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import { SEED_DOC } from "../data/seed-city";
 import type { CityDoc } from "../lib/city-from-memories";
 import {
@@ -110,19 +112,24 @@ export const useBuilderStore = create<BuilderState>()(
         })),
 
       removeMemory: (id) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            memories: s.doc.memories
-              .filter((m) => m.id !== id)
-              .map((m) =>
-                m.requires?.includes(id)
-                  ? { ...m, requires: m.requires.filter((r) => r !== id) }
-                  : m,
-              ),
-          },
-          selectedId: s.selectedId === id ? null : s.selectedId,
-        })),
+        set((s) => {
+          fileService.release(
+            s.doc.memories.find((m) => m.id === id)?.image?.fileId,
+          );
+          return {
+            doc: {
+              ...s.doc,
+              memories: s.doc.memories
+                .filter((m) => m.id !== id)
+                .map((m) =>
+                  m.requires?.includes(id)
+                    ? { ...m, requires: m.requires.filter((r) => r !== id) }
+                    : m,
+                ),
+            },
+            selectedId: s.selectedId === id ? null : s.selectedId,
+          };
+        }),
 
       moveMemory: (id, dir) =>
         set((s) => {

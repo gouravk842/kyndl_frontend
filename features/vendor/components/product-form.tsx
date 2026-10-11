@@ -138,6 +138,7 @@ export function ProductForm({ existing }: { existing?: VendorProduct }) {
   };
 
   const removeImage = (fileId: string) => {
+    fileService.release(fileId);
     setImages((prev) => {
       const next = prev.filter((img) => img.fileId !== fileId);
       if (thumbnailFileId === fileId) {

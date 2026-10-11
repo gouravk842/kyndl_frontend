@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import { starterDoc } from "../config";
 import type {
   CalendarEvent,
@@ -176,6 +178,7 @@ export const useBuilderStore = create<BuilderState>()(
       removePhoto: (id) => {
         const event = get().doc.events.find((e) => e.id === id);
         if (event && !get().canEditEvent(event)) return;
+        fileService.release(event?.photo?.fileId);
         set((s) => ({
           doc: {
             ...s.doc,

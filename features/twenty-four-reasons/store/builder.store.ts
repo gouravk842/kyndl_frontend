@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   blankContent,
   girlfriendDayAnchorAt,
@@ -178,6 +180,9 @@ export const useBuilderStore = create<BuilderState>()(
 
       removeReason: (id) =>
         set((s) => {
+          const doomed = s.doc.reasons.find((r) => r.id === id);
+          fileService.release(doomed?.image?.fileId);
+          fileService.release(doomed?.audio?.fileId);
           const reasons = s.doc.reasons.filter((r) => r.id !== id);
           return {
             doc: applySchedule({ ...s.doc, reasons }),
@@ -202,46 +207,64 @@ export const useBuilderStore = create<BuilderState>()(
       selectReason: (id) => set({ selectedId: id }),
 
       setReasonImage: (id, fileId, previewUrl) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            reasons: s.doc.reasons.map((r) =>
-              r.id === id ? { ...r, image: { fileId } } : r,
-            ),
-          },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.reasons.find((r) => r.id === id)?.image?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: {
+              ...s.doc,
+              reasons: s.doc.reasons.map((r) =>
+                r.id === id ? { ...r, image: { fileId } } : r,
+              ),
+            },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
       clearReasonImage: (id) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            reasons: s.doc.reasons.map((r) =>
-              r.id === id ? { ...r, image: null } : r,
-            ),
-          },
-        })),
+        set((s) => {
+          fileService.release(
+            s.doc.reasons.find((r) => r.id === id)?.image?.fileId,
+          );
+          return {
+            doc: {
+              ...s.doc,
+              reasons: s.doc.reasons.map((r) =>
+                r.id === id ? { ...r, image: null } : r,
+              ),
+            },
+          };
+        }),
 
       setReasonAudio: (id, fileId, previewUrl) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            reasons: s.doc.reasons.map((r) =>
-              r.id === id ? { ...r, audio: { fileId } } : r,
-            ),
-          },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.reasons.find((r) => r.id === id)?.audio?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: {
+              ...s.doc,
+              reasons: s.doc.reasons.map((r) =>
+                r.id === id ? { ...r, audio: { fileId } } : r,
+              ),
+            },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
       clearReasonAudio: (id) =>
-        set((s) => ({
-          doc: {
-            ...s.doc,
-            reasons: s.doc.reasons.map((r) =>
-              r.id === id ? { ...r, audio: null } : r,
-            ),
-          },
-        })),
+        set((s) => {
+          fileService.release(
+            s.doc.reasons.find((r) => r.id === id)?.audio?.fileId,
+          );
+          return {
+            doc: {
+              ...s.doc,
+              reasons: s.doc.reasons.map((r) =>
+                r.id === id ? { ...r, audio: null } : r,
+              ),
+            },
+          };
+        }),
 
       urlFor: (ref) => {
         if (!ref) return null;

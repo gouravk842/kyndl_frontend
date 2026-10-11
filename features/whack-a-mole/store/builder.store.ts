@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { fileService } from "@/services/files/file.service";
+
 import {
   type Apology,
   type Difficulty,
@@ -52,12 +54,20 @@ export const useBuilderStore = create<BuilderState>()(
         set((s) => ({ doc: { ...s.doc, hitQuips: quips } })),
 
       setFace: (fileId, previewUrl) =>
-        set((s) => ({
-          doc: { ...s.doc, face: { fileId } },
-          localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
-        })),
+        set((s) => {
+          const prev = s.doc.face?.fileId;
+          if (prev && prev !== fileId) fileService.release(prev);
+          return {
+            doc: { ...s.doc, face: { fileId } },
+            localPreviews: { ...s.localPreviews, [fileId]: previewUrl },
+          };
+        }),
 
-      removeFace: () => set((s) => ({ doc: { ...s.doc, face: null } })),
+      removeFace: () =>
+        set((s) => {
+          fileService.release(s.doc.face?.fileId);
+          return { doc: { ...s.doc, face: null } };
+        }),
 
       urlFor: (ref) => {
         if (!ref) return null;
