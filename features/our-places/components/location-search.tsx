@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, MapPin, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
@@ -34,9 +34,19 @@ export function LocationSearch({
   const [results, setResults] = useState<GeoResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  // Text that was set by a pick (or initial committed label). Matching it must
+  // not fire Nominatim again — otherwise select → setQuery → search → reopen.
+  const committedQueryRef = useRef((label ?? "").trim());
 
   useEffect(() => {
     const q = query.trim();
+    if (q === committedQueryRef.current) {
+      setResults([]);
+      setLoading(false);
+      setOpen(false);
+      return;
+    }
+
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       if (q.length < 3) {
@@ -93,8 +103,10 @@ export function LocationSearch({
             aria-label="Clear location"
             className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
             onClick={() => {
+              committedQueryRef.current = "";
               setQuery("");
               setResults([]);
+              setOpen(false);
               onClear();
             }}
           >
@@ -114,8 +126,10 @@ export function LocationSearch({
                 <button
                   type="button"
                   onClick={() => {
+                    committedQueryRef.current = result.label.trim();
                     onPick(result);
                     setQuery(result.label);
+                    setResults([]);
                     setOpen(false);
                   }}
                   className="flex w-full items-start gap-2 px-3 py-2.5 text-left hover:bg-accent"

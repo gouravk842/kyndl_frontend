@@ -601,7 +601,6 @@ function KeepForm({
           />
         </div>
         <LocationSearch
-          key={place?.label ?? "none"}
           inputId="keep-location"
           inlineResults
           lat={place?.lat ?? null}
