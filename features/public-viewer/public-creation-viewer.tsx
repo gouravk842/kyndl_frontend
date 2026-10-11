@@ -1,12 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Lock, SearchX } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Lock, Rocket, SearchX } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
+import { PublishToShareDialog } from "@/features/dashboard/components/publish-to-share-dialog";
+import { workspaceTabHref } from "@/features/dashboard/lib/workspace-tabs";
 import { MemoryJarPublicView } from "@/features/memory-jar/components/viewer/memory-jar-public-view";
 import type { JarConfig } from "@/features/memory-jar/config";
 import { MemoryPublicView } from "@/features/memory-pages/components/viewer/memory-public-view";
@@ -79,9 +82,15 @@ export function PublicCreationViewer({ token }: { token: string }) {
   const creation = query.data;
   if (!creation) return null;
 
+  const draftBanner =
+    creation.status === "draft" ? (
+      <OwnerDraftBanner creation={creation} token={token} />
+    ) : null;
+
   if (!hasPublicViewer(creation.type)) {
     return (
       <PublicViewFrame>
+        {draftBanner}
         <Centered>
           <h1 className="font-display text-2xl">{creation.title}</h1>
           <p className="max-w-sm text-muted-foreground">
@@ -121,6 +130,7 @@ export function PublicCreationViewer({ token }: { token: string }) {
   if (creation.type === "memory-pages") {
     return (
       <PublicViewFrame fill>
+        {draftBanner}
         <MemoryPublicView
           token={token}
           experienceType={creation.type}
@@ -146,6 +156,7 @@ export function PublicCreationViewer({ token }: { token: string }) {
       : null;
     return (
       <PublicViewFrame fill>
+        {draftBanner}
         <MemoryJarPublicView
           token={token}
           experienceType={creation.type}
@@ -167,6 +178,7 @@ export function PublicCreationViewer({ token }: { token: string }) {
   if (creation.type === "our-places") {
     return (
       <PublicViewFrame fill>
+        {draftBanner}
         <OurPlacesPublicView
           token={token}
           experienceType={creation.type}
@@ -187,6 +199,7 @@ export function PublicCreationViewer({ token }: { token: string }) {
   if (FULLSCREEN_EXPERIENCES.has(creation.type)) {
     return (
       <PublicViewFrame>
+        {draftBanner}
         <div className="w-full">
           <div className="h-[calc(100dvh-4rem)] w-full">{experience}</div>
           <RecipientAftermath
@@ -205,6 +218,7 @@ export function PublicCreationViewer({ token }: { token: string }) {
 
   return (
     <PublicViewFrame>
+      {draftBanner}
       <div className="min-h-[calc(100dvh-4rem)] w-full">
         {experience}
         <RecipientAftermath
@@ -218,6 +232,57 @@ export function PublicCreationViewer({ token }: { token: string }) {
       </div>
       {fab}
     </PublicViewFrame>
+  );
+}
+
+/** Sticky strip when the owner opens their own unpublished share link. */
+function OwnerDraftBanner({
+  creation,
+  token,
+}: {
+  creation: Creation;
+  token: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  return (
+    <>
+      <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 border-b border-[#f2dace] bg-[#3a2a25] px-4 py-3 text-sm text-[#fff7f1]">
+        <p className="min-w-0 flex-1 leading-snug">
+          <span className="font-semibold">Only you can see this.</span> Publish
+          to share — everyone else gets an empty page until you do.
+        </p>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button
+            size="sm"
+            className="bg-[#ff7a59] text-white hover:bg-[#e86a4c]"
+            onClick={() => setOpen(true)}
+          >
+            <Rocket className="size-3.5" />
+            Publish to share
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-[#fff7f1] hover:bg-white/10 hover:text-white"
+            render={<Link href={workspaceTabHref(creation.id, "publish")} />}
+          >
+            Open dashboard
+          </Button>
+        </div>
+      </div>
+      <PublishToShareDialog
+        open={open}
+        onOpenChange={setOpen}
+        creation={creation}
+        onPublished={() => {
+          void queryClient.invalidateQueries({
+            queryKey: ["public-creation", token],
+          });
+        }}
+      />
+    </>
   );
 }
 

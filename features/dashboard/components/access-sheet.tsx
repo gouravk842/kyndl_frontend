@@ -18,6 +18,8 @@ import { useSetCreationAccess } from "@/hooks/use-creations";
 import { cn } from "@/lib/utils";
 import type { Creation, CreationVisibility } from "@/types/creation";
 
+import { usePublishToShareGate } from "./publish-to-share-dialog";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function AccessSheet({
@@ -37,7 +39,7 @@ export function AccessSheet({
           <SheetDescription>
             {creation.status === "published"
               ? "Anyone allowed below can open this from its link."
-              : "Set this now — it takes effect the moment you publish."}
+              : "Publish first so the link works for others — then choose who can view."}
           </SheetDescription>
         </SheetHeader>
         {/* `open` re-mounts the form so it re-seeds from the latest saved access. */}
@@ -70,6 +72,7 @@ export function AccessForm({
   className?: string;
 }) {
   const setAccess = useSetCreationAccess();
+  const { requirePublished, dialog, isDraft } = usePublishToShareGate(creation);
 
   const [visibility, setVisibility] = useState<CreationVisibility>(
     creation.visibility,
@@ -96,124 +99,150 @@ export function AccessForm({
     setInvites((prev) => prev.filter((e) => e !== target));
   }
 
-  async function copyLink() {
+  async function doCopyLink() {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      toast.success("Link copied — ready to share.");
     } catch {
       toast.error("Could not copy the link.");
     }
   }
 
+  function copyLink() {
+    requirePublished(() => {
+      void doCopyLink();
+    });
+  }
+
+  function openShareLink() {
+    requirePublished(() => {
+      window.open(shareUrl, "_blank", "noopener,noreferrer");
+    });
+  }
+
   function handleSave() {
-    setAccess.mutate(
-      { id: creation.id, access: { visibility, invites } },
-      { onSuccess: () => onSaved?.() },
-    );
+    requirePublished(() => {
+      setAccess.mutate(
+        { id: creation.id, access: { visibility, invites } },
+        { onSuccess: () => onSaved?.() },
+      );
+    });
   }
 
   return (
     <div className={cn("flex flex-col gap-0", className)}>
+      {dialog}
       <div className="space-y-6 px-4 py-2">
+        {isDraft && (
+          <div className="rounded-xl border border-[#f2dace] bg-[#fff7f1] px-3 py-2.5 text-xs leading-relaxed text-[#7a6258]">
+            Still a draft — publish before sharing the link or changing who can
+            view it. Recipients get a blank page until you do.
+          </div>
+        )}
         {/* Visibility choice */}
         <div className="space-y-2">
-            <Label>Who can view</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <VisibilityOption
-                active={visibility === "public"}
-                onClick={() => setVisibility("public")}
-                icon={<Globe className="size-4" />}
-                title="Anyone with the link"
-                subtitle="Public"
-              />
-              <VisibilityOption
-                active={visibility === "invite"}
-                onClick={() => setVisibility("invite")}
-                icon={<Lock className="size-4" />}
-                title="Only invited people"
-                subtitle="Private"
-              />
-            </div>
+          <Label>Who can view</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <VisibilityOption
+              active={visibility === "public"}
+              onClick={() => setVisibility("public")}
+              icon={<Globe className="size-4" />}
+              title="Anyone with the link"
+              subtitle="Public"
+            />
+            <VisibilityOption
+              active={visibility === "invite"}
+              onClick={() => setVisibility("invite")}
+              icon={<Lock className="size-4" />}
+              title="Only invited people"
+              subtitle="Private"
+            />
           </div>
+        </div>
 
-          {/* Invite list — only relevant for invite-only */}
-          {visibility === "invite" && (
-            <div className="space-y-2">
-              <Label htmlFor="invite-email">Invited emails</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="invite-email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addEmail();
-                    }
-                  }}
-                />
-                <Button type="button" variant="secondary" onClick={addEmail}>
-                  <Plus className="size-4" />
-                  Add
-                </Button>
-              </div>
-              {invites.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  No one invited yet. They&apos;ll need to sign in with the
-                  invited email to view.
-                </p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {invites.map((e) => (
-                    <li
-                      key={e}
-                      className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-1.5 text-sm"
-                    >
-                      <span className="truncate">{e}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeEmail(e)}
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label={`Remove ${e}`}
-                      >
-                        <X className="size-3.5" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Share link */}
+        {/* Invite list — only relevant for invite-only */}
+        {visibility === "invite" && (
           <div className="space-y-2">
-            <Label>Share link</Label>
+            <Label htmlFor="invite-email">Invited emails</Label>
             <div className="flex gap-2">
-              <Input readOnly value={shareUrl} className="text-xs" />
-              <Button type="button" variant="secondary" onClick={copyLink}>
-                {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                render={
-                  <a href={shareUrl} target="_blank" rel="noreferrer" />
-                }
-                aria-label="Preview"
-              >
-                <Eye className="size-4" />
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addEmail();
+                  }
+                }}
+              />
+              <Button type="button" variant="secondary" onClick={addEmail}>
+                <Plus className="size-4" />
+                Add
               </Button>
             </div>
-            {creation.status !== "published" && (
+            {invites.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                Only you can open this link until you publish — use the preview
-                button to see it as your audience will.
+                No one invited yet. They&apos;ll need to sign in with the
+                invited email to view.
               </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {invites.map((e) => (
+                  <li
+                    key={e}
+                    className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-1.5 text-sm"
+                  >
+                    <span className="truncate">{e}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeEmail(e)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label={`Remove ${e}`}
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
+        )}
+
+        {/* Share link */}
+        <div className="space-y-2">
+          <Label>Share link</Label>
+          <div className="flex gap-2">
+            <Input readOnly value={shareUrl} className="text-xs" />
+            <Button type="button" variant="secondary" onClick={copyLink}>
+              {copied ? (
+                <Check className="size-4" />
+              ) : (
+                <Copy className="size-4" />
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={openShareLink}
+              aria-label={
+                isDraft ? "Publish to open share link" : "Open share link"
+              }
+            >
+              <Eye className="size-4" />
+            </Button>
+          </div>
+          {isDraft && (
+            <p className="text-xs text-muted-foreground">
+              Copying or opening this link asks you to publish first — otherwise
+              recipients see an empty page.
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="mt-auto border-t px-4 py-3">
@@ -222,7 +251,11 @@ export function AccessForm({
           disabled={setAccess.isPending}
           className="w-full sm:w-auto"
         >
-          {setAccess.isPending ? "Saving…" : "Save access"}
+          {setAccess.isPending
+            ? "Saving…"
+            : isDraft
+              ? "Publish & save access"
+              : "Save access"}
         </Button>
       </div>
     </div>

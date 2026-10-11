@@ -36,6 +36,7 @@ import { useLibrary } from "../lib/use-library";
 import { resolveWorkspaceTab } from "../lib/workspace-tabs";
 import { AccessForm } from "./access-sheet";
 import { GatedBuilder } from "./builder-desktop-gate";
+import { usePublishToShareGate } from "./publish-to-share-dialog";
 
 /**
  * The unified workspace for a single creation. One tabbed surface replacing the
@@ -131,6 +132,7 @@ function SharePanel({ creation }: { creation: Creation }) {
 function PublishPanel({ creation }: { creation: Creation }) {
   const publish = usePublishCreation();
   const unpublish = useUnpublishCreation();
+  const { requirePublished, dialog, isDraft } = usePublishToShareGate(creation);
   const published = creation.status === "published";
   // In-app navigation uses a relative href; the copyable link is the canonical
   // one the backend builds (falls back to a relative path for older payloads).
@@ -138,14 +140,21 @@ function PublishPanel({ creation }: { creation: Creation }) {
   const shareUrl = creation.share_url || shareHref;
   const [copied, setCopied] = useState(false);
 
-  async function copyLink() {
+  async function doCopyLink() {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      toast.success("Link copied — ready to share.");
     } catch {
       toast.error("Could not copy the link.");
     }
+  }
+
+  function copyLink() {
+    requirePublished(() => {
+      void doCopyLink();
+    });
   }
 
   return (
@@ -157,6 +166,7 @@ function PublishPanel({ creation }: { creation: Creation }) {
           : "Take it live and get a shareable link."
       }
     >
+      {dialog}
       <div className="space-y-4 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
         <div className="flex items-center gap-2">
           <span
@@ -191,9 +201,6 @@ function PublishPanel({ creation }: { creation: Creation }) {
             </Button>
           </div>
         ) : (
-          // In draft, offer both: publish for real, or open the share link as a
-          // private preview. Only the owner can open a draft's link, so this is a
-          // safe dry-run of exactly what the audience will see.
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={() =>
@@ -214,7 +221,7 @@ function PublishPanel({ creation }: { creation: Creation }) {
               variant="secondary"
             >
               <Eye className="size-4" />
-              Preview
+              Preview (you only)
             </Button>
           </div>
         )}
@@ -233,11 +240,11 @@ function PublishPanel({ creation }: { creation: Creation }) {
               )}
             </Button>
           </div>
-          {!published && (
+          {isDraft && (
             <p className="text-xs text-muted-foreground">
-              Only you can open this link until you publish — use{" "}
-              <span className="font-medium">Preview</span> to see it as your
-              audience will. Publishing lets everyone you&apos;ve allowed in.
+              Copying the link asks you to publish first. Use{" "}
+              <span className="font-medium">Preview</span> to see it yourself —
+              recipients get an empty page until it&apos;s live.
             </p>
           )}
         </div>
