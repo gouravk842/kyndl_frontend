@@ -109,7 +109,11 @@ export function worldFromClient(
   cam: FieldCamera,
 ): { x: number; y: number } {
   return {
-    x: round1(cam.x + ((clientX - rect.left) / rect.width) * 100 - 50),
+    // Keep coords inside the backend's 0–100 star box so a drag never
+    // produces a document that fails to save.
+    x: round1(
+      clamp(cam.x + ((clientX - rect.left) / rect.width) * 100 - 50, 0, 100),
+    ),
     y: round1(
       clamp(
         cam.y + ((clientY - rect.top) / rect.height) * 100 - SKY_ANCHOR,
@@ -132,7 +136,7 @@ export function placeInGap(stars: Pick<Star, "x" | "y">[]): {
     const count = 6 + ring * 2;
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2 + ring * 0.4;
-      const x = round1(cx + Math.cos(angle) * ring * MIN_GAP);
+      const x = round1(clamp(cx + Math.cos(angle) * ring * MIN_GAP, 8, 92));
       const y = round1(
         clamp(cy + Math.sin(angle) * ring * MIN_GAP * 0.72, 10, 68),
       );
@@ -143,7 +147,10 @@ export function placeInGap(stars: Pick<Star, "x" | "y">[]): {
     }
   }
   const last = stars[stars.length - 1]!;
-  return { x: round1(last.x + MIN_GAP), y: last.y };
+  return {
+    x: round1(clamp(last.x + MIN_GAP, 8, 92)),
+    y: round1(clamp(last.y, 10, 68)),
+  };
 }
 
 export function nearestStar(
@@ -226,7 +233,11 @@ export function looseArrange(stars: Star[], edges: [number, number][]): Star[] {
   return stars.map((star) => {
     const point = pos.get(star.id);
     if (!point) return star;
-    return { ...star, x: round1(point.x), y: round1(clamp(point.y, 10, 68)) };
+    return {
+      ...star,
+      x: round1(clamp(point.x, 8, 92)),
+      y: round1(clamp(point.y, 10, 68)),
+    };
   });
 }
 

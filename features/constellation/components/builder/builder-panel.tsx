@@ -236,9 +236,9 @@ export function BuilderPanel({
           </button>
 
           <p className="text-xs leading-relaxed text-[#8b93b8]">
-            Drag a star anywhere in the sky. Choose who it belongs with from its
-            memory. Rearrange only suggests a loose scatter — the next drag is
-            kept.
+            Drag a star anywhere in the sky. New memories join the nearest
+            neighbour on their own. Rearrange only suggests a loose scatter —
+            the next drag is kept.
           </p>
 
           {stars.length === 0 ? (

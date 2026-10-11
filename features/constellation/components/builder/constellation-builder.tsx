@@ -51,6 +51,8 @@ export function ConstellationBuilder() {
   const camera = boardCamera ?? cameraHome(doc.stars, false);
 
   // A fresh `?new=constellation` must not reopen the last persisted draft.
+  // When `?id=` is present, the sync hook loads the server sky and the store
+  // refuses a late localStorage rehydrate (see `cloudLoaded`).
   const wiped = useRef(false);
   useEffect(() => {
     if (params.get("new") !== "constellation" || params.get("id")) return;

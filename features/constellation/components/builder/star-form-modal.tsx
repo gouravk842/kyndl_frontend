@@ -8,7 +8,13 @@ import { stampGateHashes } from "@/features/unlocks/answer-hash";
 import { useAuth } from "@/hooks/use-auth";
 import { fileService } from "@/services/files/file.service";
 
-import type { Star, StarGate, StarSize } from "../../config";
+import {
+  PLACEHOLDER_STAR_LABEL,
+  PLACEHOLDER_STAR_MEMORY,
+  type Star,
+  type StarGate,
+  type StarSize,
+} from "../../config";
 import { STAR_SIZES, useBuilderStore } from "../../store/builder.store";
 
 /** How a star opens — the gate types surfaced in the builder. */
@@ -62,7 +68,6 @@ interface FormState {
   teaser: string;
   // sequential trail
   requires: number[];
-  links: number[];
 }
 
 /** Turn an ISO instant into the local value a `datetime-local` input wants. */
@@ -104,38 +109,28 @@ const EMPTY_STATE: FormState = {
   unlockAt: "",
   teaser: "",
   requires: [],
-  links: [] as number[],
 };
-
-function linkedIds(
-  id: number | undefined,
-  edges: [number, number][] | undefined,
-  stars: Star[],
-): number[] {
-  const drawn =
-    edges ??
-    stars
-      .slice(1)
-      .map((star, i) => [stars[i]!.id, star.id] as [number, number]);
-  if (id == null) return [];
-  return drawn
-    .filter(([a, b]) => a === id || b === id)
-    .map(([a, b]) => (a === id ? b : a));
-}
 
 function initialState(
   star: Star | null,
   urlFor: (fileId: string) => string,
-  links: number[] = [],
 ): FormState {
   if (!star) return { ...EMPTY_STATE };
+  // Placeholder copy is seed text, not the author's words — clear it so they
+  // don't publish a sky that still looks empty to the server.
+  const label =
+    star.label.trim().toLowerCase() === PLACEHOLDER_STAR_LABEL
+      ? ""
+      : star.label;
+  const memory =
+    star.memory.trim() === PLACEHOLDER_STAR_MEMORY ? "" : star.memory;
   const base: FormState = {
     ...EMPTY_STATE,
-    label: star.label,
+    label,
     date: star.date,
     timestamp: star.timestamp ?? "",
     stretch: star.stretch ?? "",
-    memory: star.memory,
+    memory,
     size: star.size,
     author: star.author ?? "",
     alwaysAsk: star.alwaysAsk ?? false,
@@ -143,7 +138,6 @@ function initialState(
       ? { fileId: star.image.fileId, url: urlFor(star.image.fileId) }
       : null,
     requires: star.requires ?? [],
-    links,
   };
   const gate = star.unlock;
   const cfg = (gate?.config ?? {}) as Record<string, unknown>;
@@ -221,8 +215,6 @@ export function StarFormModal({
 }) {
   const addStar = useBuilderStore((s) => s.addStar);
   const updateStar = useBuilderStore((s) => s.updateStar);
-  const setStarLinks = useBuilderStore((s) => s.setStarLinks);
-  const customEdges = useBuilderStore((s) => s.doc.customEdges);
   const allStars = useBuilderStore((s) => s.doc.stars);
   const assets = useBuilderStore((s) => s.assets);
   const localPreviews = useBuilderStore((s) => s.localPreviews);
@@ -237,7 +229,6 @@ export function StarFormModal({
     initialState(
       star,
       (fileId) => localPreviews[fileId] ?? assets[fileId] ?? "",
-      linkedIds(star?.id, customEdges, allStars),
     ),
   );
   const patch = (p: Partial<FormState>) => setForm((f) => ({ ...f, ...p }));
@@ -288,6 +279,10 @@ export function StarFormModal({
       toast.error("Give this star a name.");
       return;
     }
+    if (!form.memory.trim()) {
+      toast.error("Write the memory this star holds.");
+      return;
+    }
     const gate = buildGate(form);
     if (gate === false) {
       toast.error(
@@ -303,7 +298,7 @@ export function StarFormModal({
         date: form.date.trim(),
         timestamp: form.timestamp,
         stretch: form.stretch.trim(),
-        memory: form.memory,
+        memory: form.memory.trim(),
         size: form.size,
         image: form.starImage ? { fileId: form.starImage.fileId } : null,
         author: form.author || authorName,
@@ -311,13 +306,10 @@ export function StarFormModal({
         unlock: stamped,
         requires: form.requires,
       };
-      if (star) {
-        updateStar(star.id, data);
-        setStarLinks(star.id, form.links);
-      } else {
-        const id = addStar(data);
-        if (form.links.length) setStarLinks(id, form.links);
-      }
+      // New stars auto-join the nearest neighbour in the store. Editing leaves
+      // existing lines alone — no per-star "draw to" checklist.
+      if (star) updateStar(star.id, data);
+      else addStar(data);
       onClose();
     });
   };
@@ -339,9 +331,15 @@ export function StarFormModal({
 
   /** Validate the current step's fields; toast + block advancing on failure. */
   const validateStep = (): boolean => {
-    if (current.key === "basics" && !form.label.trim()) {
-      toast.error("Give this star a name.");
-      return false;
+    if (current.key === "basics") {
+      if (!form.label.trim()) {
+        toast.error("Give this star a name.");
+        return false;
+      }
+      if (!form.memory.trim()) {
+        toast.error("Write the memory this star holds.");
+        return false;
+      }
     }
     if (current.key === "gate" && buildGate(form) === false) {
       toast.error(
@@ -666,44 +664,6 @@ export function StarFormModal({
                       className="size-4 accent-[#ff7a59]"
                       checked={form.requires.includes(s.id)}
                       onChange={() => toggleRequire(s.id)}
-                    />
-                    <span className="truncate">
-                      {s.label || `Star ${s.id}`}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {current.key === "trail" && otherStars.length > 0 ? (
-            <div className="mt-4 rounded-xl border border-[#f2dace] bg-[#fdf3ea] p-4">
-              <p className="font-display text-sm text-[#3a2a25]">
-                Draw a line to
-              </p>
-              <p className="mt-0.5 mb-3 text-xs text-[#92786c]">
-                These are the stars this memory belongs with. A soft light
-                reaches them while it is open. A new star starts joined to its
-                nearest neighbour.
-              </p>
-              <div className="space-y-1.5">
-                {otherStars.map((s) => (
-                  <label
-                    key={`link-${s.id}`}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[#3a2a25] hover:bg-[#fbeee6]"
-                  >
-                    <input
-                      type="checkbox"
-                      className="size-4 accent-[#ff7a59]"
-                      checked={form.links.includes(s.id)}
-                      onChange={() =>
-                        setForm((f) => ({
-                          ...f,
-                          links: f.links.includes(s.id)
-                            ? f.links.filter((id) => id !== s.id)
-                            : [...f.links, s.id],
-                        }))
-                      }
                     />
                     <span className="truncate">
                       {s.label || `Star ${s.id}`}

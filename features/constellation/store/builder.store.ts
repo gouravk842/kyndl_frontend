@@ -86,6 +86,11 @@ interface BuilderState {
   /** Object-URL previews for photos uploaded this session, before the backend
    * resolves them — keyed by fileId, so the preview shows immediately. */
   localPreviews: Record<string, string>;
+  /**
+   * True once the sky was loaded from the server (`?id=`). Stops a late
+   * localStorage rehydrate from wiping those stars with a stale draft.
+   */
+  cloudLoaded: boolean;
 
   loadDoc: (doc: SkyConfig, assets?: Record<string, string>) => void;
   /** Remember a freshly-uploaded photo's local preview URL by its fileId. */
@@ -121,6 +126,7 @@ export const useBuilderStore = create<BuilderState>()(
       selectedId: null,
       assets: {},
       localPreviews: {},
+      cloudLoaded: false,
 
       loadDoc: (doc, assets = {}) =>
         set({
@@ -129,6 +135,7 @@ export const useBuilderStore = create<BuilderState>()(
           doc: completeSky(doc),
           assets,
           selectedId: doc.stars[0]?.id ?? null,
+          cloudLoaded: true,
         }),
 
       registerPreview: (fileId, previewUrl) =>
@@ -217,7 +224,14 @@ export const useBuilderStore = create<BuilderState>()(
           doc: {
             ...s.doc,
             stars: s.doc.stars.map((st) =>
-              st.id === id ? { ...st, x, y } : st,
+              st.id === id
+                ? {
+                    ...st,
+                    // Backend rejects positions outside 0–100; keep drags saveable.
+                    x: Math.min(100, Math.max(0, x)),
+                    y: Math.min(100, Math.max(0, y)),
+                  }
+                : st,
             ),
           },
         })),
@@ -259,17 +273,28 @@ export const useBuilderStore = create<BuilderState>()(
 
       selectStar: (id) => set({ selectedId: id }),
 
-      reset: () => set({ doc: starterDoc(), selectedId: null }),
+      reset: () =>
+        set({
+          doc: starterDoc(),
+          selectedId: null,
+          cloudLoaded: false,
+          assets: {},
+          localPreviews: {},
+        }),
     }),
     {
       name: "kyndl:constellation-builder",
       partialize: (s) => ({ doc: s.doc }),
       merge: (persisted, current) => {
+        // A server load won the race — keep it. Otherwise a stale draft from
+        // localStorage would replace the stars that just arrived from `?id=`.
+        if (current.cloudLoaded) return current;
         const saved = (persisted ?? {}) as Partial<BuilderState>;
         return {
           ...current,
           ...saved,
           doc: saved.doc ? completeSky(saved.doc) : current.doc,
+          cloudLoaded: false,
         };
       },
     },
