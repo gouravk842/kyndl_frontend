@@ -4,20 +4,35 @@ import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 import { ExperienceCardMedia } from "@/components/shared/experience-card-media";
+import { useExperienceCatalog } from "@/hooks/use-experience-catalog";
 import { hasBuilder, newCreationHref } from "@/lib/creations";
-import { featuredExperiences } from "@/lib/experiences";
 import { cn } from "@/lib/utils";
 
 /**
- * The "start something new" rail — one tile per live experience, drawn straight
- * from the shared experience registry so it stays in lockstep with the rest of
- * the site. Tiles whose builder has shipped read "Create"; the rest send the
- * user to the live experience to try it while their studio is on the way.
+ * The "start something new" rail — one tile per live, website-visible
+ * experience (backend `is_visible`). Tiles whose builder has shipped read
+ * "Create"; the rest send the user to the live experience to try it while
+ * their studio is on the way.
  */
 export function NewCreationGallery() {
+  const { catalog, isLoading } = useExperienceCatalog();
+
+  if (isLoading && catalog.length === 0) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="aspect-[5/4] animate-pulse rounded-2xl bg-muted"
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {featuredExperiences.map((exp) => {
+      {catalog.map((exp) => {
         const buildable = hasBuilder(exp.slug);
         return (
           <Link

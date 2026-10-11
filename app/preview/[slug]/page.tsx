@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { EmbeddedExperience } from "@/components/experiences/embedded-experience";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import { getExperience } from "@/lib/experiences";
 import { createMetadata } from "@/lib/seo";
 import { getExperienceView } from "@/lib/server/experiences";
 
@@ -13,8 +12,10 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const exp = getExperience(slug);
-  if (!exp) return createMetadata({ title: "Preview" });
+  const exp = await getExperienceView(slug);
+  if (!exp || exp.status !== "live") {
+    return createMetadata({ title: "Preview" });
+  }
   return createMetadata({
     title: `${exp.name} — public view`,
     description: `See how ${exp.name} looks when shared.`,

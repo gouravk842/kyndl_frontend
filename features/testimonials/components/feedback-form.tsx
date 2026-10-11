@@ -4,35 +4,37 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { StarRatingInput } from "@/features/reviews/components/star-rating";
-import { featuredExperiences } from "@/lib/experiences";
+import { useExperienceCatalog } from "@/hooks/use-experience-catalog";
 import { cn } from "@/lib/utils";
 import { testimonialService } from "@/services/testimonials/testimonial.service";
 
 const MAX_COMMENT = 1000;
-
-const experienceOptions = featuredExperiences.map((e) => ({
-  slug: e.slug,
-  name: e.name,
-}));
 
 /**
  * Public feedback portal form. Submissions are stored as *pending* until an
  * admin approves them for the homepage carousel.
  */
 export function FeedbackForm() {
+  const { catalog } = useExperienceCatalog();
+  const experienceOptions = catalog.map((e) => ({
+    slug: e.slug,
+    name: e.name,
+  }));
+  const firstSlug = experienceOptions[0]?.slug ?? "";
+
   const [displayName, setDisplayName] = useState("");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [experienceSlug, setExperienceSlug] = useState(
-    experienceOptions[0]?.slug ?? "",
-  );
+  // Empty until the user picks; fall back to the first visible option.
+  const [experienceSlug, setExperienceSlug] = useState("");
+  const selectedSlug = experienceSlug || firstSlug;
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: () => {
       const exp =
-        experienceOptions.find((e) => e.slug === experienceSlug) ??
+        experienceOptions.find((e) => e.slug === selectedSlug) ??
         experienceOptions[0];
       if (!exp) throw new Error("Pick an experience.");
       return testimonialService.submit({
@@ -72,7 +74,7 @@ export function FeedbackForm() {
     displayName.trim().length > 0 &&
     rating >= 1 &&
     comment.trim().length >= 8 &&
-    Boolean(experienceSlug) &&
+    Boolean(selectedSlug) &&
     !mutation.isPending;
 
   return (
@@ -104,10 +106,10 @@ export function FeedbackForm() {
           Experience
         </label>
         <select
-          value={experienceSlug}
+          value={selectedSlug}
           onChange={(e) => setExperienceSlug(e.target.value)}
           className={inputCls}
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || experienceOptions.length === 0}
           required
         >
           {experienceOptions.map((e) => (

@@ -1,3 +1,4 @@
+import type { PricingEntry } from "@/lib/experience-catalog";
 import { apiRequest } from "@/services/api/client";
 import type { CheckoutParams, Invoice, RazorpaySuccess } from "@/types/payment";
 
@@ -14,6 +15,14 @@ export interface CreatePaymentPayload {
 }
 
 export const paymentService = {
+  /** Public catalog control plane (visibility + pricing). No auth. */
+  pricing() {
+    return apiRequest<PricingEntry[]>({
+      method: "GET",
+      url: `${BASE}/pricing`,
+    });
+  },
+
   // Open a payment and get back provider checkout params (Razorpay order, key).
   create(payload: CreatePaymentPayload) {
     return apiRequest<CheckoutParams>({

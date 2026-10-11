@@ -2,20 +2,24 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { COOKIE_NAMES, REFERRAL_COOKIE_TTL_DAYS } from "@/constants/cookies";
 import { ROUTES } from "@/constants/routes";
-import { getExperience } from "@/lib/experiences";
 import { djangoFetch } from "@/lib/server/django";
+import { getExperienceView } from "@/lib/server/experiences";
 
 export const dynamic = "force-dynamic";
 
 type TargetKind = "experience" | "gift" | "general";
 
-function resolveRedirect(kind: TargetKind, slug: string): string {
+async function resolveRedirect(
+  kind: TargetKind,
+  slug: string,
+): Promise<string> {
   if (kind === "gift" && slug) {
     return `${ROUTES.gifts}/${slug}`;
   }
   if (kind === "experience" && slug) {
-    const exp = getExperience(slug);
-    return exp?.liveHref || ROUTES.experiences;
+    const exp = await getExperienceView(slug);
+    if (exp?.status === "live" && exp.liveHref) return exp.liveHref;
+    return ROUTES.experiences;
   }
   return ROUTES.experiences;
 }
@@ -50,7 +54,7 @@ export async function GET(
   const { code: rawCode, target } = await context.params;
   const code = (rawCode || "").trim().toLowerCase();
   const { kind, slug, path } = parseTarget(target);
-  const destination = new URL(resolveRedirect(kind, slug), request.url);
+  const destination = new URL(await resolveRedirect(kind, slug), request.url);
 
   if (code) {
     try {

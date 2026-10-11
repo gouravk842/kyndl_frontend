@@ -10,7 +10,9 @@ import { Logo } from "@/components/shared/logo";
 import { groupByCategory } from "@/constants/experience-taxonomy";
 import { ROUTES } from "@/constants/routes";
 import { ideaHref } from "@/features/ideas/idea-href";
-import { experienceHref, experiences } from "@/lib/experiences";
+import { useExperienceCatalog } from "@/hooks/use-experience-catalog";
+import type { ExperienceView } from "@/lib/experience-catalog";
+import { experienceHref } from "@/lib/experiences";
 import { cn } from "@/lib/utils";
 
 /** Mirrors desktop primary links used in the mobile drawer footer. */
@@ -23,7 +25,7 @@ const PRIMARY_LINKS = [
   { href: ROUTES.pricing, label: "Pricing" },
 ] as const;
 
-type Groups = ReturnType<typeof groupByCategory<(typeof experiences)[number]>>;
+type Groups = ReturnType<typeof groupByCategory<ExperienceView>>;
 
 function shelfColumns(count: number) {
   return count > 5 ? 2 : 1;
@@ -46,13 +48,9 @@ export function MarketingExperienceMenus({
   isLoggedIn: boolean;
   accountReady: boolean;
 }) {
-  const groups = useMemo(
-    () =>
-      groupByCategory(
-        experiences.filter((e) => e.status === "live" && !e.adult),
-      ),
-    [],
-  );
+  // Backend `is_visible` — never list the static registry alone.
+  const { catalog } = useExperienceCatalog();
+  const groups = useMemo(() => groupByCategory(catalog), [catalog]);
 
   return (
     <>

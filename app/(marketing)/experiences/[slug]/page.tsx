@@ -13,7 +13,7 @@ import { MemoryPagesLanding } from "@/features/memory-pages/components/marketing
 import { RelatedPairings } from "@/features/recommendations/components/companion-recommendations";
 import { ReferProductButton } from "@/features/referrals/components/refer-product-button";
 import { ScrapbookTemplatesShowcase } from "@/features/scrapbook/components/templates-showcase";
-import { experienceHref, getExperience } from "@/lib/experiences";
+import { experienceHref } from "@/lib/experiences";
 import { createMetadata } from "@/lib/seo";
 import {
   getExperiencesView,
@@ -29,8 +29,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const exp = getExperience(slug);
-  if (!exp) return createMetadata({ title: "Experience" });
+  const exp = await getExperienceView(slug);
+  if (!exp || exp.status !== "live") {
+    return createMetadata({ title: "Experience" });
+  }
   return createMetadata({
     title: exp.name,
     description: exp.description,

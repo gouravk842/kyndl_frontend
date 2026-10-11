@@ -1,9 +1,13 @@
 import type { MetadataRoute } from "next";
 
 import { clientEnv } from "@/config/env";
-import { experienceHref, getLiveExperienceSlugs } from "@/lib/experiences";
+import { experienceHref } from "@/lib/experiences";
+import {
+  getExperiencesView,
+  getRedZoneExperiencesView,
+} from "@/lib/server/experiences";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = clientEnv.NEXT_PUBLIC_APP_URL;
   const lastModified = new Date();
 
@@ -20,7 +24,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/refund",
   ];
 
-  const productPages = getLiveExperienceSlugs().map(experienceHref);
+  const [catalog, redZone] = await Promise.all([
+    getExperiencesView(),
+    getRedZoneExperiencesView(),
+  ]);
+  const productPages = [...catalog, ...redZone].map((e) =>
+    experienceHref(e.slug),
+  );
 
   const routes = Array.from(new Set([...marketing, ...productPages]));
 

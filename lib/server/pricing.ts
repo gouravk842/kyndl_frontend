@@ -2,6 +2,9 @@ import "server-only";
 
 import { cache } from "react";
 
+import type { PricingEntry } from "@/lib/experience-catalog";
+import { indexPricing } from "@/lib/experience-catalog";
+
 /**
  * Server-only fetch of the backend public **pricing feed** — the single
  * admin-controlled source for each product's display flags, money, and any
@@ -14,49 +17,34 @@ import { cache } from "react";
  * Fetched fresh per request (`cache: "no-store"`) so price/offer edits show
  * promptly; `React.cache` dedupes within a single RSC render tree.
  *
- * Resilience: any failure (backend down, network, non-200) resolves to `{}`, and
- * callers fall back to the static registry so the marketing site always renders.
+ * The feed includes hidden products (`is_visible: false`) so callers can
+ * withhold them. On failure, `ok` is false and callers may fall back to the
+ * static registry.
  */
 
-export type ProductStatus = "live" | "soon";
+export type { PricingEntry, ProductStatus } from "@/lib/experience-catalog";
 
-export interface PricingEntry {
-  code: string;
-  is_visible: boolean;
-  status: ProductStatus;
-  display_order: number;
-  is_free: boolean;
-  /** Price in the smallest currency unit (paise for INR). */
-  amount: number;
-  currency: string;
-  amount_display: string;
-  /** Struck-through anchor price in paise, or null when there's no offer. */
-  compare_at_amount: number | null;
-  compare_at_display: string;
-  offer_label: string;
-  has_offer: boolean;
-  discount_percent: number;
-  /** Paise saved vs. the anchor price. */
-  savings_amount: number;
-}
+export type PricingFeed = {
+  /** True when Django returned a 2xx pricing payload. */
+  ok: boolean;
+  entries: Record<string, PricingEntry>;
+};
 
 const DJANGO_BASE = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1"
 ).replace(/\/$/, "");
 
-/** Pricing keyed by product `code`. Empty object when the backend is unreachable. */
-export const getPricing = cache(
-  async (): Promise<Record<string, PricingEntry>> => {
-    try {
-      const res = await fetch(`${DJANGO_BASE}/payments/pricing/`, {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      });
-      if (!res.ok) return {};
-      const rows = (await res.json()) as PricingEntry[];
-      return Object.fromEntries(rows.map((row) => [row.code, row]));
-    } catch {
-      return {};
-    }
-  },
-);
+/** Pricing keyed by product `code`. `ok: false` when the backend is unreachable. */
+export const getPricing = cache(async (): Promise<PricingFeed> => {
+  try {
+    const res = await fetch(`${DJANGO_BASE}/payments/pricing/`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) return { ok: false, entries: {} };
+    const rows = (await res.json()) as PricingEntry[];
+    return { ok: true, entries: indexPricing(rows) };
+  } catch {
+    return { ok: false, entries: {} };
+  }
+});

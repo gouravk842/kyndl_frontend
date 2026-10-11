@@ -76,6 +76,7 @@ export const queryKeys = {
   payments: {
     all: ["payments"] as const,
     invoices: () => [...queryKeys.payments.all, "invoices"] as const,
+    pricing: () => [...queryKeys.payments.all, "pricing"] as const,
   },
   kynd: {
     all: ["kynd"] as const,

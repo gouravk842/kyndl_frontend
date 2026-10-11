@@ -4,6 +4,7 @@ import {
   Flame,
   Gauge,
   Hammer,
+  type LucideIcon,
   Mail,
   Percent,
   Split,
@@ -15,6 +16,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/constants/routes";
 import { ideaHref } from "@/features/ideas/idea-href";
 import { createMetadata } from "@/lib/seo";
+import { getExperiencesView } from "@/lib/server/experiences";
 
 export const metadata = createMetadata({
   title: "Games",
@@ -23,8 +25,18 @@ export const metadata = createMetadata({
   path: "/games",
 });
 
-const games = [
+// Which games are live/visible is backend-controlled, resolved per request.
+export const dynamic = "force-dynamic";
+
+const ALL_GAMES: {
+  slug: string;
+  title: string;
+  description: string;
+  href: string;
+  icon: LucideIcon;
+}[] = [
   {
+    slug: "ludo",
     title: "Ludo for Two",
     description:
       "Classic Ludo reimagined for date night — realistic dice, captures, and a tunable couple-activity mode.",
@@ -32,6 +44,7 @@ const games = [
     icon: Dices,
   },
   {
+    slug: "whack-a-mole",
     title: "Whack My Face",
     description:
       "Smash their selfie in a tiny arcade, dodge the sacred hearts, and unlock the apology letter at the end.",
@@ -39,6 +52,7 @@ const games = [
     icon: Hammer,
   },
   {
+    slug: "flames",
     title: "FLAMES",
     description:
       "Cancel matching letters and let destiny pick Friends, Lovers, Affection, Marriage, Enemies, or Siblings.",
@@ -46,6 +60,7 @@ const games = [
     icon: Flame,
   },
   {
+    slug: "love-calculator",
     title: "Love Calculator",
     description:
       "Two names in, a silly % out — fake science with a note you wrote underneath.",
@@ -53,6 +68,7 @@ const games = [
     icon: Percent,
   },
   {
+    slug: "folded-note",
     title: "Folded Note",
     description:
       "Unfold a schoolyard note, check Yes / No / Maybe, and get the reaction they planted.",
@@ -60,6 +76,7 @@ const games = [
     icon: Mail,
   },
   {
+    slug: "this-or-that",
     title: "This or That",
     description:
       "Rapid A/B taps that grade their vibe on a shareable type card.",
@@ -67,6 +84,7 @@ const games = [
     icon: Split,
   },
   {
+    slug: "delulu-meter",
     title: "Delulu Meter",
     description: "Rate the crush chaos 1–5 and land on a comedy delulu gauge.",
     href: ROUTES.deluluMeter,
@@ -74,7 +92,11 @@ const games = [
   },
 ];
 
-export default function GamesPage() {
+export default async function GamesPage() {
+  const visible = await getExperiencesView();
+  const visibleSlugs = new Set(visible.map((e) => e.slug));
+  const games = ALL_GAMES.filter((g) => visibleSlugs.has(g.slug));
+
   return (
     <div className="relative overflow-hidden">
       <PageHeader
