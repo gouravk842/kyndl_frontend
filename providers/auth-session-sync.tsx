@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { hasSignedInMarker } from "@/lib/auth-cookie";
 import { authService } from "@/services/auth/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import type { ApiError } from "@/types/api";
@@ -11,6 +12,10 @@ import type { ApiError } from "@/types/api";
  * `/dashboard` trusts the httpOnly auth cookies. Those drift apart: the name
  * stays after logout, or the name shows when the dashboard will demand login.
  * This check makes the cookie session the only source of truth.
+ *
+ * Anonymous visitors (no readable `kyndl_signed_in` marker) skip `/api/auth/me`
+ * and the refresh hop entirely. The marker is set/cleared with the httpOnly
+ * tokens by the BFF and kept in sync by `proxy.ts`.
  */
 export function AuthSessionSync() {
   useEffect(() => {
@@ -19,6 +24,11 @@ export function AuthSessionSync() {
       localStorage.removeItem("kyndl-auth");
     } catch {
       // Private mode / blocked storage — the store no longer reads it.
+    }
+
+    if (!hasSignedInMarker()) {
+      useAuthStore.getState().clearAuth();
+      return;
     }
 
     let cancelled = false;

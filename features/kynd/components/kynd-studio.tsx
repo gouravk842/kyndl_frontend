@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Plus, Users } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Conversation } from "@/features/kynd/components/kynd-chat";
@@ -80,10 +81,14 @@ export function KyndStudio() {
   }
 
   function askAbout(item: KyndItem) {
-    const subject = item.title || item.body;
+    const raw = (item.title || item.body).trim();
+    const subject = raw.replace(
+      /^(loves|wants|dislikes|food|details|places|said|other)\s+/i,
+      "",
+    );
     setPrefill({
       id: Date.now(),
-      text: `What should I remember about ${subject}?`,
+      text: `What do you remember about ${subject || raw}?`,
     });
     setTab("talk");
   }
@@ -146,58 +151,65 @@ export function KyndStudio() {
     }
   }
 
+  const everyone = focusId === null && picked === "all";
+
   return (
     <div className="-m-6 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden bg-[#f6f0e9] text-[#2c2420] dark:bg-[#161311] dark:text-[#f6efe9]">
-      <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-[#eadfd4] px-4 py-3 dark:border-white/10">
-        <PersonChip
-          pressed={focusId === null && picked === "all"}
-          label="Everyone"
-          detail="Ask across your Kynd"
-          onClick={() => choose("all")}
-        />
-        {rows.map((row, index) => (
+      <header className="flex shrink-0 items-center gap-3 border-b border-[#eadfd4] px-3 py-2.5 sm:px-4 dark:border-white/10">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <PersonChip
-            key={row.id}
-            pressed={row.id === focusId}
-            label={row.name}
-            mark={monogram(row.name)}
-            detail={relationshipLabel(row.relationship_type)}
-            wash={PERSON_WASH[index % PERSON_WASH.length] ?? "#FBD3DE"}
-            onClick={() => choose(row.id)}
+            pressed={everyone}
+            label="Everyone"
+            detail="Across your Kynd"
+            icon={<Users className="size-3.5" />}
+            onClick={() => choose("all")}
           />
-        ))}
-        <button
-          type="button"
-          onClick={() => {
-            setCreating(true);
-            setPersonOpen(true);
-          }}
-          className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-dashed border-[#c4b2a6] px-4 text-sm text-[#5c4a43] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020] dark:text-[#cbb8ad]"
-        >
-          Add someone
-        </button>
-      </div>
+          {rows.map((row, index) => (
+            <PersonChip
+              key={row.id}
+              pressed={row.id === focusId}
+              label={row.name}
+              mark={monogram(row.name)}
+              detail={relationshipLabel(row.relationship_type)}
+              wash={PERSON_WASH[index % PERSON_WASH.length] ?? "#FBD3DE"}
+              onClick={() => choose(row.id)}
+            />
+          ))}
+          <button
+            type="button"
+            aria-label="Add someone"
+            title="Add someone"
+            onClick={() => {
+              setCreating(true);
+              setPersonOpen(true);
+            }}
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-[#c4b2a6] text-[#5c4a43] transition-colors hover:border-[#8e1020]/50 hover:text-[#8e1020] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020] dark:text-[#cbb8ad]"
+          >
+            <Plus className="size-4" />
+          </button>
+        </div>
 
-      <div
-        role="tablist"
-        aria-label="Kynd"
-        className="mx-4 mt-3 flex max-w-sm shrink-0 rounded-full bg-white p-1 shadow-[0_8px_24px_-18px_rgba(58,42,37,0.45)] dark:bg-white/10"
-      >
-        <TabButton
-          pressed={tab === "talk"}
-          onClick={() => setTab("talk")}
-          tone="bg-gradient-to-r from-[#FF7A59] to-[#F2596F]"
+        <div
+          role="tablist"
+          aria-label="Kynd view"
+          className="flex shrink-0 rounded-full bg-white p-0.5 shadow-[0_6px_18px_-14px_rgba(58,42,37,0.5)] dark:bg-white/10"
         >
-          Chat
-        </TabButton>
-        <TabButton
-          pressed={tab === "graph"}
-          onClick={() => setTab("graph")}
-          tone="bg-gradient-to-r from-[#F0A13D] to-[#F2596F]"
-        >
-          Graph
-        </TabButton>
-      </div>
+          <TabButton
+            pressed={tab === "talk"}
+            onClick={() => setTab("talk")}
+            tone="bg-gradient-to-r from-[#FF7A59] to-[#F2596F]"
+          >
+            Chat
+          </TabButton>
+          <TabButton
+            pressed={tab === "graph"}
+            onClick={() => setTab("graph")}
+            tone="bg-gradient-to-r from-[#F0A13D] to-[#F2596F]"
+          >
+            Graph
+          </TabButton>
+        </div>
+      </header>
 
       {people.isError ? (
         <KyndEmpty
@@ -341,6 +353,7 @@ function PersonChip({
   label,
   detail,
   mark,
+  icon,
   wash = "#FBD3DE",
   onClick,
 }: {
@@ -348,6 +361,7 @@ function PersonChip({
   label: string;
   detail: string;
   mark?: string;
+  icon?: ReactNode;
   wash?: string;
   onClick: () => void;
 }) {
@@ -355,37 +369,33 @@ function PersonChip({
     <button
       type="button"
       aria-pressed={pressed}
+      aria-label={`${label}, ${detail}`}
+      title={`${label} · ${detail}`}
       onClick={onClick}
       className={cn(
-        "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020]",
+        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020]",
         pressed
-          ? "bg-[#8e1020] text-[#f6f0e9]"
-          : "bg-white text-[#2c2420] dark:bg-white/10 dark:text-[#f6efe9]",
+          ? "bg-[#8e1020] pr-3 pl-1.5 text-[#f6f0e9]"
+          : icon
+            ? "bg-white pr-3 pl-1.5 text-[#2c2420] dark:bg-white/10 dark:text-[#f6efe9]"
+            : "bg-transparent px-1.5 text-[#2c2420] hover:bg-white/70 dark:text-[#f6efe9] dark:hover:bg-white/10",
       )}
     >
-      {mark ? (
-        <span
-          aria-hidden
-          className={cn(
-            "flex size-7 items-center justify-center rounded-full font-serif text-sm",
-            pressed ? "bg-white/15" : "text-[#8e1020]",
-          )}
-          style={pressed ? undefined : { background: wash }}
-        >
-          {mark}
+      <span
+        aria-hidden
+        className={cn(
+          "flex size-6 items-center justify-center rounded-full font-serif text-xs",
+          pressed ? "bg-white/15" : "text-[#8e1020]",
+        )}
+        style={pressed || icon ? undefined : { background: wash }}
+      >
+        {icon ?? mark}
+      </span>
+      {pressed || icon ? (
+        <span className="max-w-[7.5rem] truncate text-sm leading-none">
+          {icon && !pressed ? "All" : label}
         </span>
       ) : null}
-      <span>
-        <span className="block text-sm leading-tight">{label}</span>
-        <span
-          className={cn(
-            "block text-[11px] leading-tight",
-            pressed ? "text-white/75" : "text-[#6b564c] dark:text-[#cbb8ad]",
-          )}
-        >
-          {detail}
-        </span>
-      </span>
     </button>
   );
 }
@@ -408,7 +418,7 @@ function TabButton({
       aria-selected={pressed}
       onClick={onClick}
       className={cn(
-        "min-h-11 flex-1 rounded-full text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020]",
+        "h-8 min-w-[4.25rem] rounded-full px-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020]",
         pressed ? cn(tone, "text-white") : "text-[#5c4a43] dark:text-[#cbb8ad]",
       )}
     >

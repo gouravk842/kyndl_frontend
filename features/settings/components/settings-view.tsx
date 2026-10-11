@@ -25,27 +25,30 @@ export function SettingsView() {
         subtitle="Your profile and how Kyndl reaches you."
       />
 
-      <PageContainer size="lg" className="space-y-10 py-10 md:py-14">
-        <section className="rounded-3xl border border-[#F4DDD0] bg-white px-5 py-5 md:px-6">
+      <PageContainer size="md" className="space-y-8 py-10 md:py-14">
+        <section className="overflow-hidden rounded-3xl border border-[#F4DDD0] bg-white px-5 py-5 md:px-6">
           <h3 className="text-sm font-semibold text-[#3A2A25]">Profile</h3>
           <p className="mt-1 text-xs text-[#7A6258]">
             Details from your Kyndl account.
           </p>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
+            <div className="min-w-0">
               <dt className="text-xs text-[#B08C7D]">Name</dt>
-              <dd className="mt-0.5 text-sm font-medium text-[#3A2A25]">
+              <dd className="mt-0.5 truncate text-sm font-medium text-[#3A2A25]">
                 {displayName}
               </dd>
             </div>
-            <div>
+            <div className="min-w-0">
               <dt className="text-xs text-[#B08C7D]">Email</dt>
-              <dd className="mt-0.5 text-sm font-medium text-[#3A2A25]">
+              <dd
+                className="mt-0.5 break-all text-sm font-medium text-[#3A2A25]"
+                title={profile?.email}
+              >
                 {profile?.email ?? "—"}
               </dd>
             </div>
             {profile?.date_joined && (
-              <div>
+              <div className="min-w-0">
                 <dt className="text-xs text-[#B08C7D]">Member since</dt>
                 <dd className="mt-0.5 text-sm font-medium text-[#3A2A25]">
                   {formatDateLocal(profile.date_joined)}
@@ -53,7 +56,7 @@ export function SettingsView() {
               </div>
             )}
             {providers.length > 0 && (
-              <div>
+              <div className="min-w-0">
                 <dt className="text-xs text-[#B08C7D]">Linked sign-in</dt>
                 <dd className="mt-0.5 text-sm font-medium text-[#3A2A25] capitalize">
                   {providers.join(", ")}
@@ -80,7 +83,7 @@ export function SettingsView() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-[#F4DDD0] bg-white px-5 py-5 md:px-6">
+        <section className="overflow-hidden rounded-3xl border border-[#F4DDD0] bg-white px-5 py-5 md:px-6">
           <NotificationSettings />
         </section>
       </PageContainer>

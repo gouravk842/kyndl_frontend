@@ -37,11 +37,19 @@ function timeAgo(iso: string): string {
  * (marks all seen); clicking an item marks it read and deep-links to its target.
  * Live updates arrive over the notifications WebSocket (see `useNotifications`).
  */
-export function NotificationBell() {
+export function NotificationBell({
+  keepAlive = true,
+}: {
+  /**
+   * When false (marketing chrome), only the badge counts endpoint runs until
+   * the panel opens — no list fetch or WebSocket on /privacy, /terms, etc.
+   */
+  keepAlive?: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { list, unread, unseen, markSeen, markAllRead, markOneRead } =
-    useNotifications();
+    useNotifications({ keepAlive, panelOpen: open });
 
   const onOpenChange = (next: boolean) => {
     setOpen(next);

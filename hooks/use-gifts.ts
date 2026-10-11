@@ -22,12 +22,16 @@ import type {
 const PAYMENT_CANCELLED = "payment_cancelled";
 
 /** Public gift catalog, with optional search + sorting. */
-export function useGiftCatalog(params?: CatalogParams) {
+export function useGiftCatalog(
+  params?: CatalogParams,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: queryKeys.gifts.catalog(
       params as Record<string, unknown> | undefined,
     ),
     queryFn: () => giftService.catalog(params),
+    enabled: options?.enabled ?? true,
     staleTime: 30 * 1000,
   });
 }

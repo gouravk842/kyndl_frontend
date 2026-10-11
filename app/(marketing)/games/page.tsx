@@ -115,6 +115,7 @@ export default function GamesPage() {
                 <div className="mt-6">
                   <Link
                     href={game.href}
+                    prefetch={false}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#C75B39]"
                   >
                     Play now
@@ -124,6 +125,7 @@ export default function GamesPage() {
 
                 <Link
                   href={game.href}
+                  prefetch={false}
                   className="absolute inset-0 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2596F]/50"
                   aria-label={`Play ${game.title}`}
                 />

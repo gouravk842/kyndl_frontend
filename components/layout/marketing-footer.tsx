@@ -38,8 +38,6 @@ const linkColumns = [
     title: "Company",
     links: [
       { href: ROUTES.pricing, label: "Pricing" },
-      { href: ROUTES.about, label: "About" },
-      { href: ROUTES.blog, label: "Blog" },
       { href: ROUTES.feedback, label: "Share feedback" },
       { href: ROUTES.ideas, label: "Submit an idea" },
     ],
@@ -133,6 +131,7 @@ export function MarketingFooter() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
+                        prefetch={false}
                         className="text-sm text-[#7A6258] transition-colors duration-300 hover:text-[#3A2A25]"
                       >
                         {link.label}
@@ -155,18 +154,21 @@ export function MarketingFooter() {
           >
             <Link
               href={ROUTES.terms}
+              prefetch={false}
               className="transition-colors duration-300 hover:text-[#3A2A25]"
             >
               Terms
             </Link>
             <Link
               href={ROUTES.privacy}
+              prefetch={false}
               className="transition-colors duration-300 hover:text-[#3A2A25]"
             >
               Privacy
             </Link>
             <Link
               href={ROUTES.refund}
+              prefetch={false}
               className="transition-colors duration-300 hover:text-[#3A2A25]"
             >
               Refunds

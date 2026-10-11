@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import {
   type Experience,
   experiences,
@@ -72,14 +74,14 @@ function merge(
   };
 }
 
-async function buildViews(): Promise<ExperienceView[]> {
+const buildViews = cache(async (): Promise<ExperienceView[]> => {
   const pricing = await getPricing();
   return experiences
     .map((exp, index) => merge(exp, pricing[exp.slug], index))
     .filter((v): v is Ordered => v !== null)
     .sort((a, b) => a.__order - b.__order)
     .map(({ __order: _drop, ...view }) => view);
-}
+});
 
 /** Visible, live experiences in backend display order.
  *  Coming-soon products stay off the catalog. Adults-only (Red Zone)

@@ -69,6 +69,31 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next();
   response.headers.set("x-pathname", pathname);
+
+  // Keep the readable signed-in marker in sync with httpOnly tokens so client
+  // JS can skip `/api/auth/me` for anonymous visitors (and backfill the marker
+  // for sessions established before the flag existed).
+  const hasSignedInMarker = Boolean(
+    request.cookies.get(COOKIE_NAMES.SIGNED_IN)?.value,
+  );
+  if (isAuthenticated && !hasSignedInMarker) {
+    response.cookies.set(COOKIE_NAMES.SIGNED_IN, "1", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+    });
+  } else if (!isAuthenticated && hasSignedInMarker) {
+    response.cookies.set(COOKIE_NAMES.SIGNED_IN, "", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+  }
+
   return response;
 }
 

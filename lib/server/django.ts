@@ -32,6 +32,14 @@ const baseCookieOptions = {
   path: "/",
 };
 
+/** Readable companion to the httpOnly tokens — client JS gates the /me probe. */
+const signedInCookieOptions = {
+  httpOnly: false,
+  secure: isProd,
+  sameSite: "lax" as const,
+  path: "/",
+};
+
 const REQUEST_ID_HEADER = "X-Request-ID";
 
 export interface DjangoResult {
@@ -227,6 +235,12 @@ export function setAuthCookies(
       maxAge: REFRESH_MAX_AGE,
     });
   }
+  if (tokens.access || tokens.refresh) {
+    response.cookies.set(COOKIE_NAMES.SIGNED_IN, "1", {
+      ...signedInCookieOptions,
+      maxAge: REFRESH_MAX_AGE,
+    });
+  }
   return response;
 }
 
@@ -238,6 +252,10 @@ export function clearAuthCookies(response: NextResponse): NextResponse {
   });
   response.cookies.set(COOKIE_NAMES.REFRESH_TOKEN, "", {
     ...baseCookieOptions,
+    maxAge: 0,
+  });
+  response.cookies.set(COOKIE_NAMES.SIGNED_IN, "", {
+    ...signedInCookieOptions,
     maxAge: 0,
   });
   return response;

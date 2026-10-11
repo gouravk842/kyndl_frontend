@@ -158,7 +158,7 @@ export function MarketingHeader() {
 
         <div className="flex items-center gap-1 sm:gap-2">
           <CartButton />
-          {isLoggedIn && <NotificationBell />}
+          {isLoggedIn && <NotificationBell keepAlive={false} />}
           {!isHydrated ? (
             <div
               aria-hidden

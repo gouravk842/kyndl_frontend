@@ -15,11 +15,7 @@ import {
 } from "@/features/kynd/components/kynd-button";
 import { KyndEmpty } from "@/features/kynd/components/kynd-empty";
 import { KyndShell } from "@/features/kynd/components/kynd-shell";
-import {
-  categoryLabel,
-  isPersonId,
-  monogram,
-} from "@/features/kynd/lib/catalog";
+import { categoryLabel, isPersonId } from "@/features/kynd/lib/catalog";
 import { useKyndChat, useKyndPerson } from "@/hooks/use-kynd";
 import { formatTimeLocal, parseApiDate } from "@/lib/datetime";
 import { kyndService } from "@/services/kynd/kynd.service";
@@ -222,56 +218,47 @@ export function Conversation({
       }
     >
       {pane ? (
-        <div className="flex h-full min-h-0 flex-col px-3 pt-3 pb-3 sm:px-4">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.75rem] border border-[#F4C9C0] bg-white shadow-[0_24px_50px_-28px_rgba(242,89,111,0.45)] dark:border-white/10 dark:bg-[#1c1715]">
-            <header className="flex shrink-0 items-center gap-3 bg-gradient-to-r from-[#FF7A59] via-[#F2596F] to-[#E07A92] px-4 py-3 text-white">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white font-serif text-base text-[#F2596F]">
-                {name ? monogram(name) : "K"}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate font-medium">
-                  {name ?? "Kynd"}
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-white/85">
-                  <span
-                    className={
-                      asking
-                        ? "size-1.5 rounded-full bg-[#D7F5C8] motion-safe:animate-pulse"
-                        : "size-1.5 rounded-full bg-[#D7F5C8]"
-                    }
-                  />
-                  {asking ? "Looking that up" : "With you"}
-                </span>
-              </span>
-            </header>
-            <PaneThread
-              open={open}
-              name={name}
-              loading={loading}
-              failed={failed}
-              onRetryLoad={onRetryLoad}
-              onSuggest={send}
-              messages={messages}
-              pending={pending}
-              asking={asking}
-              personId={personId}
-              dismissed={dismissed}
-              saving={saving}
-              onDismiss={(id) => setDismissed((ids) => [...ids, id])}
-              onKeep={keep}
-              onChoose={choosePerson}
-              endRef={endRef}
+        <div className="relative flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,#FFF8F3_0%,#FFF0F4_48%,#FFF8EC_100%)] dark:bg-[#161311]">
+          <div
+            aria-live="polite"
+            className="pointer-events-none absolute top-3 right-4 z-10 flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] text-[#6b564c] shadow-sm backdrop-blur-sm dark:bg-black/40 dark:text-[#cbb8ad]"
+          >
+            <span
+              className={
+                asking
+                  ? "size-1.5 rounded-full bg-[#6E8B6A] motion-safe:animate-pulse"
+                  : "size-1.5 rounded-full bg-[#6E8B6A]"
+              }
             />
-            <PaneComposer
-              draft={draft}
-              asking={asking}
-              name={name}
-              sendError={sendError}
-              fieldRef={fieldRef}
-              onDraft={setDraft}
-              onSend={() => void send(draft)}
-            />
+            {asking ? "Looking that up" : "With you"}
           </div>
+          <PaneThread
+            open={open}
+            name={name}
+            loading={loading}
+            failed={failed}
+            onRetryLoad={onRetryLoad}
+            onSuggest={send}
+            messages={messages}
+            pending={pending}
+            asking={asking}
+            personId={personId}
+            dismissed={dismissed}
+            saving={saving}
+            onDismiss={(id) => setDismissed((ids) => [...ids, id])}
+            onKeep={keep}
+            onChoose={choosePerson}
+            endRef={endRef}
+          />
+          <PaneComposer
+            draft={draft}
+            asking={asking}
+            name={name}
+            sendError={sendError}
+            fieldRef={fieldRef}
+            onDraft={setDraft}
+            onSend={() => void send(draft)}
+          />
         </div>
       ) : (
         <header>
@@ -481,81 +468,85 @@ function PaneThread({
   endRef: RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[linear-gradient(180deg,#FFF8F3_0%,#FFF0F4_55%,#FFF8EC_100%)] px-4 py-4 dark:bg-[#161311]">
-      {loading ? (
-        <div className="space-y-3" aria-hidden>
-          <div className="h-10 w-40 animate-pulse rounded-2xl bg-[#FBD3DE] motion-reduce:animate-none" />
-          <div className="ml-auto h-10 w-52 animate-pulse rounded-2xl bg-[#FFD5C8] motion-reduce:animate-none" />
-        </div>
-      ) : null}
-      {failed ? (
-        <KyndEmpty
-          title="This didn't load."
-          body="Check your connection, then try again."
-          action={{ label: "Try again", onClick: onRetryLoad }}
-        />
-      ) : null}
-      {open ? (
-        <div className="mt-auto flex flex-col items-start gap-2">
-          <p className="text-xs text-[#92786C]">Try one of these</p>
-          {suggestionsFor(name).map((question) => (
-            <button
-              key={question}
-              type="button"
-              onClick={() => onSuggest(question)}
-              className="max-w-[85%] rounded-2xl rounded-bl-md border border-[#F2DACE] bg-white px-3.5 py-2.5 text-left text-[15px] leading-snug text-[#3A2A25] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F2596F] dark:border-white/10 dark:bg-white/10 dark:text-[#f6efe9]"
-            >
-              {question}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {messages.length > 0 ? (
-        <ol className="space-y-3" aria-live="polite">
-          {messages.map((message, index) => {
-            const earlier = index > 0 ? messages[index - 1] : undefined;
-            return (
-              <li key={message.id}>
-                <Turn
-                  compact
-                  message={message}
-                  previous={earlier}
-                  dismissed={dismissed.includes(message.id)}
-                  saving={saving === message.id}
-                  onDismiss={() => onDismiss(message.id)}
-                  onKeep={(offer) => onKeep(message, offer)}
-                  onChoose={(nextId) =>
-                    onChoose(
-                      nextId,
-                      earlier?.role === "user" ? earlier.body : "",
-                    )
-                  }
-                />
-              </li>
-            );
-          })}
-        </ol>
-      ) : null}
-      {pending ? (
-        <div className="mt-3" aria-live="polite">
-          <Turn
-            compact
-            message={{
-              id: "pending",
-              role: "user",
-              body: pending,
-              kind: "user",
-              items: [],
-              offer_save: null,
-              clarification_people: null,
-              person_id: personId ?? null,
-              created_at: "",
-            }}
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        {loading ? (
+          <div className="space-y-3" aria-hidden>
+            <div className="h-10 w-40 animate-pulse rounded-2xl bg-[#FBD3DE] motion-reduce:animate-none" />
+            <div className="ml-auto h-10 w-52 animate-pulse rounded-2xl bg-[#FFD5C8] motion-reduce:animate-none" />
+          </div>
+        ) : null}
+        {failed ? (
+          <KyndEmpty
+            title="This didn't load."
+            body="Check your connection, then try again."
+            action={{ label: "Try again", onClick: onRetryLoad }}
           />
-          {asking ? <Typing /> : null}
-        </div>
-      ) : null}
-      <div ref={endRef} />
+        ) : null}
+        {open ? (
+          <div className="mt-auto flex flex-col items-start gap-2.5 pb-2">
+            <p className="text-xs tracking-wide text-[#92786C] uppercase">
+              Try one of these
+            </p>
+            {suggestionsFor(name).map((question) => (
+              <button
+                key={question}
+                type="button"
+                onClick={() => onSuggest(question)}
+                className="max-w-xl rounded-2xl rounded-bl-md border border-[#F2DACE]/80 bg-white/90 px-4 py-3 text-left text-[15px] leading-snug text-[#3A2A25] shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F2596F] dark:border-white/10 dark:bg-white/10 dark:text-[#f6efe9]"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {messages.length > 0 ? (
+          <ol className="space-y-4" aria-live="polite">
+            {messages.map((message, index) => {
+              const earlier = index > 0 ? messages[index - 1] : undefined;
+              return (
+                <li key={message.id}>
+                  <Turn
+                    compact
+                    message={message}
+                    previous={earlier}
+                    dismissed={dismissed.includes(message.id)}
+                    saving={saving === message.id}
+                    onDismiss={() => onDismiss(message.id)}
+                    onKeep={(offer) => onKeep(message, offer)}
+                    onChoose={(nextId) =>
+                      onChoose(
+                        nextId,
+                        earlier?.role === "user" ? earlier.body : "",
+                      )
+                    }
+                  />
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+        {pending ? (
+          <div className="mt-4" aria-live="polite">
+            <Turn
+              compact
+              message={{
+                id: "pending",
+                role: "user",
+                body: pending,
+                kind: "user",
+                items: [],
+                offer_save: null,
+                clarification_people: null,
+                person_id: personId ?? null,
+                created_at: "",
+              }}
+            />
+            {asking ? <Typing /> : null}
+          </div>
+        ) : null}
+        <div ref={endRef} />
+      </div>
     </div>
   );
 }
@@ -598,55 +589,57 @@ function PaneComposer({
 }) {
   return (
     <form
-      className="shrink-0 border-t border-[#F2DACE] bg-white px-3 py-3 dark:border-white/10 dark:bg-[#1c1715]"
+      className="shrink-0 border-t border-[#eadfd4]/80 bg-[#f6f0e9]/90 px-4 py-3 backdrop-blur-sm sm:px-6 lg:px-8 dark:border-white/10 dark:bg-[#161311]/90"
       onSubmit={(event) => {
         event.preventDefault();
         onSend();
       }}
     >
-      {sendError ? (
-        <p className="mb-2 px-1 text-sm text-[#8e1020]" role="alert">
-          {sendError}{" "}
+      <div className="mx-auto w-full max-w-3xl">
+        {sendError ? (
+          <p className="mb-2 px-1 text-sm text-[#8e1020]" role="alert">
+            {sendError}{" "}
+            <button
+              type="button"
+              className="underline underline-offset-4"
+              onClick={onSend}
+            >
+              Try again
+            </button>
+          </p>
+        ) : null}
+        <div className="flex items-end gap-2.5 rounded-[1.75rem] border border-[#F2DACE] bg-white p-2 shadow-[0_12px_32px_-24px_rgba(58,42,37,0.55)] dark:border-white/10 dark:bg-[#1c1715]">
+          <label className="min-w-0 flex-1">
+            <span className="sr-only">
+              {name ? `Message Kynd about ${name}` : "Message Kynd"}
+            </span>
+            <textarea
+              ref={fieldRef}
+              value={draft}
+              rows={Math.min(4, Math.max(1, draft.split("\n").length))}
+              disabled={asking}
+              placeholder={name ? `Ask anything about ${name}…` : "Ask Kynd…"}
+              enterKeyHint="send"
+              autoComplete="off"
+              className="max-h-36 min-h-12 w-full resize-none rounded-[1.35rem] bg-transparent px-3.5 py-3 text-[15px] leading-relaxed text-[#3A2A25] outline-none disabled:opacity-60 dark:text-[#f6efe9]"
+              onChange={(event) => onDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  onSend();
+                }
+              }}
+            />
+          </label>
           <button
-            type="button"
-            className="underline underline-offset-4"
-            onClick={onSend}
+            type="submit"
+            aria-label="Send"
+            disabled={asking || !draft.trim()}
+            className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#FF7A59] to-[#F2596F] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F2596F] disabled:opacity-40"
           >
-            Try again
+            <SendHorizontal className="size-4" />
           </button>
-        </p>
-      ) : null}
-      <div className="flex items-end gap-2">
-        <label className="min-w-0 flex-1">
-          <span className="sr-only">
-            {name ? `Message Kynd about ${name}` : "Message Kynd"}
-          </span>
-          <textarea
-            ref={fieldRef}
-            value={draft}
-            rows={Math.min(4, Math.max(1, draft.split("\n").length))}
-            disabled={asking}
-            placeholder={name ? `Message about ${name}` : "Message Kynd"}
-            enterKeyHint="send"
-            autoComplete="off"
-            className="max-h-32 min-h-11 w-full resize-none rounded-3xl border border-[#F2DACE] bg-[#FFF7F1] px-4 py-3 text-sm leading-relaxed text-[#3A2A25] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F2596F] disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-[#f6efe9]"
-            onChange={(event) => onDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                onSend();
-              }
-            }}
-          />
-        </label>
-        <button
-          type="submit"
-          aria-label="Send"
-          disabled={asking || !draft.trim()}
-          className="mb-0.5 flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#FF7A59] to-[#F2596F] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F2596F] disabled:opacity-40"
-        >
-          <SendHorizontal className="size-4" />
-        </button>
+        </div>
       </div>
     </form>
   );
@@ -675,8 +668,8 @@ function Turn({
     if (compact) {
       const when = bubbleTime(message.created_at);
       return (
-        <div className="ml-auto max-w-[78%]">
-          <p className="rounded-2xl rounded-br-md bg-gradient-to-br from-[#FF7A59] to-[#F2596F] px-3.5 py-2.5 text-[15px] leading-relaxed wrap-anywhere whitespace-pre-wrap text-white shadow-[0_8px_20px_-14px_rgba(242,89,111,0.9)]">
+        <div className="ml-auto max-w-[min(36rem,85%)]">
+          <p className="rounded-2xl rounded-br-md bg-gradient-to-br from-[#FF7A59] to-[#F2596F] px-4 py-3 text-[15px] leading-relaxed wrap-anywhere whitespace-pre-wrap text-white shadow-[0_8px_20px_-14px_rgba(242,89,111,0.9)]">
             {message.body}
           </p>
           {when ? (
@@ -804,13 +797,13 @@ function CompactReply({
   const when = bubbleTime(message.created_at);
 
   return (
-    <div className="flex max-w-[88%] items-end gap-2">
+    <div className="flex max-w-[min(40rem,92%)] items-end gap-2.5">
       <span className="mb-5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#F2596F] font-serif text-[10px] text-white">
         K
       </span>
       <div className="min-w-0">
         <p className="mb-1 text-[11px] text-[#92786C]">Kynd</p>
-        <div className="rounded-2xl rounded-bl-md border border-[#F2DACE] bg-white px-3.5 py-2.5 text-[15px] leading-relaxed text-[#3A2A25] dark:border-white/10 dark:bg-white/10 dark:text-[#f6efe9]">
+        <div className="rounded-2xl rounded-bl-md border border-[#F2DACE] bg-white/95 px-4 py-3 text-[15px] leading-relaxed text-[#3A2A25] shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-[#f6efe9]">
           <p className="wrap-anywhere whitespace-pre-wrap">{message.body}</p>
           {message.items.length > 0 ? (
             <ul className="mt-2 space-y-1">

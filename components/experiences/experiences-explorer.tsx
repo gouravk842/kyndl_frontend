@@ -90,6 +90,7 @@ function ExperienceCard({
     >
       <Link
         href={experienceHref(exp.slug)}
+        prefetch={false}
         className="relative flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F2596F]/50"
         aria-label={`Explore ${exp.name}`}
       >

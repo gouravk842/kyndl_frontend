@@ -15,8 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/games",
     "/ideas",
     "/pricing",
-    "/about",
-    "/blog",
     "/terms",
     "/privacy",
     "/refund",

@@ -117,6 +117,7 @@ function MegaMenu({
                   <li key={exp.slug}>
                     <Link
                       href={experienceHref(exp.slug)}
+                      prefetch={false}
                       onClick={onNavigate}
                       className="group flex items-start gap-3 rounded-2xl p-2.5 transition-colors hover:bg-white"
                     >
@@ -168,6 +169,7 @@ function MegaMenu({
           </div>
           <Link
             href={ROUTES.experiences}
+            prefetch={false}
             onClick={onNavigate}
             className="inline-flex items-center gap-1 text-sm font-semibold text-[#C75B39] hover:text-[#9e3f21]"
           >
@@ -191,6 +193,7 @@ function PanelPill({
   return (
     <Link
       href={href}
+      prefetch={false}
       onClick={onClick}
       className="inline-flex items-center rounded-full border border-[#F2DACE] bg-white/70 px-3.5 py-1.5 text-sm text-[#7A6258] transition-colors hover:border-[#FF7A59]/50 hover:text-[#3A2A25]"
     >
@@ -303,6 +306,7 @@ function MobileDrawer({
                   <li key={exp.slug}>
                     <Link
                       href={experienceHref(exp.slug)}
+                      prefetch={false}
                       onClick={onClose}
                       className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors active:bg-white"
                     >

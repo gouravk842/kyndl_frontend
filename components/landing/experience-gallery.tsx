@@ -162,6 +162,7 @@ export function ExperienceGallery({
               >
                 <Link
                   href={experienceHref(exp.slug)}
+                  prefetch={false}
                   className={cn(
                     "kyndl-card-soft group relative flex h-full min-h-[28rem] flex-col overflow-hidden rounded-3xl border border-[#F4DDD0] bg-white p-6",
                     "transition-all duration-500 hover:-translate-y-1 hover:border-[#FF7A59]/45 hover:shadow-[0_28px_64px_-26px_rgba(242,89,111,0.45)]",

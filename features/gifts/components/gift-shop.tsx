@@ -41,9 +41,9 @@ export function GiftShop({ products: initial }: { products: GiftProduct[] }) {
   };
   const isDefault = !params.q && sort === "newest" && !category && !subcategory;
 
-  const { data, isFetching } = useGiftCatalog(params);
-  // Use the server-rendered list until the first client fetch resolves.
-  const products = isDefault && !data ? initial : (data ?? []);
+  // Default view is already SSR'd — only hit the BFF when filters change.
+  const { data, isFetching } = useGiftCatalog(params, { enabled: !isDefault });
+  const products = isDefault ? initial : (data ?? []);
 
   return (
     <div>

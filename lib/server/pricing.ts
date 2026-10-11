@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 /**
  * Server-only fetch of the backend public **pricing feed** — the single
  * admin-controlled source for each product's display flags, money, and any
@@ -9,8 +11,8 @@ import "server-only";
  * Split source of truth: the frontend owns presentation (copy, icons, gradients,
  * the experience itself); the backend owns only what an admin flips without a
  * deploy — visibility, status, sort order, price, and the offer/anchor fields.
- * Fetched fresh per render (`cache: "no-store"`) so price/offer edits show
- * promptly.
+ * Fetched fresh per request (`cache: "no-store"`) so price/offer edits show
+ * promptly; `React.cache` dedupes within a single RSC render tree.
  *
  * Resilience: any failure (backend down, network, non-200) resolves to `{}`, and
  * callers fall back to the static registry so the marketing site always renders.
@@ -43,16 +45,18 @@ const DJANGO_BASE = (
 ).replace(/\/$/, "");
 
 /** Pricing keyed by product `code`. Empty object when the backend is unreachable. */
-export async function getPricing(): Promise<Record<string, PricingEntry>> {
-  try {
-    const res = await fetch(`${DJANGO_BASE}/payments/pricing/`, {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-    if (!res.ok) return {};
-    const rows = (await res.json()) as PricingEntry[];
-    return Object.fromEntries(rows.map((row) => [row.code, row]));
-  } catch {
-    return {};
-  }
-}
+export const getPricing = cache(
+  async (): Promise<Record<string, PricingEntry>> => {
+    try {
+      const res = await fetch(`${DJANGO_BASE}/payments/pricing/`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!res.ok) return {};
+      const rows = (await res.json()) as PricingEntry[];
+      return Object.fromEntries(rows.map((row) => [row.code, row]));
+    } catch {
+      return {};
+    }
+  },
+);
