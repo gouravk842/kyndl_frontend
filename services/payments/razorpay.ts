@@ -8,12 +8,25 @@ interface RazorpayHandlerResponse {
   razorpay_signature: string;
 }
 
+interface RazorpayFailureResponse {
+  error?: {
+    description?: string;
+    reason?: string;
+  };
+}
+
 interface RazorpayInstance {
   open: () => void;
+  on: (
+    event: string,
+    handler: (response: RazorpayFailureResponse) => void,
+  ) => void;
 }
 
 // Minimal shape of the global the SDK installs on `window`.
-type RazorpayConstructor = new (options: Record<string, unknown>) => RazorpayInstance;
+type RazorpayConstructor = new (
+  options: Record<string, unknown>,
+) => RazorpayInstance;
 
 declare global {
   interface Window {
@@ -26,7 +39,9 @@ let sdkPromise: Promise<void> | null = null;
 /** Load the Razorpay checkout SDK once, lazily (browser-only). */
 function loadSdk(): Promise<void> {
   if (typeof window === "undefined") {
-    return Promise.reject(new Error("Razorpay is only available in the browser."));
+    return Promise.reject(
+      new Error("Razorpay is only available in the browser."),
+    );
   }
   if (window.Razorpay) return Promise.resolve();
   if (sdkPromise) return sdkPromise;
@@ -35,7 +50,14 @@ function loadSdk(): Promise<void> {
     const script = document.createElement("script");
     script.src = SDK_SRC;
     script.async = true;
-    script.onload = () => resolve();
+    script.onload = () => {
+      if (!window.Razorpay) {
+        sdkPromise = null;
+        reject(new Error("Payment SDK unavailable."));
+        return;
+      }
+      resolve();
+    };
     script.onerror = () => {
       sdkPromise = null;
       reject(new Error("Could not load the payment SDK."));
@@ -43,6 +65,12 @@ function loadSdk(): Promise<void> {
     document.body.appendChild(script);
   });
   return sdkPromise;
+}
+
+function assertCheckoutParams(checkout: CheckoutParams): void {
+  if (!checkout.key_id?.trim() || !checkout.order_id?.trim()) {
+    throw new Error("Payment checkout is missing required provider fields.");
+  }
 }
 
 export interface CheckoutOptions {
@@ -60,11 +88,12 @@ export interface CheckoutOptions {
 export async function openRazorpayCheckout(
   options: CheckoutOptions,
 ): Promise<RazorpaySuccess | null> {
+  const { checkout, name, description, prefill } = options;
+  assertCheckoutParams(checkout);
+
   await loadSdk();
   const Razorpay = window.Razorpay;
   if (!Razorpay) throw new Error("Payment SDK unavailable.");
-
-  const { checkout, name, description, prefill } = options;
 
   return new Promise<RazorpaySuccess | null>((resolve, reject) => {
     let settled = false;
@@ -90,10 +119,23 @@ export async function openRazorpayCheckout(
         },
       },
     });
+
+    instance.on("payment.failed", (response) => {
+      if (settled) return;
+      settled = true;
+      const message =
+        response?.error?.description ||
+        response?.error?.reason ||
+        "Payment failed.";
+      reject(new Error(message));
+    });
+
     try {
       instance.open();
     } catch (err) {
-      reject(err instanceof Error ? err : new Error("Could not open checkout."));
+      reject(
+        err instanceof Error ? err : new Error("Could not open checkout."),
+      );
     }
   });
 }
