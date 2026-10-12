@@ -42,7 +42,9 @@ export function OurPlacesBuilder() {
         sync={sync}
         className="h-full w-[280px] shrink-0 border-r sm:w-[380px]"
       />
-      <div className="relative h-full flex-1">
+      {/* `isolate` keeps Leaflet's z-[1000] zoom controls from stacking above
+          the Add/Edit place modal (also z-1000) rendered from the panel. */}
+      <div className="relative isolate h-full flex-1">
         <BuilderMap />
         <button
           type="button"
