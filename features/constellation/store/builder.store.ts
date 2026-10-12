@@ -129,13 +129,21 @@ export const useBuilderStore = create<BuilderState>()(
       cloudLoaded: false,
 
       loadDoc: (doc, assets = {}) =>
-        set({
+        set((s) => {
           // A converted sky stores the memories and may omit the art the
           // panel reads (finale, tour, sound, scene). Fill only what's missing.
-          doc: completeSky(doc),
-          assets,
-          selectedId: doc.stars[0]?.id ?? null,
-          cloudLoaded: true,
+          // Preserve selection across asset-URL refreshes (same doc, new URLs).
+          const next = completeSky(doc);
+          const keepSelected =
+            s.selectedId && next.stars.some((st) => st.id === s.selectedId)
+              ? s.selectedId
+              : (next.stars[0]?.id ?? null);
+          return {
+            doc: next,
+            assets,
+            selectedId: keepSelected,
+            cloudLoaded: true,
+          };
         }),
 
       registerPreview: (fileId, previewUrl) =>

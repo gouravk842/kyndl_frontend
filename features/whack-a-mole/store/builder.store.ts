@@ -75,7 +75,7 @@ export const useBuilderStore = create<BuilderState>()(
         return localPreviews[ref.fileId] ?? assets[ref.fileId] ?? null;
       },
 
-      reset: () => set({ doc: starterDoc(), localPreviews: {} }),
+      reset: () => set({ doc: starterDoc(), assets: {}, localPreviews: {} }),
     }),
     {
       name: "kyndl:whack-a-mole-builder",

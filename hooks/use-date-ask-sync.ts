@@ -24,5 +24,11 @@ export function useDateAskSync(): MomentSync {
     doc,
     load,
     makeTitle: momentTitle,
+    resetDraft: () => useDateAskBuilder.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useDateAskBuilder.persist.hasHydrated(),
+      onFinishHydration: (fn) =>
+        useDateAskBuilder.persist.onFinishHydration(fn),
+    },
   });
 }

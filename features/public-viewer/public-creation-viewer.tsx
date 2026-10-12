@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Lock, Rocket, SearchX } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,10 @@ import type { JarConfig } from "@/features/memory-jar/config";
 import { MemoryPublicView } from "@/features/memory-pages/components/viewer/memory-public-view";
 import { OurPlacesPublicView } from "@/features/our-places/components/our-places-public-view";
 import { RecipientAftermath } from "@/features/recipient-aftermath/components/recipient-aftermath";
+import {
+  minAssetExpiresIn,
+  usePresignedAssetRefresh,
+} from "@/hooks/use-presigned-asset-refresh";
 import { withCallbackUrl } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { creationService } from "@/services/creations/creation.service";
@@ -25,13 +29,23 @@ import { MakeYourOwnFab } from "./make-your-own-fab";
 import { assetUrls, hasPublicViewer, renderPublicExperience } from "./registry";
 
 export function PublicCreationViewer({ token }: { token: string }) {
+  const queryKey = useMemo(() => ["public-creation", token] as const, [token]);
   const query = useQuery({
-    queryKey: ["public-creation", token],
+    queryKey,
     queryFn: () => creationService.getPublic(token),
     // 403/404 are definitive answers, not transient failures.
     retry: false,
+    // Asset URLs are short-lived; keep the query eligible to refetch soon, but
+    // never clear rendered data while a background refresh is in flight.
     staleTime: 60 * 1000,
+    refetchOnWindowFocus: true,
   });
+
+  usePresignedAssetRefresh(
+    queryKey,
+    minAssetExpiresIn(query.data?.assets),
+    query.isSuccess,
+  );
 
   if (query.isLoading) {
     return (

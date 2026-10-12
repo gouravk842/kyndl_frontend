@@ -29,5 +29,10 @@ export function useSpotifyPlaqueSync(): PlaqueSync {
     doc,
     load,
     makeTitle: plaqueTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

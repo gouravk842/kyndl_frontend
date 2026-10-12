@@ -27,5 +27,10 @@ export function useStringFrameSync(): StringFrameSync {
     doc,
     load,
     makeTitle: frameTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

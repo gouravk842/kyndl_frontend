@@ -25,5 +25,10 @@ export function useTwentyFourReasonsSync(): TwentyFourReasonsSync {
     doc,
     load,
     makeTitle: reasonsTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

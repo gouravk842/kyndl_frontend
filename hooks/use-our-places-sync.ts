@@ -20,5 +20,10 @@ export function useOurPlacesSync(): OurPlacesSync {
     doc,
     load,
     makeTitle: (content) => content.map.title,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

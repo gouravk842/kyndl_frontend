@@ -2,11 +2,16 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { queryKeys } from "@/constants/query-keys";
+import {
+  minAssetExpiresIn,
+  usePresignedAssetRefresh,
+} from "@/hooks/use-presigned-asset-refresh";
 import { creationService } from "@/services/creations/creation.service";
 import { useAuthStore } from "@/store/auth.store";
+import type { CreationAsset } from "@/types/creation";
 
 export type SyncStatus =
   | "disabled" // signed out — local draft only
@@ -38,6 +43,12 @@ export interface CreationSync {
   save: () => void;
 }
 
+/** Zustand persist hydration helpers used to wipe a draft after rehydrate. */
+export type DraftPersistApi = {
+  hasHydrated: () => boolean;
+  onFinishHydration: (fn: () => void) => () => void;
+};
+
 /** What a feature must provide to sync its builder store to the backend. */
 export interface CreationSyncConfig<TContent> {
   /** Registered experience slug, e.g. "memory-jar". */
@@ -52,6 +63,13 @@ export interface CreationSyncConfig<TContent> {
   load: (content: TContent, assets?: Record<string, string>) => void;
   /** Derives the dashboard card title from the document. */
   makeTitle: (content: TContent) => string;
+  /**
+   * Clears the local builder draft. Required with `draftPersist` so a fresh
+   * `/dashboard?new=<type>` does not reopen the last localStorage document.
+   */
+  resetDraft?: () => void;
+  /** Persist hydration API for the feature store (Zustand `persist`). */
+  draftPersist?: DraftPersistApi;
 }
 
 /**
@@ -69,7 +87,7 @@ export interface CreationSyncConfig<TContent> {
 export function useCreationSync<TContent>(
   config: CreationSyncConfig<TContent>,
 ): CreationSync {
-  const { type, doc, load, makeTitle } = config;
+  const { type, doc, load, makeTitle, resetDraft, draftPersist } = config;
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,28 +106,83 @@ export function useCreationSync<TContent>(
   // unsaved changes without deep-comparing.
   const [savedDoc, setSavedDoc] = useState<TContent | null>(null);
 
+  // A fresh `?new=<type>` must not reopen the last persisted draft. Wait for
+  // Zustand rehydrate so a late localStorage merge cannot undo the wipe.
+  // Sync hooks pass inline helpers — keep latest via effect-updated refs.
+  const resetDraftRef = useRef(resetDraft);
+  const draftPersistRef = useRef(draftPersist);
+  useEffect(() => {
+    resetDraftRef.current = resetDraft;
+    draftPersistRef.current = draftPersist;
+  }, [resetDraft, draftPersist]);
+
+  const wipedDraft = useRef(false);
+  useEffect(() => {
+    const reset = resetDraftRef.current;
+    const persistApi = draftPersistRef.current;
+    if (!reset || !persistApi) return;
+    if (searchParams.get("new") !== type || searchParams.get("id")) return;
+    const wipe = () => {
+      if (wipedDraft.current) return;
+      wipedDraft.current = true;
+      reset();
+      setSavedDoc(null);
+    };
+    if (persistApi.hasHydrated()) wipe();
+    return persistApi.onFinishHydration(wipe);
+  }, [type, searchParams]);
+
   // ----------------------------------------------------- load existing record
+  const detailQueryKey = queryKeys.creations.detail(creationId ?? undefined);
   const detailQuery = useQuery({
-    queryKey: queryKeys.creations.detail(creationId ?? undefined),
+    queryKey: detailQueryKey,
     queryFn: () => creationService.get<TContent>(creationId as string),
     enabled: enabled && !!creationId,
-    // The document is the source of truth once loaded; don't refetch on focus.
-    staleTime: Infinity,
+    // Document edits are local until Save; still allow asset-URL refreshes.
+    staleTime: 60 * 1000,
     refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
+
+  usePresignedAssetRefresh(
+    detailQueryKey,
+    minAssetExpiresIn(
+      detailQuery.data?.assets as Record<string, CreationAsset> | undefined,
+    ),
+    enabled && !!creationId && detailQuery.isSuccess,
+  );
+
+  // Keep latest doc/baseline in refs so asset-only refetches can avoid clobbering
+  // unsaved edits without re-running this effect on every keystroke.
+  const docRef = useRef(doc);
+  const savedDocRef = useRef(savedDoc);
+  useEffect(() => {
+    docRef.current = doc;
+    savedDocRef.current = savedDoc;
+  }, [doc, savedDoc]);
 
   useEffect(() => {
     if (!detailQuery.data) return;
     const { content, assets } = detailQuery.data;
-    const urls: Record<string, string> = {};
-    for (const [fileId, asset] of Object.entries(assets ?? {})) {
-      urls[fileId] = asset.url;
+    const urls = assetUrlMap(
+      assets as Record<string, CreationAsset> | undefined,
+    );
+    const baseline = savedDocRef.current;
+    const currentDoc = docRef.current;
+    const isDirty = baseline !== null && currentDoc !== baseline;
+
+    if (isDirty) {
+      // Refresh presigned URLs only — keep the in-progress local document.
+      load(currentDoc, urls);
+      return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate baseline from fetched data
+
     setSavedDoc(content);
     load(content, urls);
-  }, [detailQuery.data, load]);
+    // dataUpdatedAt: re-run when a background asset refresh lands, not on identity churn.
+    // detailQuery.data is read when dataUpdatedAt changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: refresh on dataUpdatedAt only
+  }, [detailQuery.dataUpdatedAt, load]);
 
   // ------------------------------------------------------------- mutations
   const createMutation = useMutation({
@@ -185,4 +258,16 @@ export function useCreationSync<TContent>(
     detailQuery.data?.public_token ?? createMutation.data?.public_token ?? null;
 
   return { status, enabled, creationId, publicToken, myRole, dirty, save };
+}
+
+function assetUrlMap(
+  assets: Record<string, CreationAsset> | undefined,
+): Record<string, string> {
+  const urls: Record<string, string> = {};
+  for (const [fileId, asset] of Object.entries(assets ?? {})) {
+    // Builders preview at full fidelity; prefer original here. Public viewers
+    // use pickAssetUrl / variants via `assetUrls()` instead.
+    urls[fileId] = asset.url;
+  }
+  return urls;
 }

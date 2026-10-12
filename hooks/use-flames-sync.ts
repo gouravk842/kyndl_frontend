@@ -19,5 +19,10 @@ export function useFlamesSync(): FlamesSync {
     doc,
     load,
     makeTitle: (d) => d.title.trim() || "FLAMES",
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

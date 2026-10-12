@@ -18,5 +18,9 @@ export async function GET(req: NextRequest, ctx: Context) {
     method: "GET",
     accessToken,
   });
-  return forward(result);
+  const response = forward(result);
+  // Presigned asset URLs inside the body must never be served from a shared
+  // HTTP cache after they expire.
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }

@@ -24,5 +24,11 @@ export function useProposalSync(): MomentSync {
     doc,
     load,
     makeTitle: momentTitle,
+    resetDraft: () => useProposalBuilder.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useProposalBuilder.persist.hasHydrated(),
+      onFinishHydration: (fn) =>
+        useProposalBuilder.persist.onFinishHydration(fn),
+    },
   });
 }

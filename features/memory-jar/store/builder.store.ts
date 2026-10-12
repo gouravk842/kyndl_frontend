@@ -103,7 +103,14 @@ export const useBuilderStore = create<BuilderState>()(
       localPreviews: {},
 
       loadDoc: (doc, assets = {}) =>
-        set({ doc, assets, selectedId: doc.notes[0]?.id ?? null }),
+        set((s) => ({
+          doc,
+          assets,
+          selectedId:
+            s.selectedId && doc.notes.some((n) => n.id === s.selectedId)
+              ? s.selectedId
+              : (doc.notes[0]?.id ?? null),
+        })),
 
       setMeta: (patch) => set((s) => ({ doc: { ...s.doc, ...patch } })),
 
@@ -196,7 +203,13 @@ export const useBuilderStore = create<BuilderState>()(
         return localPreviews[ref.fileId] ?? assets[ref.fileId] ?? null;
       },
 
-      reset: () => set({ doc: starterDoc(), selectedId: null }),
+      reset: () =>
+        set({
+          doc: starterDoc(),
+          selectedId: null,
+          assets: {},
+          localPreviews: {},
+        }),
     }),
     {
       name: "kyndl:memory-jar-builder",

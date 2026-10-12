@@ -173,7 +173,7 @@ export const useBuilderStore = create<BuilderState>()(
         return { ...assets, ...localPreviews };
       },
 
-      reset: () => set({ doc: starterDoc() }),
+      reset: () => set({ doc: starterDoc(), assets: {}, localPreviews: {} }),
     }),
     {
       name: "kyndl:memory-lantern-builder",

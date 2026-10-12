@@ -55,6 +55,8 @@ interface BuilderState {
 
   /** Photo URL to render for a place (local preview wins, else loaded asset). */
   photoUrl: (place: PlaceDoc) => string | null;
+
+  reset: () => void;
 }
 
 export const useBuilderStore = create<BuilderState>()(
@@ -66,7 +68,14 @@ export const useBuilderStore = create<BuilderState>()(
       localPreviews: {},
 
       loadDoc: (doc, assets = {}) =>
-        set({ doc, assets, selectedId: doc.places[0]?.id ?? null }),
+        set((s) => ({
+          doc,
+          assets,
+          selectedId:
+            s.selectedId && doc.places.some((p) => p.id === s.selectedId)
+              ? s.selectedId
+              : (doc.places[0]?.id ?? null),
+        })),
 
       setMap: (patch) =>
         set((s) => ({ doc: { ...s.doc, map: { ...s.doc.map, ...patch } } })),
@@ -159,6 +168,14 @@ export const useBuilderStore = create<BuilderState>()(
           null
         );
       },
+
+      reset: () =>
+        set({
+          doc: starterDoc(),
+          selectedId: null,
+          assets: {},
+          localPreviews: {},
+        }),
     }),
     {
       name: "kyndl:our-places-builder",

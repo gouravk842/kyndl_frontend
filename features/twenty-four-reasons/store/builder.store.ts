@@ -91,12 +91,16 @@ export const useBuilderStore = create<BuilderState>()(
       previewOffsetMs: 0,
 
       loadDoc: (doc, assets = {}) =>
-        set({
+        set((s) => ({
           doc,
           assets,
-          selectedId: doc.reasons[0]?.id ?? null,
-          previewOffsetMs: 0,
-        }),
+          selectedId:
+            s.selectedId && doc.reasons.some((r) => r.id === s.selectedId)
+              ? s.selectedId
+              : (doc.reasons[0]?.id ?? null),
+          // Keep scrub position across silent asset-URL refreshes.
+          previewOffsetMs: s.previewOffsetMs,
+        })),
 
       setMeta: (patch) => set((s) => ({ doc: { ...s.doc, ...patch } })),
 

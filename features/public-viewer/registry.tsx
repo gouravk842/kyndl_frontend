@@ -32,7 +32,7 @@ import type { TimeCapsuleConfig } from "@/features/time-capsule/config";
 import type { TimelessTreasureConfig } from "@/features/timeless-treasure/config";
 import type { TwentyFourReasonsContent } from "@/features/twenty-four-reasons/config";
 import type { WhackAMoleConfig } from "@/features/whack-a-mole/config";
-import type { CreationAsset } from "@/types/creation";
+import { type CreationAsset, pickAssetUrl } from "@/types/creation";
 
 /**
  * The audience-facing renderer for each experience type. A published creation's
@@ -413,13 +413,20 @@ export function hasPublicViewer(type: string): boolean {
   return type in PUBLIC_VIEWERS;
 }
 
-/** Resolve `assets` (fileId → CreationAsset) down to plain fileId → URL. */
+/**
+ * Resolve `assets` (fileId → CreationAsset) down to plain fileId → URL.
+ *
+ * Prefers an EXIF-stripped derived variant whose long edge is at least
+ * `minEdge` (default 1280 ≈ `medium`) so public viewers don't pull GPS-bearing
+ * originals into album frames. Falls back to the original while processing.
+ */
 export function assetUrls(
   assets: Record<string, CreationAsset> | undefined,
+  minEdge = 1280,
 ): Record<string, string> {
   const urls: Record<string, string> = {};
   for (const [fileId, asset] of Object.entries(assets ?? {})) {
-    urls[fileId] = asset.url;
+    urls[fileId] = pickAssetUrl(asset, minEdge) ?? asset.url;
   }
   return urls;
 }

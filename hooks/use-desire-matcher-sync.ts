@@ -25,5 +25,10 @@ export function useDesireMatcherSync(): DesireMatcherSync {
     doc,
     load,
     makeTitle: matcherTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

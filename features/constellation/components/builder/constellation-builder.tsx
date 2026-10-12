@@ -1,7 +1,6 @@
 "use client";
 
 import { RefreshCw, X } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useConstellationSync } from "@/hooks/use-constellation-sync";
@@ -40,7 +39,6 @@ export function ConstellationBuilder() {
   const assets = useBuilderStore((s) => s.assets);
   const localPreviews = useBuilderStore((s) => s.localPreviews);
   const previewAssets = { ...assets, ...localPreviews };
-  const params = useSearchParams();
 
   const boardRef = useRef<HTMLDivElement>(null);
   const draggingId = useRef<number | null>(null);
@@ -49,22 +47,6 @@ export function ConstellationBuilder() {
   const [previewing, setPreviewing] = useState(false);
   const [boardCamera, setBoardCamera] = useState<FieldCamera | null>(null);
   const camera = boardCamera ?? cameraHome(doc.stars, false);
-
-  // A fresh `?new=constellation` must not reopen the last persisted draft.
-  // When `?id=` is present, the sync hook loads the server sky and the store
-  // refuses a late localStorage rehydrate (see `cloudLoaded`).
-  const wiped = useRef(false);
-  useEffect(() => {
-    if (params.get("new") !== "constellation" || params.get("id")) return;
-    const reset = () => {
-      if (wiped.current) return;
-      wiped.current = true;
-      useBuilderStore.getState().reset();
-      setBoardCamera(null);
-    };
-    if (useBuilderStore.persist.hasHydrated()) reset();
-    return useBuilderStore.persist.onFinishHydration(reset);
-  }, [params]);
 
   useEffect(() => {
     const el = boardRef.current;

@@ -25,5 +25,10 @@ export function useMirrorMatchSync(): MirrorMatchSync {
     doc,
     load,
     makeTitle: mirrorTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

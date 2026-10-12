@@ -31,7 +31,10 @@ export async function GET(req: NextRequest, ctx: Context) {
     method: "GET",
     accessToken,
   });
-  return forward(result);
+  const response = forward(result);
+  // Detail payloads embed short-lived media signatures — never HTTP-cache them.
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 // Save the document (partial update).

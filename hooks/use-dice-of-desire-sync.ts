@@ -27,5 +27,10 @@ export function useDiceOfDesireSync(): DiceOfDesireSync {
     doc,
     load,
     makeTitle: gameTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

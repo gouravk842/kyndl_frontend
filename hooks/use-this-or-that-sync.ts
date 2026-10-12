@@ -19,5 +19,10 @@ export function useThisOrThatSync(): ThisOrThatSync {
     doc,
     load,
     makeTitle: (d) => d.title.trim() || "This or That",
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

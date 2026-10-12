@@ -24,5 +24,10 @@ export function useChocolateBouquetSync(): ChocolateBouquetSync {
     doc,
     load,
     makeTitle: bouquetTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

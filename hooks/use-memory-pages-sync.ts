@@ -20,5 +20,10 @@ export function useMemoryPagesSync(): MemoryPagesSync {
     doc,
     load,
     makeTitle: (content) => content.title,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

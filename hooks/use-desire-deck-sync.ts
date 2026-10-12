@@ -27,5 +27,10 @@ export function useDesireDeckSync(): DesireDeckSync {
     doc,
     load,
     makeTitle: deckTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

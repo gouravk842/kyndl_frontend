@@ -32,5 +32,10 @@ export function useLudoSync(): LudoSync {
     doc,
     load,
     makeTitle: ludoTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

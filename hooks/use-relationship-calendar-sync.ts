@@ -20,5 +20,10 @@ export function useRelationshipCalendarSync(): RelationshipCalendarSync {
     doc,
     load,
     makeTitle: (content) => content.title || "Our Calendar",
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

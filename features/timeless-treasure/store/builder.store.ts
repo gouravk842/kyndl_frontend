@@ -159,7 +159,7 @@ export const useBuilderStore = create<BuilderState>()(
         return localPreviews[ref.fileId] ?? assets[ref.fileId] ?? null;
       },
 
-      reset: () => set({ doc: starterDoc() }),
+      reset: () => set({ doc: starterDoc(), assets: {}, localPreviews: {} }),
     }),
     {
       name: "kyndl:timeless-treasure-builder",

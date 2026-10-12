@@ -364,6 +364,7 @@ export const useBuilderStore = create<BuilderState>()(
           story: fresh,
           selectedPageId: fresh.pages[0]!.id,
           selectedElementId: null,
+          chosen: false,
         });
       },
 

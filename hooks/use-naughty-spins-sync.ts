@@ -27,5 +27,10 @@ export function useNaughtySpinsSync(): NaughtySpinsSync {
     doc,
     load,
     makeTitle: wheelTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

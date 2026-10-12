@@ -29,5 +29,10 @@ export function useCountdownSync(): CountdownSync {
     doc,
     load,
     makeTitle: countdownTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

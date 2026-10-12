@@ -57,6 +57,8 @@ interface BuilderState {
   setPhoto: (id: string, fileId: string, previewUrl: string) => void;
   removePhoto: (id: string) => void;
   photoUrl: (event: CalendarEvent) => string | null;
+
+  reset: () => void;
 }
 
 const now = new Date();
@@ -198,6 +200,14 @@ export const useBuilderStore = create<BuilderState>()(
           null
         );
       },
+
+      reset: () =>
+        set({
+          doc: starterDoc(),
+          selectedId: null,
+          assets: {},
+          localPreviews: {},
+        }),
     }),
     {
       name: "kyndl:relationship-calendar-builder",

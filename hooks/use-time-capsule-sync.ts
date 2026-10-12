@@ -30,5 +30,10 @@ export function useTimeCapsuleSync(): TimeCapsuleSync {
     doc,
     load,
     makeTitle: capsuleTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

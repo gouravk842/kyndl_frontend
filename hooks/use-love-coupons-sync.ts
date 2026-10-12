@@ -25,5 +25,10 @@ export function useLoveCouponsSync(): LoveCouponsSync {
     doc,
     load,
     makeTitle: bookTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

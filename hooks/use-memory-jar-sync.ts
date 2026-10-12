@@ -27,5 +27,10 @@ export function useMemoryJarSync(): MemoryJarSync {
     doc,
     load,
     makeTitle: jarTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }

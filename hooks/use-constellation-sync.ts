@@ -24,5 +24,10 @@ export function useConstellationSync(): ConstellationSync {
     doc,
     load,
     makeTitle: skyTitle,
+    resetDraft: () => useBuilderStore.getState().reset(),
+    draftPersist: {
+      hasHydrated: () => useBuilderStore.persist.hasHydrated(),
+      onFinishHydration: (fn) => useBuilderStore.persist.onFinishHydration(fn),
+    },
   });
 }
