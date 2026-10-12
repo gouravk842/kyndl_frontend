@@ -11,6 +11,8 @@
  * twenty surface-level ones — aim for 6–15.
  */
 
+import { clientEnv } from "@/config/env";
+
 export type PlaceCategory =
   | "first" // firsts — first date, first trip, first kiss
   | "trip" // travel and getaways
@@ -70,18 +72,24 @@ export type MapConfig = {
 };
 
 /**
- * Ready-made base maps. All are free and need no API key, so the gift never
- * breaks on a billing wall.
+ * Ready-made base maps via CARTO raster tiles. Since Sep 2026 these require
+ * `NEXT_PUBLIC_CARTO_API_KEY` (free tier at https://carto.com/basemaps/apikey/).
+ * Without a key the CDN serves an "API key required" placeholder instead of
+ * the basemap. Positron is warmed toward cream by `our-places.css`.
  *
- * NOTE: the classic Stamen Watercolor tiles were retired in 2023 (they moved to
- * Stadia Maps and now require an account + key), so they are intentionally not
- * offered here. CartoDB Positron, warmed with a CSS filter, gives the painterly,
- * romantic feel without a key.
+ * NOTE: Stamen Watercolor was retired in 2023 (now Stadia Maps + key), so it
+ * is intentionally not offered here.
  */
+function cartoTileUrl(path: string): string {
+  const key = clientEnv.NEXT_PUBLIC_CARTO_API_KEY?.trim();
+  const base = `https://{s}.basemaps.cartocdn.com/${path}/{z}/{x}/{y}{r}.png`;
+  return key ? `${base}?key=${encodeURIComponent(key)}` : base;
+}
+
 export const TILE_STYLES = {
   /** Clean, minimal, light — warmed toward cream by `our-places.css`. */
   positron: {
-    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    url: cartoTileUrl("light_all"),
     attribution: "© OpenStreetMap contributors © CARTO",
     subdomains: "abcd",
     minZoom: 3,
@@ -89,7 +97,7 @@ export const TILE_STYLES = {
   },
   /** Softer, more illustrated streets — a gentle alternative. */
   voyager: {
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    url: cartoTileUrl("rastertiles/voyager"),
     attribution: "© OpenStreetMap contributors © CARTO",
     subdomains: "abcd",
     minZoom: 3,

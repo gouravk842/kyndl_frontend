@@ -17,6 +17,10 @@ const clientSchema = z.object({
   // Google Analytics 4 measurement id (G-XXXXXXXX). Optional — GA is disabled
   // when unset so local/dev builds don't need a property.
   NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().optional(),
+  // CARTO Basemaps API key for Our Places raster tiles. Optional — without it
+  // tiles render as the "API key required" placeholder (required since Sep 2026).
+  // Get one free at https://carto.com/basemaps/apikey/
+  NEXT_PUBLIC_CARTO_API_KEY: z.string().optional(),
   NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS: z
     .enum(["true", "false"])
     .default("false")
@@ -47,6 +51,7 @@ export const clientEnv = parseEnv(clientSchema, {
   NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
   NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+  NEXT_PUBLIC_CARTO_API_KEY: process.env.NEXT_PUBLIC_CARTO_API_KEY,
   NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS:
     process.env.NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS,
 });
