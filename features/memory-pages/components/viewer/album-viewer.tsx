@@ -12,6 +12,7 @@ import {
 } from "react";
 import HTMLFlipBook from "react-pageflip";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import { playFlipSound } from "@/features/scrapbook/components/viewer/flip-sound";
 import { cn } from "@/lib/utils";
 
@@ -217,11 +218,11 @@ function AlbumCover({
         {cover && (
           <div className="bg-[#fdfaf1] p-2 shadow-[0_14px_30px_-14px_rgba(80,52,25,0.55)]">
             <div className="border border-[#c2a266] p-[3px]">
-              {/* eslint-disable-next-line @next/next/no-img-element -- presigned/object URL */}
-              <img
+              <KeepsakeImage
                 src={cover}
-                alt=""
-                className="aspect-square w-[150px] object-cover"
+                alt="Cover photo"
+                className="aspect-square w-[150px]"
+                imgClassName="aspect-square w-[150px] object-cover"
               />
             </div>
           </div>
@@ -565,11 +566,7 @@ export function AlbumViewer({
           active={autoOn}
           onClick={() => setAutoOn((v) => !v)}
         >
-          {autoOn ? (
-            <Pause className="size-4" />
-          ) : (
-            <Play className="size-4" />
-          )}
+          {autoOn ? <Pause className="size-4" /> : <Play className="size-4" />}
         </Toggle>
         <Toggle
           label={muted ? "Unmute page-turn sound" : "Mute page-turn sound"}

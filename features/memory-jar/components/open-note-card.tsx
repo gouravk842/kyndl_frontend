@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import type { JarNote } from "@/features/memory-jar/config";
 
 type OpenNoteCardProps = {
@@ -87,7 +88,10 @@ export function OpenNoteCard({
       <div
         aria-hidden
         className="absolute inset-0"
-        style={{ background: "rgba(40,25,15,0.5)", backdropFilter: "blur(2px)" }}
+        style={{
+          background: "rgba(40,25,15,0.5)",
+          backdropFilter: "blur(2px)",
+        }}
       />
 
       <motion.div
@@ -147,11 +151,11 @@ export function OpenNoteCard({
             </p>
             {imageUrl ? (
               <div className="mx-auto mb-3 max-w-[80%] overflow-hidden rounded-sm shadow-[0_4px_14px_rgba(40,25,15,0.25)]">
-                {/* eslint-disable-next-line @next/next/no-img-element -- transient/presigned URL */}
-                <img
+                <KeepsakeImage
                   src={imageUrl}
                   alt={note.title}
-                  className="max-h-56 w-full object-cover"
+                  className="max-h-56 w-full"
+                  imgClassName="max-h-56 w-full object-cover"
                 />
               </div>
             ) : null}
@@ -252,12 +256,16 @@ function ScrollRoll() {
       <span
         aria-hidden
         className="absolute left-0 top-0 h-full w-4 rounded-full"
-        style={{ background: "radial-gradient(circle at 60% 40%, #d8bf90, #b7965f)" }}
+        style={{
+          background: "radial-gradient(circle at 60% 40%, #d8bf90, #b7965f)",
+        }}
       />
       <span
         aria-hidden
         className="absolute right-0 top-0 h-full w-4 rounded-full"
-        style={{ background: "radial-gradient(circle at 40% 40%, #d8bf90, #b7965f)" }}
+        style={{
+          background: "radial-gradient(circle at 40% 40%, #d8bf90, #b7965f)",
+        }}
       />
     </div>
   );

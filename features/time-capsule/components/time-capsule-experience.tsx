@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Lock, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import { useMounted } from "@/hooks/use-mounted";
 import { formatInUserTz } from "@/lib/datetime";
 
@@ -263,12 +264,14 @@ function OpenedCapsule({
         {photos.length > 0 && (
           <div className="mt-8 grid grid-cols-2 gap-3">
             {photos.map((url, i) => (
-              // eslint-disable-next-line @next/next/no-img-element -- transient/presigned URL
-              <img
+              <KeepsakeImage
                 key={i}
                 src={url}
-                alt=""
-                className="aspect-[4/3] w-full rounded-xl object-cover shadow-sm"
+                alt={`Capsule photo ${i + 1}`}
+                className="aspect-[4/3] w-full rounded-xl shadow-sm"
+                imgClassName="aspect-[4/3] w-full object-cover"
+                gallery={photos}
+                galleryIndex={i}
               />
             ))}
           </div>

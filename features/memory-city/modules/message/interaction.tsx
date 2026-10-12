@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import Image from "next/image";
 import { useEffect } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import type { ModuleInteractionProps } from "@/features/unlocks";
 
 import { MOOD_COLORS, MOOD_LABELS } from "../../types";
@@ -64,13 +65,19 @@ export default function MessageInteraction({
 
         <div className="relative h-64 w-full shrink-0 overflow-hidden">
           {config.imageUrl ? (
-            <Image
+            <KeepsakeImage
               src={config.imageUrl}
               alt={config.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 28rem"
-              className="object-cover"
-            />
+              className="absolute inset-0"
+            >
+              <Image
+                src={config.imageUrl}
+                alt={config.title}
+                fill
+                sizes="(max-width: 768px) 100vw, 28rem"
+                className="object-cover"
+              />
+            </KeepsakeImage>
           ) : (
             <div
               className="h-full w-full"

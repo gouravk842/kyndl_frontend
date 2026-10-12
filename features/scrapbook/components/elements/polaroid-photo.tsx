@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import { cn } from "@/lib/utils";
 
 import { AssetSlot } from "./asset-slot";
@@ -43,13 +44,12 @@ export function PolaroidPhoto({
         )}
       >
         {showImage ? (
-          // eslint-disable-next-line @next/next/no-img-element -- local user-supplied assets; graceful onError fallback to a slot
-          <img
+          <KeepsakeImage
             src={src}
-            alt={alt}
-            draggable={false}
+            alt={alt || "Scrapbook photo"}
+            className="h-full w-full"
+            imgClassName="h-full w-full object-cover"
             onError={() => setFailed(true)}
-            className="h-full w-full object-cover"
           />
         ) : (
           <AssetSlot kind="photo" hint={src?.split("/").pop()} />

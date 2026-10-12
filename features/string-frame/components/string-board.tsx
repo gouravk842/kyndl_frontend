@@ -3,6 +3,8 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ImagePlus } from "lucide-react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
+
 import type { FrameTheme, StringFrameConfig } from "../config";
 
 /** How many photo-leaves hang from one branch before a new row starts. */
@@ -80,13 +82,18 @@ export function StringBoard({
       {/* The hanging photo-leaves */}
       <div className="relative z-10 mt-2 space-y-8">
         {rows.map((row, r) => (
-          <div key={r} className="flex items-start justify-center gap-4 sm:gap-6">
+          <div
+            key={r}
+            className="flex items-start justify-center gap-4 sm:gap-6"
+          >
             {row.map((url, i) => {
               const idx = r * PER_ROW + i;
               return (
                 <HangingPhoto
                   key={`${r}-${i}`}
                   url={url}
+                  gallery={photoUrls}
+                  galleryIndex={idx}
                   twine={theme.twine}
                   clip={theme.clip}
                   leaf={LEAF_COLORS[idx % LEAF_COLORS.length]!}
@@ -118,7 +125,10 @@ export function StringBoard({
 /** A weathered driftwood branch spanning the top, with a leafy sprig. */
 function Branch() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 z-0"
+    >
       <svg viewBox="0 0 430 46" className="h-auto w-full" fill="none">
         <defs>
           <linearGradient id="sf-bark" x1="0" y1="0" x2="0" y2="1">
@@ -147,14 +157,8 @@ function Branch() {
         />
         {/* a small leafy sprig off the right end */}
         <g transform="translate(392 6)">
-          <path
-            d="M0 8 C10 -4 24 -6 34 2 C22 6 10 10 0 8 Z"
-            fill="#6f9a44"
-          />
-          <path
-            d="M4 12 C12 4 26 4 34 12 C24 16 12 18 4 12 Z"
-            fill="#8bad3f"
-          />
+          <path d="M0 8 C10 -4 24 -6 34 2 C22 6 10 10 0 8 Z" fill="#6f9a44" />
+          <path d="M4 12 C12 4 26 4 34 12 C24 16 12 18 4 12 Z" fill="#8bad3f" />
         </g>
       </svg>
     </div>
@@ -225,9 +229,21 @@ function NameCluster({
       </div>
 
       {/* emblems tucked among the leaves */}
-      <Emblem className="absolute -top-2 -left-3 w-6" kind="heart" color="#e0574f" />
-      <Emblem className="absolute -top-3 right-2 w-8" kind="glasses" color="#3f2b16" />
-      <Emblem className="absolute -bottom-1 -left-4 w-7" kind="infinity" color="#3f2b16" />
+      <Emblem
+        className="absolute -top-2 -left-3 w-6"
+        kind="heart"
+        color="#e0574f"
+      />
+      <Emblem
+        className="absolute -top-3 right-2 w-8"
+        kind="glasses"
+        color="#3f2b16"
+      />
+      <Emblem
+        className="absolute -bottom-1 -left-4 w-7"
+        kind="infinity"
+        color="#3f2b16"
+      />
 
       {/* the name */}
       <div className="relative px-5 py-3">
@@ -249,13 +265,7 @@ const LEAF_FAN = [
 ];
 
 /** The big name, each letter drawn in the next colour of the palette. */
-function ColorfulName({
-  name,
-  palette,
-}: {
-  name: string;
-  palette: string[];
-}) {
+function ColorfulName({ name, palette }: { name: string; palette: string[] }) {
   const chars = [...name];
   let colorIdx = 0;
   return (
@@ -292,6 +302,8 @@ function ColorfulName({
 /** One photo hung from the branch on twine, clasped by a little metal leaf. */
 function HangingPhoto({
   url,
+  gallery,
+  galleryIndex,
   twine,
   clip,
   leaf,
@@ -301,6 +313,8 @@ function HangingPhoto({
   sway,
 }: {
   url: string | null;
+  gallery: string[];
+  galleryIndex: number;
   twine: string;
   clip: string;
   leaf: string;
@@ -349,10 +363,22 @@ function HangingPhoto({
 
         {/* the print */}
         <div className="relative z-10 mt-1 w-full overflow-hidden rounded-[4px] border-[3px] border-[#faf6ee] bg-[#faf6ee] shadow-[0_10px_18px_-8px_rgba(30,22,10,0.6)]">
-          <div className="aspect-[3/4] w-full" style={{ background: "#e7ded2" }}>
+          <div
+            className="aspect-[3/4] w-full"
+            style={{ background: "#e7ded2" }}
+          >
             {url ? (
-              // eslint-disable-next-line @next/next/no-img-element -- transient/presigned URL
-              <img src={url} alt="" className="h-full w-full object-cover" />
+              <KeepsakeImage
+                src={url}
+                alt="Hanging photo"
+                className="h-full w-full"
+                imgClassName="h-full w-full object-cover"
+                gallery={gallery}
+                galleryIndex={Math.min(
+                  galleryIndex,
+                  Math.max(gallery.length - 1, 0),
+                )}
+              />
             ) : (
               <div className="grid h-full place-items-center text-[#b6a998]">
                 <ImagePlus className="size-5" />
@@ -379,10 +405,7 @@ function Leaf({ color, width }: { color: string; width: number }) {
       fill="none"
       aria-hidden
     >
-      <path
-        d="M50 3 C20 26 18 74 50 117 C82 74 80 26 50 3 Z"
-        fill={color}
-      />
+      <path d="M50 3 C20 26 18 74 50 117 C82 74 80 26 50 3 Z" fill={color} />
       {/* a soft highlight down one side */}
       <path
         d="M50 8 C26 30 25 70 50 110 C50 70 50 40 50 8 Z"
@@ -396,7 +419,12 @@ function Leaf({ color, width }: { color: string; width: number }) {
         strokeLinecap="round"
       />
       {[26, 44, 62, 80].map((y, i) => (
-        <g key={i} stroke="rgba(0,0,0,0.2)" strokeWidth="1.4" strokeLinecap="round">
+        <g
+          key={i}
+          stroke="rgba(0,0,0,0.2)"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        >
           <path d={`M50 ${y} C40 ${y + 2} 34 ${y + 8} 30 ${y + 14}`} />
           <path d={`M50 ${y} C60 ${y + 2} 66 ${y + 8} 70 ${y + 14}`} />
         </g>
@@ -461,7 +489,10 @@ function Emblem({
       )}
       {kind === "infinity" && (
         <svg viewBox="0 0 44 20" className="w-full">
-          <path {...common} d="M12 10c0-4-6-4-6 0s6 4 8 0c2-4 8-4 8 0s-6 4-8 0" />
+          <path
+            {...common}
+            d="M12 10c0-4-6-4-6 0s6 4 8 0c2-4 8-4 8 0s-6 4-8 0"
+          />
         </svg>
       )}
     </div>

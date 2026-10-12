@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
+
 /**
  * Dark metal frame from the stage asset. The photo sits inside the gold
  * stroke, drops onto the podium, and a sheen crosses the glass as it settles.
@@ -52,12 +54,11 @@ export function HeroMemory({
         }}
       >
         {url ? (
-          // eslint-disable-next-line @next/next/no-img-element -- presigned or object URL
-          <img
+          <KeepsakeImage
             src={url}
             alt={caption || "A memory"}
-            draggable={false}
-            className="h-full w-full object-cover"
+            className="h-full w-full"
+            imgClassName="h-full w-full object-cover"
           />
         ) : (
           <div className="h-full w-full" style={{ background: glow }} />

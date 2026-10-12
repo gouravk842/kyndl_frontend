@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import type { Star } from "@/features/constellation/config";
 import { formatInUserTz } from "@/lib/datetime";
 
@@ -87,11 +88,11 @@ export function MemoryCard({ star, imageUrl, onClose }: MemoryCardProps) {
                   "0 0 40px 12px rgba(255, 236, 210, 0.35), 0 0 0 1px rgba(255,255,255,0.35)",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- uploaded/presigned or /public URL */}
-              <img
+              <KeepsakeImage
                 src={imageUrl}
                 alt={star.label}
-                className="h-full w-full object-cover"
+                className="h-full w-full rounded-full"
+                imgClassName="h-full w-full object-cover"
               />
             </div>
           </div>

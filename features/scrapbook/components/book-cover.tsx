@@ -2,6 +2,7 @@
 
 import { forwardRef, useState } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import { cn } from "@/lib/utils";
 
 import { AssetSlot } from "./elements/asset-slot";
@@ -94,13 +95,12 @@ export const BookCover = forwardRef<HTMLDivElement, BookCoverProps>(
             <div className="mt-6 h-32 w-32 rotate-[-3deg] rounded-[3px] bg-[#f5e9e2] p-1.5 shadow-lg transition-transform duration-500 group-hover:-translate-y-1 group-hover:rotate-[-1deg]">
               <div className="relative h-full w-full overflow-hidden bg-[#efe4d6]">
                 {showPhoto ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- local cover asset with onError fallback
-                  <img
+                  <KeepsakeImage
                     src={coverPhoto}
-                    alt=""
-                    draggable={false}
+                    alt="Cover photo"
+                    className="h-full w-full"
+                    imgClassName="h-full w-full object-cover"
                     onError={() => setPhotoFailed(true)}
-                    className="h-full w-full object-cover"
                   />
                 ) : (
                   <AssetSlot kind="photo" hint="cover.jpg" />

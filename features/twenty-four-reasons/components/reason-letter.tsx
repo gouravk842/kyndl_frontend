@@ -5,6 +5,8 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
+
 import type { Reason } from "../config";
 import { OpeningHand, type OpeningPhase } from "./opening-hand";
 
@@ -327,14 +329,21 @@ export function ReasonLetter({
                     ) : null}
 
                     {imageUrl ? (
-                      <motion.img
+                      <KeepsakeImage
                         src={imageUrl}
-                        alt=""
-                        className="mt-5 max-h-64 w-full rounded-xl object-cover shadow-[0_12px_30px_rgba(90,50,35,0.15)]"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.25 }}
-                      />
+                        alt="Reason photo"
+                        className="mt-5 max-h-64 w-full rounded-xl shadow-[0_12px_30px_rgba(90,50,35,0.15)]"
+                        disableHoverScale
+                      >
+                        <motion.img
+                          src={imageUrl}
+                          alt=""
+                          className="max-h-64 w-full rounded-xl object-cover"
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.25 }}
+                        />
+                      </KeepsakeImage>
                     ) : null}
 
                     {audioUrl ? (

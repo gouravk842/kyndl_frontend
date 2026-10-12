@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import { cn } from "@/lib/utils";
 
 import { CATEGORY_GLYPH, CATEGORY_LABELS, SAMPLE_DOC } from "../config";
@@ -189,8 +190,12 @@ function MemoryDetailSheet({
             className="relative z-10 w-full max-w-md overflow-hidden rounded-t-2xl bg-[#fffaf4] shadow-2xl sm:rounded-2xl"
           >
             {photoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- presigned URL
-              <img src={photoUrl} alt="" className="h-48 w-full object-cover" />
+              <KeepsakeImage
+                src={photoUrl}
+                alt={event.title}
+                className="h-48 w-full"
+                imgClassName="h-48 w-full object-cover"
+              />
             )}
             <div className="px-5 py-5">
               <div className="flex items-start justify-between gap-3">

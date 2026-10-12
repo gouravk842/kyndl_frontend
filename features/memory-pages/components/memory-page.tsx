@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useRef, useState } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -188,14 +189,13 @@ function FramedPhoto({
       <div className="border border-[#c2a266] p-[3px]">
         <div className="relative aspect-[4/3] overflow-hidden bg-[#e9dfc9]">
           {url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- local user-supplied / presigned asset
-            <img
+            <KeepsakeImage
               src={url}
-              alt=""
-              draggable={false}
+              alt="Album photo"
+              className="h-full w-full"
               // `contain` so nothing gets cropped — portrait docs (ID cards,
               // marksheets) and landscape photos both sit fully inside the mat.
-              className="h-full w-full object-contain"
+              imgClassName="h-full w-full object-contain"
             />
           ) : (
             <span className="absolute inset-0 grid place-items-center text-[#b29a6f]">

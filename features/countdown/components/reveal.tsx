@@ -2,6 +2,8 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
+
 import type { CountdownConfig, CountdownTheme } from "../config";
 
 /**
@@ -52,12 +54,23 @@ export function Reveal({
         <motion.div
           className="mx-auto mt-7 w-full max-w-sm overflow-hidden rounded-2xl border shadow-2xl"
           style={{ borderColor: theme.cardBorder }}
-          initial={reduceMotion ? false : { opacity: 0, scale: 0.92, rotate: -2 }}
+          initial={
+            reduceMotion ? false : { opacity: 0, scale: 0.92, rotate: -2 }
+          }
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ delay: 0.45, type: "spring", stiffness: 140, damping: 16 }}
+          transition={{
+            delay: 0.45,
+            type: "spring",
+            stiffness: 140,
+            damping: 16,
+          }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- transient/presigned URL */}
-          <img src={imageUrl} alt="" className="h-auto w-full object-cover" />
+          <KeepsakeImage
+            src={imageUrl}
+            alt="Reveal photo"
+            className="h-auto w-full"
+            imgClassName="h-auto w-full object-cover"
+          />
         </motion.div>
       )}
 

@@ -6,7 +6,15 @@ import "../our-places.css";
 import L from "leaflet";
 import { MapPin, Pause, Play, SkipBack, SkipForward, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, Marker, Polyline, TileLayer, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  Marker,
+  Polyline,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 
 import { CATEGORY_META, MOOD_COLORS, type Place, TILE_STYLES } from "../config";
 import { pinHtml } from "../lib/map-helpers";
@@ -64,7 +72,8 @@ export function OurPlacesReadOnlyMap({
     }
     openAt(i);
   };
-  const goPrev = () => openAt(Math.max(0, (activeIndex < 0 ? 0 : activeIndex) - 1));
+  const goPrev = () =>
+    openAt(Math.max(0, (activeIndex < 0 ? 0 : activeIndex) - 1));
   const togglePlay = () => {
     if (playing) {
       setPlaying(false);
@@ -142,7 +151,11 @@ export function OurPlacesReadOnlyMap({
             }}
             interactive={false}
           />
-          <PreviewPins places={places} activeId={activeId} onSelect={selectPlace} />
+          <PreviewPins
+            places={places}
+            activeId={activeId}
+            onSelect={selectPlace}
+          />
           <TourCamera active={active} places={places} flyZoom={flyZoom} />
         </MapContainer>
       ) : (
@@ -159,7 +172,9 @@ export function OurPlacesReadOnlyMap({
           {doc.map.title || "Our Places"}
         </h1>
         {doc.map.subtitle && (
-          <p className="mt-1 font-hand text-lg text-[#c75b39]">{doc.map.subtitle}</p>
+          <p className="mt-1 font-hand text-lg text-[#c75b39]">
+            {doc.map.subtitle}
+          </p>
         )}
         <p className="mt-1 text-xs font-medium tracking-wide text-[#92786c] uppercase">
           {places.length} {places.length === 1 ? "place" : "places"}
@@ -299,8 +314,12 @@ function PreviewCard({
     <div className="overflow-hidden rounded-2xl border border-[#f2dace] bg-[#fffaf4] shadow-[0_24px_60px_-24px_rgba(58,42,37,0.6)]">
       {photo && (
         <div className="relative h-44 w-full">
-          {/* eslint-disable-next-line @next/next/no-img-element -- presigned URL */}
-          <img src={photo} alt="" className="h-full w-full object-cover" />
+          <KeepsakeImage
+            src={photo}
+            alt={place.name || "Place photo"}
+            className="h-full w-full"
+            imgClassName="h-full w-full object-cover"
+          />
         </div>
       )}
       <div className="space-y-2.5 p-5">
@@ -448,7 +467,10 @@ function TourCamera({
       const tick = (now: number) => {
         const t = Math.min(1, (now - start) / DURATION);
         const e = easeInOut(t);
-        plane.setLatLng([a.lat + (b.lat - a.lat) * e, a.lng + (b.lng - a.lng) * e]);
+        plane.setLatLng([
+          a.lat + (b.lat - a.lat) * e,
+          a.lng + (b.lng - a.lng) * e,
+        ]);
         if (t < 1) {
           rafRef.current = requestAnimationFrame(tick);
         } else {
@@ -509,7 +531,10 @@ function PreviewPins({
   useEffect(() => {
     const nodes = map.getContainer().querySelectorAll<HTMLElement>(".op-pin");
     nodes.forEach((el) =>
-      el.classList.toggle("is-active", el.getAttribute("data-place-id") === activeId),
+      el.classList.toggle(
+        "is-active",
+        el.getAttribute("data-place-id") === activeId,
+      ),
     );
   }, [activeId, map, places]);
 

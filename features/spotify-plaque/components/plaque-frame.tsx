@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
+
 import type { PlaqueConfig, PlaqueTheme } from "../config";
 import { ScanCode } from "./scan-code";
 
@@ -88,20 +90,29 @@ export function PlaqueFrame({
         >
           <AnimatePresence mode="popLayout" initial={false}>
             {current ? (
-              <motion.img
+              <KeepsakeImage
                 key={`${current}-${index}`}
                 src={current}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-                initial={
-                  reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.04 }
-                }
-                animate={{ opacity: 1, scale: 1 }}
-                exit={
-                  reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }
-                }
-                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-              />
+                alt="Cover photo"
+                className="absolute inset-0"
+                gallery={photoUrls}
+                galleryIndex={index % Math.max(count, 1)}
+                disableHoverScale
+              >
+                <motion.img
+                  src={current}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  initial={
+                    reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.04 }
+                  }
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={
+                    reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }
+                  }
+                  transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </KeepsakeImage>
             ) : (
               <div
                 key="placeholder"

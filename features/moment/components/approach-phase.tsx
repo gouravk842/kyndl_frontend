@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
 import { cn } from "@/lib/utils";
 
 import { useTypewriter } from "../hooks/use-typewriter";
@@ -52,9 +53,16 @@ export function ApproachPhase({
   if (!beat) return null;
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={handleTap}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleTap();
+        }
+      }}
       className="relative flex size-full cursor-pointer items-center justify-center px-8 text-center outline-none"
     >
       <AnimatePresence mode="wait">
@@ -88,13 +96,17 @@ export function ApproachPhase({
           )}
 
           {beat.kind === "counter" && (
-            <CounterBeat label={beat.label} sinceDate={beat.sinceDate} theme={theme} />
+            <CounterBeat
+              label={beat.label}
+              sinceDate={beat.sinceDate}
+              theme={theme}
+            />
           )}
         </motion.div>
       </AnimatePresence>
 
       <Progress count={beats.length} index={index} theme={theme} />
-    </button>
+    </div>
   );
 }
 
@@ -158,7 +170,19 @@ function PhotoBeat({
         )}
       >
         {url ? (
-          <Image src={url} alt={caption ?? ""} fill className="object-cover" sizes="240px" />
+          <KeepsakeImage
+            src={url}
+            alt={caption || "Moment photo"}
+            className="absolute inset-0"
+          >
+            <Image
+              src={url}
+              alt={caption ?? ""}
+              fill
+              className="object-cover"
+              sizes="240px"
+            />
+          </KeepsakeImage>
         ) : (
           <div className="flex size-full items-center justify-center bg-black/20 text-xs text-white/50">
             photo
@@ -201,7 +225,10 @@ function CounterBeat({
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 160, damping: 14 }}
-        className={cn("text-7xl font-semibold tabular-nums sm:text-8xl", t.text)}
+        className={cn(
+          "text-7xl font-semibold tabular-nums sm:text-8xl",
+          t.text,
+        )}
       >
         {days ?? "…"}
       </motion.span>

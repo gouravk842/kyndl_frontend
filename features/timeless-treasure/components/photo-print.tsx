@@ -2,6 +2,8 @@
 
 import { motion, type Variants } from "framer-motion";
 
+import { KeepsakeImage } from "@/components/ui/keepsake-image";
+
 import type { TreasureTheme } from "../config";
 
 /**
@@ -84,12 +86,19 @@ export function PhotoPrint({
         style={{ width: hasSide ? 184 : 224, aspectRatio: "4 / 5" }}
       >
         {url ? (
-          <motion.img
+          <KeepsakeImage
             src={url}
-            alt={note || ""}
-            className="h-full w-full object-cover"
-            variants={reduceMotion ? undefined : developVariants}
-          />
+            alt={note || "Memory photo"}
+            className="h-full w-full"
+            disableHoverScale={!reduceMotion}
+          >
+            <motion.img
+              src={url}
+              alt={note || ""}
+              className="h-full w-full object-cover"
+              variants={reduceMotion ? undefined : developVariants}
+            />
+          </KeepsakeImage>
         ) : (
           <div className="grid h-full w-full place-items-center bg-black/[0.05]">
             <span className="text-[10px] tracking-[0.34em] text-black/30 uppercase">
