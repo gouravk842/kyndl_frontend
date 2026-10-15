@@ -4,6 +4,7 @@ import {
   ChartColumn,
   Compass,
   Feather,
+  Heart,
   Home,
   LayoutDashboard,
   Library,
@@ -15,6 +16,7 @@ import {
   Settings,
   Settings2,
   Share2,
+  ShoppingBag,
   Store,
   Wallet,
 } from "lucide-react";
@@ -23,6 +25,7 @@ import { usePathname } from "next/navigation";
 
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import { Logo } from "@/components/shared/logo";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import {
@@ -35,28 +38,25 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { useUiStore } from "@/store/ui.store";
 
-// Static destinations that live below the user's library.
-const navItems = [
-  { href: ROUTES.memories, label: "Memories", icon: Library },
-  { href: ROUTES.kynd, label: "Kynd", icon: Feather },
-  { href: ROUTES.referrals, label: "Referrals", icon: Share2 },
-  { href: ROUTES.experiences, label: "Explore", icon: Compass },
-  { href: ROUTES.billing, label: "Billing", icon: Receipt },
-  { href: ROUTES.settings, label: "Settings", icon: Settings },
-] as const;
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof Compass;
+};
 
 // Shown only to shopkeepers (users who own an active vendor shop).
-const shopNavItems = [
+const shopNavItems: NavItem[] = [
   { href: ROUTES.shop, label: "Shop overview", icon: LayoutDashboard },
   { href: ROUTES.shopProducts, label: "Products", icon: Package },
   { href: ROUTES.shopOrders, label: "Orders", icon: Store },
   { href: ROUTES.shopExpenses, label: "Expenses", icon: Wallet },
   { href: ROUTES.shopReports, label: "P&L", icon: ChartColumn },
-  { href: ROUTES.shopSettings, label: "Settings", icon: Settings2 },
-] as const;
+  { href: ROUTES.shopSettings, label: "Shop settings", icon: Settings2 },
+];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const settings = useSiteSettings();
   const { sidebarOpen, toggleSidebar } = useUiStore();
   const isVendor = useAuthStore((s) => Boolean(s.user?.is_vendor));
 
@@ -65,6 +65,34 @@ export function DashboardSidebar() {
   const setDashboardCategory = useUiStore((s) => s.setDashboardCategory);
   const selected = resolveSelectedKey(categories, dashboardCategory);
   const onDashboard = pathname === ROUTES.dashboard;
+
+  const showLibrary = settings.show_experiences;
+  const isShopMode = settings.site_mode === "v2";
+
+  const shopperLinks: NavItem[] = [
+    ...(settings.show_gifts
+      ? [
+          { href: ROUTES.gifts, label: "Shop gifts", icon: ShoppingBag },
+          { href: ROUTES.giftOrders, label: "My orders", icon: Package },
+          { href: ROUTES.giftWishlist, label: "Wishlist", icon: Heart },
+        ]
+      : []),
+    ...(settings.show_memory_bank
+      ? [{ href: ROUTES.memories, label: "Memories", icon: Library }]
+      : []),
+    ...(settings.show_kynd
+      ? [{ href: ROUTES.kynd, label: "Kynd", icon: Feather }]
+      : []),
+    // Referrals stay on the full (v1) product; hide on ecommerce-first mode.
+    ...(!isShopMode
+      ? [{ href: ROUTES.referrals, label: "Referrals", icon: Share2 }]
+      : []),
+    ...(settings.show_experiences
+      ? [{ href: ROUTES.experiences, label: "Explore", icon: Compass }]
+      : []),
+    { href: ROUTES.billing, label: "Billing", icon: Receipt },
+    { href: ROUTES.settings, label: "Settings", icon: Settings },
+  ];
 
   const renderLink = ({
     href,
@@ -75,16 +103,24 @@ export function DashboardSidebar() {
     label: string;
     icon: typeof Compass;
   }) => {
-    // Exact match for the shop overview so it isn't "active" on every sub-route.
     const active =
-      href === ROUTES.shop
-        ? pathname === href
+      href === ROUTES.shop || href === ROUTES.gifts
+        ? pathname === href || pathname.startsWith(`${href}/`)
         : pathname === href || pathname.startsWith(`${href}/`);
+    // Avoid /gifts matching /gifts/orders incorrectly for "Shop gifts" — use exact for gifts root.
+    const isActive =
+      href === ROUTES.gifts
+        ? pathname === ROUTES.gifts ||
+          (pathname.startsWith(`${ROUTES.gifts}/`) &&
+            !pathname.startsWith(ROUTES.giftOrders) &&
+            !pathname.startsWith(ROUTES.giftWishlist))
+        : active;
+
     return (
       <Link
         key={href}
         href={href}
-        className={rowClass(active)}
+        className={rowClass(isActive)}
         title={sidebarOpen ? undefined : label}
       >
         <span className={iconTileClass()}>
@@ -95,7 +131,6 @@ export function DashboardSidebar() {
     );
   };
 
-  // A library category: navigates to the dashboard and selects it in the store.
   const renderCategory = (key: string, label: string, count?: number) => {
     const active = onDashboard && selected === key;
     return (
@@ -178,19 +213,25 @@ export function DashboardSidebar() {
       >
         {renderCategory(HOME_KEY, "Home")}
 
-        <div className="my-2 border-t" />
-        {sidebarOpen && (
-          <p className="px-3 pb-1 pt-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            My library
-          </p>
-        )}
-        {categories.map((cat) => renderCategory(cat.key, cat.label, cat.count))}
-        {renderCategory(CREATE_KEY, "Start something new")}
+        {showLibrary ? (
+          <>
+            <div className="my-2 border-t" />
+            {sidebarOpen && (
+              <p className="px-3 pb-1 pt-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                My library
+              </p>
+            )}
+            {categories.map((cat) =>
+              renderCategory(cat.key, cat.label, cat.count),
+            )}
+            {renderCategory(CREATE_KEY, "Start something new")}
+          </>
+        ) : null}
 
         <div className="my-2 border-t" />
-        {navItems.map(renderLink)}
+        {shopperLinks.map(renderLink)}
 
-        {isVendor && (
+        {isVendor && settings.show_gifts ? (
           <>
             <div className="my-2 border-t" />
             {sidebarOpen && (
@@ -200,13 +241,12 @@ export function DashboardSidebar() {
             )}
             {shopNavItems.map(renderLink)}
           </>
-        )}
+        ) : null}
       </nav>
     </aside>
   );
 }
 
-/** Shared row layout for both static links and category entries. */
 function rowClass(active: boolean) {
   return cn(
     "flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors",

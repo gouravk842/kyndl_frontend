@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -58,6 +59,7 @@ export function HeaderUserMenu() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const settings = useSiteSettings();
 
   const logout = useMutation({
     mutationFn: () => authService.logout(),
@@ -107,22 +109,30 @@ export function HeaderUserMenu() {
           <LayoutDashboard className="mr-2 size-4" />
           Dashboard
         </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href={ROUTES.memories} />}>
-          <Library className="mr-2 size-4" />
-          Memory Bank
-        </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href={ROUTES.kynd} />}>
-          <Feather className="mr-2 size-4" />
-          Kynd
-        </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href={ROUTES.giftWishlist} />}>
-          <Heart className="mr-2 size-4" />
-          Wishlist
-        </DropdownMenuItem>
-        <DropdownMenuItem render={<Link href={ROUTES.giftOrders} />}>
-          <Package className="mr-2 size-4" />
-          Orders
-        </DropdownMenuItem>
+        {settings.show_memory_bank ? (
+          <DropdownMenuItem render={<Link href={ROUTES.memories} />}>
+            <Library className="mr-2 size-4" />
+            Memory Bank
+          </DropdownMenuItem>
+        ) : null}
+        {settings.show_kynd ? (
+          <DropdownMenuItem render={<Link href={ROUTES.kynd} />}>
+            <Feather className="mr-2 size-4" />
+            Kynd
+          </DropdownMenuItem>
+        ) : null}
+        {settings.show_gifts ? (
+          <>
+            <DropdownMenuItem render={<Link href={ROUTES.giftWishlist} />}>
+              <Heart className="mr-2 size-4" />
+              Wishlist
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href={ROUTES.giftOrders} />}>
+              <Package className="mr-2 size-4" />
+              Orders
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => logout.mutate()}
