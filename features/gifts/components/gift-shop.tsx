@@ -21,12 +21,15 @@ const SORTS: { label: string; value: CatalogSort }[] = [
 export function GiftShop({
   products: initial,
   initialCategory = null,
+  initialQuery = "",
 }: {
   products: GiftProduct[];
   /** Prefill master category from `?category=` (e.g. homepage shelf links). */
   initialCategory?: string | null;
+  /** Prefill search from `?q=` (e.g. occasion chips on the v2 home). */
+  initialQuery?: string;
 }) {
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [sort, setSort] = useState<CatalogSort>("newest");
   // Master + subcategory selections are the shared taxonomy's slugs (null = all).
   const [category, setCategory] = useState<string | null>(initialCategory);

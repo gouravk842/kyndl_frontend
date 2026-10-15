@@ -18,20 +18,28 @@ export const dynamic = "force-dynamic";
 export default async function GiftsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; q?: string }>;
 }) {
   await requireSiteFeature("show_gifts");
-  const [{ category }, products] = await Promise.all([
+  const [params, products] = await Promise.all([
     searchParams,
     getGiftCatalog(),
   ]);
   const initialCategory =
-    typeof category === "string" && category.trim() ? category.trim() : null;
+    typeof params.category === "string" && params.category.trim()
+      ? params.category.trim()
+      : null;
+  const initialQuery =
+    typeof params.q === "string" && params.q.trim() ? params.q.trim() : "";
 
   return (
     <section className="relative py-3 md:py-4">
       <PageContainer size="xl" className="relative">
-        <GiftShop products={products} initialCategory={initialCategory} />
+        <GiftShop
+          products={products}
+          initialCategory={initialCategory}
+          initialQuery={initialQuery}
+        />
       </PageContainer>
     </section>
   );

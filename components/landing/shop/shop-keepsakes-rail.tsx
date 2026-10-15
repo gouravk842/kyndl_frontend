@@ -10,58 +10,55 @@ import { ROUTES } from "@/constants/routes";
 import type { ExperienceView } from "@/lib/experience-catalog";
 import { experienceHref } from "@/lib/experiences";
 
-/** Compact digital-keepsake rail under the physical shop — optional in v2. */
+/** Optional digital rail — kept quiet so the shop stays the hero. */
 export function ShopKeepsakesRail({
   experiences,
 }: {
   experiences: ExperienceView[];
 }) {
-  const items = experiences.slice(0, 6);
+  const items = experiences.slice(0, 4);
   if (items.length === 0) return null;
 
   return (
-    <section className="relative py-16 md:py-20">
+    <section className="border-t border-[#EFE4DA] bg-white py-16 md:py-20">
       <PageContainer size="xl">
         <FadeIn>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-medium tracking-[0.2em] text-[#C75B39] uppercase">
-                Also digital
-              </p>
-              <h2 className="mt-3 font-display text-3xl text-[#3A2A25] md:text-4xl">
-                Keepsakes that arrive as a link.
+              <h2 className="font-display text-2xl tracking-tight text-[#2A1814] md:text-3xl">
+                Prefer a digital keepsake?
               </h2>
-              <p className="mt-3 max-w-lg text-[#7A6258]">
-                Scrapbooks, plaques, proposals — personalize in minutes when a
-                parcel isn’t the point.
+              <p className="mt-2 max-w-md text-[#7A6258]">
+                Scrapbooks, plaques, and proposals — personalize in minutes.
               </p>
             </div>
             <Link
               href={ROUTES.experiences}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#C75B39] hover:text-[#9e3f21]"
+              className="group inline-flex items-center gap-1.5 text-sm font-medium text-[#2A1814] underline-offset-4 hover:underline"
             >
-              Browse all
-              <ArrowRight className="size-4" />
+              Browse keepsakes
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </FadeIn>
 
-        <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-8 grid gap-px bg-[#EFE4DA] sm:grid-cols-2 lg:grid-cols-4">
           {items.map((exp) => (
-            <li key={exp.slug}>
+            <li key={exp.slug} className="bg-white">
               <Link
                 href={experienceHref(exp.slug)}
                 prefetch={false}
-                className="group flex items-center gap-4 border-b border-[#F2DACE] py-4 transition-colors hover:border-[#C75B39]/45"
+                className="group flex h-full items-start gap-3 p-5 transition-colors hover:bg-[#FFFAF6]"
               >
-                <span className="flex size-11 shrink-0 items-center justify-center text-[#FF7A59]">
-                  <ExperienceIcon name={exp.icon} className="size-5" />
-                </span>
+                <ExperienceIcon
+                  name={exp.icon}
+                  className="mt-0.5 size-5 shrink-0 text-[#C75B39]"
+                />
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-[#3A2A25] group-hover:text-[#C75B39]">
+                  <span className="block text-sm font-semibold text-[#2A1814] group-hover:text-[#C75B39]">
                     {exp.name}
                   </span>
-                  <span className="mt-0.5 line-clamp-1 text-xs text-[#92786C]">
+                  <span className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#92786C]">
                     {exp.tagline}
                   </span>
                 </span>

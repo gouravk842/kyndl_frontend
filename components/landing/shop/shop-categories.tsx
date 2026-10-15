@@ -1,14 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Gem,
-  Gift,
-  Heart,
-  Home,
-  type LucideIcon,
-  Sparkles,
-} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { FadeIn } from "@/components/animations/fade-in";
@@ -18,54 +11,63 @@ import type { ProductCategory } from "@/types/gift";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/** Curated shelves when the taxonomy is still empty — still link into /gifts. */
 const FALLBACK_SHELVES: {
   name: string;
   slug: string;
-  blurb: string;
-  icon: LucideIcon;
+  image: string;
+  href: string;
 }[] = [
   {
     name: "Jewellery",
     slug: "jewellery",
-    blurb: "Rings, chains, and pieces that catch the light.",
-    icon: Gem,
+    image: "/images/shop-cat-jewellery.jpg",
+    href: ROUTES.gifts,
   },
   {
     name: "Personalized",
     slug: "personalized",
-    blurb: "Names, dates, and details only they would notice.",
-    icon: Sparkles,
+    image: "/images/shop-cat-personalized.jpg",
+    href: ROUTES.gifts,
   },
   {
     name: "Keepsakes",
     slug: "keepsakes",
-    blurb: "Objects meant to stay on a shelf — and in a story.",
-    icon: Gift,
+    image: "/images/shop-cat-keepsakes.jpg",
+    href: ROUTES.gifts,
   },
   {
     name: "For the home",
     slug: "home",
-    blurb: "Warmth for the places you share.",
-    icon: Home,
+    image: "/images/shop-cat-home.jpg",
+    href: ROUTES.gifts,
   },
   {
     name: "Just because",
     slug: "just-because",
-    blurb: "No occasion required — only intention.",
-    icon: Heart,
+    image: "/images/shop-cat-just-because.jpg",
+    href: ROUTES.gifts,
   },
 ];
 
-const ICONS: LucideIcon[] = [Gem, Sparkles, Gift, Home, Heart];
+const IMAGE_BY_HINT: { match: RegExp; image: string }[] = [
+  {
+    match: /jewel|ring|neck|earring|gold/i,
+    image: "/images/shop-cat-jewellery.jpg",
+  },
+  {
+    match: /personal|custom|engrav/i,
+    image: "/images/shop-cat-personalized.jpg",
+  },
+  { match: /keep|memory|moment/i, image: "/images/shop-cat-keepsakes.jpg" },
+  { match: /home|decor|living/i, image: "/images/shop-cat-home.jpg" },
+];
 
-function iconFor(index: number, slug: string): LucideIcon {
-  const lower = slug.toLowerCase();
-  if (lower.includes("jewel") || lower.includes("ring")) return Gem;
-  if (lower.includes("home") || lower.includes("decor")) return Home;
-  if (lower.includes("personal") || lower.includes("custom")) return Sparkles;
-  if (lower.includes("heart") || lower.includes("love")) return Heart;
-  return ICONS[index % ICONS.length] ?? Gift;
+function imageFor(slug: string, name: string, index: number): string {
+  const hay = `${slug} ${name}`;
+  for (const row of IMAGE_BY_HINT) {
+    if (row.match.test(hay)) return row.image;
+  }
+  return FALLBACK_SHELVES[index % FALLBACK_SHELVES.length]!.image;
 }
 
 export function ShopCategories({
@@ -73,68 +75,67 @@ export function ShopCategories({
 }: {
   categories: ProductCategory[];
 }) {
-  const fromApi = categories.length > 0;
-  const shelves = fromApi
-    ? categories.slice(0, 6).map((c, i) => ({
-        name: c.name,
-        slug: c.slug,
-        blurb:
-          c.subcategories.length > 0
-            ? c.subcategories
-                .slice(0, 3)
-                .map((s) => s.name)
-                .join(" · ")
-            : "Browse this shelf",
-        icon: iconFor(i, c.slug),
-        href: `${ROUTES.gifts}?category=${encodeURIComponent(c.slug)}`,
-      }))
-    : FALLBACK_SHELVES.map((s) => ({
-        ...s,
-        // No taxonomy yet — open the full shop rather than an empty filter.
-        href: ROUTES.gifts,
-      }));
+  const shelves =
+    categories.length > 0
+      ? categories.slice(0, 5).map((c, i) => ({
+          name: c.name,
+          slug: c.slug,
+          image: imageFor(c.slug, c.name, i),
+          href: `${ROUTES.gifts}?category=${encodeURIComponent(c.slug)}`,
+        }))
+      : FALLBACK_SHELVES;
 
   return (
-    <section className="relative border-b border-[#F2DACE] bg-[#FFF7F1] py-16 md:py-20">
+    <section className="bg-[#FFFAF6] py-16 md:py-20">
       <PageContainer size="xl">
         <FadeIn>
-          <p className="text-sm font-medium tracking-[0.2em] text-[#C75B39] uppercase">
-            Shop by shelf
-          </p>
-          <h2 className="mt-3 font-display text-3xl text-[#3A2A25] md:text-4xl">
-            Jewellery, gifts, and more.
-          </h2>
-          <p className="mt-3 max-w-xl text-[#7A6258]">
-            Start with a shelf — or wander the full shop.
-          </p>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="font-display text-3xl tracking-tight text-[#2A1814] md:text-[2.35rem]">
+                Shop the collection
+              </h2>
+              <p className="mt-2 max-w-md text-[#7A6258]">
+                Start with a shelf that fits the moment.
+              </p>
+            </div>
+            <Link
+              href={ROUTES.gifts}
+              className="text-sm font-medium text-[#2A1814] underline-offset-4 hover:underline"
+            >
+              View all
+            </Link>
+          </div>
         </FadeIn>
 
-        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {shelves.map((shelf, index) => {
-            const Icon = shelf.icon;
-            return (
-              <motion.li
-                key={shelf.slug}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ delay: index * 0.06, duration: 0.45, ease }}
-              >
-                <Link
-                  href={shelf.href}
-                  className="group flex h-full flex-col border-b border-[#F2DACE] pb-5 transition-colors hover:border-[#C75B39]/50"
-                >
-                  <Icon className="size-5 text-[#C75B39] transition-transform duration-300 group-hover:-translate-y-0.5" />
-                  <span className="mt-4 font-display text-xl text-[#3A2A25] group-hover:text-[#C75B39]">
+        <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
+          {shelves.map((shelf, index) => (
+            <motion.li
+              key={shelf.slug}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ delay: index * 0.05, duration: 0.5, ease }}
+            >
+              <Link href={shelf.href} className="group block">
+                <div className="relative aspect-[4/5] overflow-hidden bg-[#EDE0D6]">
+                  <Image
+                    src={shelf.image}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 50vw, 20vw"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  />
+                  <div
+                    className="absolute inset-0 bg-gradient-to-t from-[#2A1814]/55 via-transparent to-transparent"
+                    aria-hidden
+                  />
+                  <span className="absolute inset-x-0 bottom-0 p-3 font-display text-lg text-[#FFFAF6] sm:p-4 sm:text-xl">
                     {shelf.name}
                   </span>
-                  <span className="mt-1.5 text-sm leading-relaxed text-[#92786C]">
-                    {shelf.blurb}
-                  </span>
-                </Link>
-              </motion.li>
-            );
-          })}
+                </div>
+              </Link>
+            </motion.li>
+          ))}
         </ul>
       </PageContainer>
     </section>

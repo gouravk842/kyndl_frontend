@@ -5,6 +5,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { CreationWorkspaceHeader } from "@/features/dashboard/components/creation-workspace-header";
 import { DashboardHeaderActions } from "@/features/dashboard/components/dashboard-header-actions";
+import { CartButton } from "@/features/gifts/components/cart-button";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 
 export default function DashboardLayout({
@@ -20,7 +21,8 @@ export default function DashboardLayout({
           <Suspense fallback={<div />}>
             <CreationWorkspaceHeader />
           </Suspense>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <CartButton />
             <NotificationBell />
             <ThemeToggle />
             <Suspense fallback={<div className="size-9" />}>

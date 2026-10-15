@@ -23,10 +23,7 @@ export function GiftCard({
 
   return (
     <motion.article
-      className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border border-[#F4DDD0]/80 bg-white",
-        "transition-colors duration-300 hover:border-[#FF7A59]/40",
-      )}
+      className={cn("group relative flex flex-col bg-transparent")}
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-48px" }}
@@ -43,7 +40,7 @@ export function GiftCard({
       />
       <Link
         href={href}
-        className="relative block aspect-[4/5] overflow-hidden bg-[#FDEBE6]"
+        className="relative block aspect-[4/5] overflow-hidden bg-[#EDE0D6]"
       >
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -69,9 +66,9 @@ export function GiftCard({
         )}
       </Link>
 
-      <div className="flex flex-1 flex-col gap-1 p-3 sm:p-3.5">
+      <div className="flex flex-1 flex-col gap-1 pt-3">
         <Link href={href} className="min-w-0">
-          <h3 className="line-clamp-2 text-sm font-medium leading-snug text-[#3A2A25] transition-colors group-hover:text-[#C75B39]">
+          <h3 className="line-clamp-2 text-sm font-medium leading-snug text-[#2A1814] transition-colors group-hover:text-[#C75B39]">
             {product.name}
           </h3>
         </Link>
