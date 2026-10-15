@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return createMetadata({
     title: page?.title ?? "Privacy Policy",
     description:
-      "How Kyndl collects, uses, and protects your information when you use our keepsakes and gifts.",
+      "How Kyndl collects and uses basic account and order information for the shop.",
     path: "/privacy",
   });
 }

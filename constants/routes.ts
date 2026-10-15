@@ -76,6 +76,8 @@ export const ROUTES = {
   terms: "/terms",
   privacy: "/privacy",
   refund: "/refund",
+  shipping: "/shipping",
+  contact: "/contact",
   feedback: "/feedback",
   /** Standalone “tell us what you were hoping to find” form. */
   ideas: "/ideas",
@@ -162,6 +164,8 @@ export const PUBLIC_ROUTES = [
   ROUTES.terms,
   ROUTES.privacy,
   ROUTES.refund,
+  ROUTES.shipping,
+  ROUTES.contact,
   ROUTES.login,
   ROUTES.register,
   ROUTES.verifyEmail,

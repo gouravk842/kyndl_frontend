@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (settings.show_recommend) marketing.push("/recommend");
   marketing.push("/ideas");
   if (settings.show_pricing) marketing.push("/pricing");
-  marketing.push("/terms", "/privacy", "/refund");
+  marketing.push("/terms", "/privacy", "/refund", "/shipping", "/contact");
   if (settings.show_red_zone) marketing.push("/red-zone");
 
   const catalogPromise = settings.show_experiences

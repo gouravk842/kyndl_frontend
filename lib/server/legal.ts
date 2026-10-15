@@ -1,6 +1,11 @@
 import "server-only";
 
-export type LegalPageSlug = "terms" | "privacy" | "refund";
+export type LegalPageSlug =
+  | "terms"
+  | "privacy"
+  | "refund"
+  | "shipping"
+  | "contact";
 
 export type LegalPage = {
   slug: LegalPageSlug;
@@ -13,7 +18,13 @@ const DJANGO_BASE = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1"
 ).replace(/\/$/, "");
 
-const LEGAL_SLUGS = new Set<string>(["terms", "privacy", "refund"]);
+const LEGAL_SLUGS = new Set<string>([
+  "terms",
+  "privacy",
+  "refund",
+  "shipping",
+  "contact",
+]);
 
 export function isLegalPageSlug(value: string): value is LegalPageSlug {
   return LEGAL_SLUGS.has(value);

@@ -80,7 +80,9 @@ export function MarketingFooter() {
       links: [
         { href: ROUTES.terms, label: "Terms" },
         { href: ROUTES.privacy, label: "Privacy" },
+        { href: ROUTES.shipping, label: "Shipping" },
         { href: ROUTES.refund, label: "Refunds" },
+        { href: ROUTES.contact, label: "Contact" },
       ],
     },
     {
@@ -94,7 +96,7 @@ export function MarketingFooter() {
   ];
 
   const blurb = isV2
-    ? "Thoughtful gifts and digital keepsakes — personalize in minutes, send with a private link, or ship something they can hold."
+    ? "A small individual-run shop for thoughtful gifts and jewellery — made to feel personal, delivered across India."
     : "Keep the days in a Memory Bank, then grow them into something they can hold — a scrapbook, a sky, a jar — sent with a private link.";
 
   return (
@@ -184,6 +186,20 @@ export function MarketingFooter() {
               className="transition-colors duration-300 hover:text-[#3A2A25]"
             >
               Refunds
+            </Link>
+            <Link
+              href={ROUTES.shipping}
+              prefetch={false}
+              className="transition-colors duration-300 hover:text-[#3A2A25]"
+            >
+              Shipping
+            </Link>
+            <Link
+              href={ROUTES.contact}
+              prefetch={false}
+              className="transition-colors duration-300 hover:text-[#3A2A25]"
+            >
+              Contact
             </Link>
           </nav>
         </div>
