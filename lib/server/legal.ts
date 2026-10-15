@@ -20,8 +20,9 @@ export function isLegalPageSlug(value: string): value is LegalPageSlug {
 }
 
 /**
- * Fetch a published legal page for SSR. Returns null if missing or unreachable
- * so the route can render a not-found / empty state without crashing.
+ * Fetch a published legal page for SSR. Backend resolves v1 vs v2 copy from
+ * Site settings — use no-store so flipping site_mode updates legal pages
+ * immediately. Returns null if missing or unreachable.
  */
 export async function getLegalPage(
   slug: LegalPageSlug,
@@ -30,7 +31,7 @@ export async function getLegalPage(
     const res = await fetch(`${DJANGO_BASE}/legal/${slug}/`, {
       method: "GET",
       headers: { Accept: "application/json" },
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<LegalPage>;
