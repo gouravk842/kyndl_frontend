@@ -1,6 +1,7 @@
 import { ROUTES } from "@/constants/routes";
 import { KyndStory } from "@/features/kynd/components/story/kynd-story";
 import { createMetadata } from "@/lib/seo";
+import { requireSiteFeature } from "@/lib/server/require-site-feature";
 
 export const metadata = createMetadata({
   title: "The little things matter",
@@ -9,6 +10,7 @@ export const metadata = createMetadata({
   path: ROUTES.kyndStory,
 });
 
-export default function KyndStoryPage() {
+export default async function KyndStoryPage() {
+  await requireSiteFeature("show_kynd");
   return <KyndStory />;
 }

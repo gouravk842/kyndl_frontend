@@ -17,6 +17,7 @@ import { ROUTES } from "@/constants/routes";
 import { ideaHref } from "@/features/ideas/idea-href";
 import { createMetadata } from "@/lib/seo";
 import { getExperiencesView } from "@/lib/server/experiences";
+import { requireSiteFeature } from "@/lib/server/require-site-feature";
 
 export const metadata = createMetadata({
   title: "Games",
@@ -93,6 +94,7 @@ const ALL_GAMES: {
 ];
 
 export default async function GamesPage() {
+  await requireSiteFeature("show_games");
   const visible = await getExperiencesView();
   const visibleSlugs = new Set(visible.map((e) => e.slug));
   const games = ALL_GAMES.filter((g) => visibleSlugs.has(g.slug));

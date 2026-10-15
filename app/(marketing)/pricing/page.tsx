@@ -9,6 +9,7 @@ import {
   getPricingPage,
   type PricingPageCardIcon,
 } from "@/lib/server/pricing-page";
+import { requireSiteFeature } from "@/lib/server/require-site-feature";
 
 export const metadata = createMetadata({
   title: "Pricing",
@@ -56,6 +57,7 @@ function ComingSoonState({
 }
 
 export default async function PricingPage() {
+  await requireSiteFeature("show_pricing");
   const page = await getPricingPage();
 
   if (!page || page.status === "coming_soon") {

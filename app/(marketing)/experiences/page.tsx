@@ -7,6 +7,7 @@ import { ROUTES } from "@/constants/routes";
 import { ideaHref } from "@/features/ideas/idea-href";
 import { createMetadata } from "@/lib/seo";
 import { getExperiencesView } from "@/lib/server/experiences";
+import { requireSiteFeature } from "@/lib/server/require-site-feature";
 
 export const metadata = createMetadata({
   title: "Experiences",
@@ -19,6 +20,7 @@ export const metadata = createMetadata({
 export const dynamic = "force-dynamic";
 
 export default async function ExperiencesPage() {
+  await requireSiteFeature("show_experiences");
   const experiences = await getExperiencesView();
 
   return (

@@ -11,9 +11,11 @@ import { HeaderUserMenu } from "@/components/layout/header-user-menu";
 import { PageContainer } from "@/components/layout/page-container";
 import { AgeConsentDialog } from "@/components/red-zone/age-consent-dialog";
 import { Logo } from "@/components/shared/logo";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { ROUTES } from "@/constants/routes";
 import { CartButton } from "@/features/gifts/components/cart-button";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
+import { visiblePrimaryLinks } from "@/lib/marketing-nav";
 import { hasRedZoneConsent, setRedZoneConsent } from "@/lib/red-zone-consent";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -26,19 +28,11 @@ const MarketingExperienceMenus = dynamic(
   { ssr: false },
 );
 
-/** Top-level destinations, in the order they appear in the bar. */
-const PRIMARY_LINKS = [
-  { href: ROUTES.memoryBankStory, label: "Memory Bank" },
-  { href: ROUTES.kyndStory, label: "Kynd" },
-  { href: ROUTES.gifts, label: "Gifts" },
-  { href: ROUTES.recommend, label: "For you" },
-  { href: ROUTES.games, label: "Games" },
-  { href: ROUTES.pricing, label: "Pricing" },
-] as const;
-
 export function MarketingHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const settings = useSiteSettings();
+  const primaryLinks = visiblePrimaryLinks(settings);
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -78,6 +72,8 @@ export function MarketingHeader() {
   const isActive = (href: string) =>
     href === ROUTES.home ? pathname === href : pathname.startsWith(href);
 
+  const emphasizeGifts = settings.site_mode === "v2";
+
   return (
     <header
       className={cn(
@@ -105,59 +101,68 @@ export function MarketingHeader() {
         </div>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-          <div className="relative" onMouseEnter={openMega}>
-            <Link
-              href={ROUTES.experiences}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-sm transition-colors",
-                megaOpen || isActive(ROUTES.experiences)
-                  ? "text-[#3A2A25]"
-                  : "text-[#7A6258] hover:text-[#3A2A25]",
-              )}
-              aria-expanded={megaOpen}
-              onFocus={openMega}
-            >
-              Experiences
-              <ChevronDown
+          {settings.show_experiences ? (
+            <div className="relative" onMouseEnter={openMega}>
+              <Link
+                href={ROUTES.experiences}
                 className={cn(
-                  "size-3.5 transition-transform duration-300",
-                  megaOpen && "rotate-180",
-                )}
-              />
-            </Link>
-          </div>
-
-          {PRIMARY_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className={cn(
-                "rounded-full px-3.5 py-2 text-sm transition-colors",
-                link.label === "Memory Bank"
-                  ? isActive(link.href)
-                    ? "text-[#C75B39]"
-                    : "text-[#C75B39]/80 hover:text-[#C75B39]"
-                  : isActive(link.href)
+                  "inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-sm transition-colors",
+                  megaOpen || isActive(ROUTES.experiences)
                     ? "text-[#3A2A25]"
                     : "text-[#7A6258] hover:text-[#3A2A25]",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+                )}
+                aria-expanded={megaOpen}
+                onFocus={openMega}
+              >
+                Experiences
+                <ChevronDown
+                  className={cn(
+                    "size-3.5 transition-transform duration-300",
+                    megaOpen && "rotate-180",
+                  )}
+                />
+              </Link>
+            </div>
+          ) : null}
 
-          <button
-            type="button"
-            onClick={goRedZone}
-            className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium text-[#C2415A] transition-colors hover:text-[#9e1f3c]"
-          >
-            <Flame className="size-3.5" />
-            Red Zone
-          </button>
+          {primaryLinks.map((link) => {
+            const accent =
+              (!emphasizeGifts && link.label === "Memory Bank") ||
+              (emphasizeGifts && link.label === "Gifts");
+            return (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={cn(
+                  "rounded-full px-3.5 py-2 text-sm transition-colors",
+                  accent
+                    ? isActive(link.href)
+                      ? "text-[#C75B39]"
+                      : "text-[#C75B39]/80 hover:text-[#C75B39]"
+                    : isActive(link.href)
+                      ? "text-[#3A2A25]"
+                      : "text-[#7A6258] hover:text-[#3A2A25]",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+
+          {settings.show_red_zone ? (
+            <button
+              type="button"
+              onClick={goRedZone}
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium text-[#C2415A] transition-colors hover:text-[#9e1f3c]"
+            >
+              <Flame className="size-3.5" />
+              Red Zone
+            </button>
+          ) : null}
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <CartButton />
+          {settings.show_cart && settings.show_gifts ? <CartButton /> : null}
           {isLoggedIn && <NotificationBell keepAlive={false} />}
           {!isHydrated ? (
             <div
@@ -194,15 +199,17 @@ export function MarketingHeader() {
         />
       ) : null}
 
-      <AgeConsentDialog
-        open={redZoneAsking}
-        onConfirm={() => {
-          setRedZoneConsent();
-          setRedZoneAsking(false);
-          router.push(ROUTES.redZone);
-        }}
-        onCancel={() => setRedZoneAsking(false)}
-      />
+      {settings.show_red_zone ? (
+        <AgeConsentDialog
+          open={redZoneAsking}
+          onConfirm={() => {
+            setRedZoneConsent();
+            setRedZoneAsking(false);
+            router.push(ROUTES.redZone);
+          }}
+          onCancel={() => setRedZoneAsking(false)}
+        />
+      ) : null}
     </header>
   );
 }

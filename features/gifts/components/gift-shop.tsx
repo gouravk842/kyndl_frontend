@@ -18,11 +18,18 @@ const SORTS: { label: string; value: CatalogSort }[] = [
   { label: "Name", value: "name" },
 ];
 
-export function GiftShop({ products: initial }: { products: GiftProduct[] }) {
+export function GiftShop({
+  products: initial,
+  initialCategory = null,
+}: {
+  products: GiftProduct[];
+  /** Prefill master category from `?category=` (e.g. homepage shelf links). */
+  initialCategory?: string | null;
+}) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<CatalogSort>("newest");
   // Master + subcategory selections are the shared taxonomy's slugs (null = all).
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(initialCategory);
   const [subcategory, setSubcategory] = useState<string | null>(null);
 
   const { data: categories } = useCategories();

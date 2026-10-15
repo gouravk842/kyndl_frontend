@@ -1,64 +1,16 @@
+"use client";
+
 import Link from "next/link";
 
 import { PageContainer } from "@/components/layout/page-container";
 import { Logo } from "@/components/shared/logo";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { siteConfig } from "@/config/site";
 import { EXPERIENCE_CATEGORIES } from "@/constants/experience-taxonomy";
 import { ROUTES } from "@/constants/routes";
 
-/**
- * Footer as an honest sitemap. The "Experiences" column mirrors the header's
- * shelves (from the shared taxonomy) so the two navigation surfaces agree, and
- * the other columns surface every real destination — Gifts, Games, account —
- * so the footer works as a genuine navigation fallback.
- */
-const linkColumns = [
-  {
-    title: "Experiences",
-    links: [
-      { href: ROUTES.memoryBankStory, label: "Memory Bank" },
-      { href: ROUTES.kyndStory, label: "Kynd" },
-      ...EXPERIENCE_CATEGORIES.map((c) => ({
-        href: `${ROUTES.experiences}#${c.id}`,
-        label: c.label,
-      })),
-      { href: ROUTES.experiences, label: "See all →" },
-    ],
-  },
-  {
-    title: "Shop",
-    links: [
-      { href: ROUTES.gifts, label: "Physical gifts" },
-      { href: ROUTES.giftWishlist, label: "Wishlist" },
-      { href: ROUTES.giftOrders, label: "My orders" },
-      { href: ROUTES.games, label: "Games" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { href: ROUTES.pricing, label: "Pricing" },
-      { href: ROUTES.feedback, label: "Share feedback" },
-      { href: ROUTES.ideas, label: "Submit an idea" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { href: ROUTES.terms, label: "Terms" },
-      { href: ROUTES.privacy, label: "Privacy" },
-      { href: ROUTES.refund, label: "Refunds" },
-    ],
-  },
-  {
-    title: "Account",
-    links: [
-      { href: ROUTES.login, label: "Log in" },
-      { href: ROUTES.register, label: "Get started" },
-      { href: ROUTES.dashboard, label: "Dashboard" },
-    ],
-  },
-] as const;
+type FooterLink = { href: string; label: string };
+type FooterColumn = { title: string; links: FooterLink[] };
 
 const socialLinks = [
   {
@@ -79,6 +31,71 @@ const socialLinks = [
 
 export function MarketingFooter() {
   const year = new Date().getFullYear();
+  const settings = useSiteSettings();
+  const isV2 = settings.site_mode === "v2";
+
+  const experienceLinks: FooterLink[] = [
+    ...(settings.show_memory_bank
+      ? [{ href: ROUTES.memoryBankStory, label: "Memory Bank" }]
+      : []),
+    ...(settings.show_kynd ? [{ href: ROUTES.kyndStory, label: "Kynd" }] : []),
+    ...(settings.show_experiences
+      ? [
+          ...EXPERIENCE_CATEGORIES.map((c) => ({
+            href: `${ROUTES.experiences}#${c.id}`,
+            label: c.label,
+          })),
+          { href: ROUTES.experiences, label: "See all →" },
+        ]
+      : []),
+  ];
+
+  const shopLinks: FooterLink[] = [
+    ...(settings.show_gifts
+      ? [
+          { href: ROUTES.gifts, label: "Physical gifts" },
+          { href: ROUTES.giftWishlist, label: "Wishlist" },
+          { href: ROUTES.giftOrders, label: "My orders" },
+        ]
+      : []),
+    ...(settings.show_games ? [{ href: ROUTES.games, label: "Games" }] : []),
+  ];
+
+  const companyLinks: FooterLink[] = [
+    ...(settings.show_pricing
+      ? [{ href: ROUTES.pricing, label: "Pricing" }]
+      : []),
+    { href: ROUTES.feedback, label: "Share feedback" },
+    { href: ROUTES.ideas, label: "Submit an idea" },
+  ];
+
+  const linkColumns: FooterColumn[] = [
+    ...(experienceLinks.length
+      ? [{ title: "Experiences", links: experienceLinks }]
+      : []),
+    ...(shopLinks.length ? [{ title: "Shop", links: shopLinks }] : []),
+    { title: "Company", links: companyLinks },
+    {
+      title: "Legal",
+      links: [
+        { href: ROUTES.terms, label: "Terms" },
+        { href: ROUTES.privacy, label: "Privacy" },
+        { href: ROUTES.refund, label: "Refunds" },
+      ],
+    },
+    {
+      title: "Account",
+      links: [
+        { href: ROUTES.login, label: "Log in" },
+        { href: ROUTES.register, label: "Get started" },
+        { href: ROUTES.dashboard, label: "Dashboard" },
+      ],
+    },
+  ];
+
+  const blurb = isV2
+    ? "Thoughtful gifts and digital keepsakes — personalize in minutes, send with a private link, or ship something they can hold."
+    : "Keep the days in a Memory Bank, then grow them into something they can hold — a scrapbook, a sky, a jar — sent with a private link.";
 
   return (
     <footer className="relative overflow-hidden border-t border-[#F2DACE] bg-[#FCEEE3]">
@@ -89,13 +106,9 @@ export function MarketingFooter() {
 
       <PageContainer size="xl" className="relative py-12 md:py-14">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_2.6fr]">
-          {/* Brand */}
           <div className="max-w-sm space-y-4">
             <Logo className="[&_text]:fill-[#3A2A25]" />
-            <p className="text-sm leading-relaxed text-[#7A6258]">
-              Keep the days in a Memory Bank, then grow them into something they
-              can hold — a scrapbook, a sky, a jar — sent with a private link.
-            </p>
+            <p className="text-sm leading-relaxed text-[#7A6258]">{blurb}</p>
             <div className="flex items-center gap-3 pt-1">
               {socialLinks.map((social) => (
                 <a
@@ -119,7 +132,6 @@ export function MarketingFooter() {
             </div>
           </div>
 
-          {/* Link columns */}
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
             {linkColumns.map((column) => (
               <nav key={column.title} aria-label={column.title}>

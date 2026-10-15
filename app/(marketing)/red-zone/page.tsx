@@ -1,6 +1,7 @@
 import { RedZoneSection } from "@/features/red-zone/components/red-zone-section";
 import { createMetadata } from "@/lib/seo";
 import { getRedZoneExperiencesView } from "@/lib/server/experiences";
+import { requireSiteFeature } from "@/lib/server/require-site-feature";
 
 export const metadata = createMetadata({
   title: "Red Zone · 18+",
@@ -13,6 +14,7 @@ export const metadata = createMetadata({
 export const dynamic = "force-dynamic";
 
 export default async function RedZonePage() {
+  await requireSiteFeature("show_red_zone");
   const experiences = await getRedZoneExperiencesView();
   return <RedZoneSection experiences={experiences} />;
 }

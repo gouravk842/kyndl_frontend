@@ -5,8 +5,11 @@ import { ExperienceGallery } from "@/components/landing/experience-gallery";
 import { HeroSection } from "@/components/landing/hero-section";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { MemoryBankSpotlight } from "@/components/landing/memory-bank-spotlight";
+import { ShopHome } from "@/components/landing/shop/shop-home";
 import { createMetadata } from "@/lib/seo";
 import { getFeaturedExperiencesView } from "@/lib/server/experiences";
+import { getGiftCatalog, getGiftCategories } from "@/lib/server/gifts";
+import { getSiteSettings } from "@/lib/server/site-settings";
 import { getApprovedTestimonials } from "@/lib/server/testimonials";
 
 const PlayAndNight = dynamic(() =>
@@ -17,28 +20,67 @@ const Testimonials = dynamic(() =>
   import("@/components/landing/testimonials").then((m) => m.Testimonials),
 );
 
-export const metadata = createMetadata({
-  title: "Moments made to be felt",
-  description:
-    "Keep the days in a Memory Bank, then grow them into a scrapbook, a night sky, a jar of notes — or craft any Kyndl experience on its own. Personalized in minutes.",
-  path: "/",
-});
+export async function generateMetadata() {
+  const settings = await getSiteSettings();
+  if (settings.site_mode === "v2") {
+    return createMetadata({
+      title: "Shop gifts & jewellery",
+      description:
+        "A boutique for jewellery, keepsakes, and thoughtful gifts — curated to feel personal, ready to wrap and ship.",
+      path: "/",
+    });
+  }
+  return createMetadata({
+    title: "Moments made to be felt",
+    description:
+      "Keep the days in a Memory Bank, then grow them into a scrapbook, a night sky, a jar of notes — or craft any Kyndl experience on its own. Personalized in minutes.",
+    path: "/",
+  });
+}
 
 export default async function HomePage() {
+  const settings = await getSiteSettings();
+
+  if (settings.site_mode === "v2") {
+    const [products, categories, featured, testimonials] = await Promise.all([
+      settings.show_gifts ? getGiftCatalog() : Promise.resolve([]),
+      settings.show_gifts ? getGiftCategories() : Promise.resolve([]),
+      settings.show_experiences
+        ? getFeaturedExperiencesView()
+        : Promise.resolve([]),
+      getApprovedTestimonials(),
+    ]);
+
+    return (
+      <ShopHome
+        products={products}
+        categories={categories}
+        experiences={featured}
+        testimonials={testimonials}
+        settings={settings}
+      />
+    );
+  }
+
   const [featured, testimonials] = await Promise.all([
     getFeaturedExperiencesView(),
     getApprovedTestimonials(),
   ]);
+
+  const showGallery = settings.show_experiences;
+  const showBankSpotlight =
+    settings.show_memory_bank && settings.show_memory_bank_spotlight;
+  const showPlay = settings.show_play_and_night;
+
   return (
     <>
-      {/* Funnel: feel it → the bank → experiences → how → play/nights → proof. */}
       <HeroSection />
-      <MemoryBankSpotlight />
-      <ExperienceGallery experiences={featured} />
+      {showBankSpotlight ? <MemoryBankSpotlight /> : null}
+      {showGallery ? <ExperienceGallery experiences={featured} /> : null}
       <HowItWorks />
-      <PlayAndNight />
+      {showPlay ? <PlayAndNight /> : null}
       <Testimonials items={testimonials} />
-      <CreateKeepsakeFab />
+      {showGallery || settings.show_gifts ? <CreateKeepsakeFab /> : null}
     </>
   );
 }

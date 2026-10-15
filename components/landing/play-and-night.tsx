@@ -8,12 +8,19 @@ import { useState } from "react";
 import { FadeIn } from "@/components/animations/fade-in";
 import { PageContainer } from "@/components/layout/page-container";
 import { AgeConsentDialog } from "@/components/red-zone/age-consent-dialog";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { ROUTES } from "@/constants/routes";
 import { hasRedZoneConsent, setRedZoneConsent } from "@/lib/red-zone-consent";
 
 export function PlayAndNight() {
   const router = useRouter();
+  const settings = useSiteSettings();
   const [asking, setAsking] = useState(false);
+
+  const showGames = settings.show_games;
+  const showRedZone = settings.show_red_zone;
+
+  if (!showGames && !showRedZone) return null;
 
   const goRedZone = () => {
     if (hasRedZoneConsent()) {
@@ -37,66 +44,78 @@ export function PlayAndNight() {
           </h2>
         </FadeIn>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-2">
-          <FadeIn>
-            <Link
-              href={ROUTES.games}
-              className="kyndl-card-soft group flex h-full flex-col rounded-3xl border border-[#F4DDD0] bg-white p-7 transition-all duration-500 hover:-translate-y-1 hover:border-[#FF7A59]/45 hover:shadow-[0_28px_64px_-26px_rgba(242,89,111,0.4)]"
-            >
-              <span className="flex size-12 items-center justify-center rounded-2xl border border-[#F4DDD0] bg-[#FFF7F1] text-[#FF7A59]">
-                <Dices className="size-5" />
-              </span>
-              <h3 className="mt-5 font-display text-2xl text-[#3A2A25]">
-                Games for two
-              </h3>
-              <p className="mt-2 max-w-md text-[#7A6258]">
-                Ludo on the couch, FLAMES on a dare, a folded note like school.
-                Silly, shareable, still yours.
-              </p>
-              <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-[#C75B39]">
-                Play the games
-                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </span>
-            </Link>
-          </FadeIn>
-
-          <FadeIn delay={0.08}>
-            <button
-              type="button"
-              onClick={goRedZone}
-              className="kyndl-card-soft group flex h-full flex-col rounded-3xl border border-[#F4DDD0] bg-[#FFF7F1] p-7 text-left transition-all duration-500 hover:-translate-y-1 hover:border-[#C2415A]/40 hover:shadow-[0_28px_64px_-26px_rgba(194,65,90,0.35)]"
-            >
-              <span className="flex size-12 items-center justify-center rounded-2xl border border-[#F4DDD0] bg-white text-[#C2415A]">
-                <Flame className="size-5" />
-              </span>
-              <h3 className="mt-5 font-display text-2xl text-[#3A2A25]">
-                Naughty nights
-                <span className="ml-2 align-middle text-xs font-medium tracking-[0.16em] text-[#C2415A] uppercase">
-                  18+
+        <div
+          className={
+            showGames && showRedZone
+              ? "mt-12 grid gap-5 md:grid-cols-2"
+              : "mt-12 mx-auto grid max-w-xl gap-5"
+          }
+        >
+          {showGames ? (
+            <FadeIn>
+              <Link
+                href={ROUTES.games}
+                className="kyndl-card-soft group flex h-full flex-col rounded-3xl border border-[#F4DDD0] bg-white p-7 transition-all duration-500 hover:-translate-y-1 hover:border-[#FF7A59]/45 hover:shadow-[0_28px_64px_-26px_rgba(242,89,111,0.4)]"
+              >
+                <span className="flex size-12 items-center justify-center rounded-2xl border border-[#F4DDD0] bg-[#FFF7F1] text-[#FF7A59]">
+                  <Dices className="size-5" />
                 </span>
-              </h3>
-              <p className="mt-2 max-w-md text-[#7A6258]">
-                Red Zone — private, playful, and only for the two of you. Same
-                Kyndl warmth. A little more heat.
-              </p>
-              <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-[#C2415A]">
-                Enter Red Zone
-                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </span>
-            </button>
-          </FadeIn>
+                <h3 className="mt-5 font-display text-2xl text-[#3A2A25]">
+                  Games for two
+                </h3>
+                <p className="mt-2 max-w-md text-[#7A6258]">
+                  Ludo on the couch, FLAMES on a dare, a folded note like
+                  school. Silly, shareable, still yours.
+                </p>
+                <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-[#C75B39]">
+                  Play the games
+                  <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            </FadeIn>
+          ) : null}
+
+          {showRedZone ? (
+            <FadeIn delay={showGames ? 0.08 : 0}>
+              <button
+                type="button"
+                onClick={goRedZone}
+                className="kyndl-card-soft group flex h-full flex-col rounded-3xl border border-[#F4DDD0] bg-[#FFF7F1] p-7 text-left transition-all duration-500 hover:-translate-y-1 hover:border-[#C2415A]/40 hover:shadow-[0_28px_64px_-26px_rgba(194,65,90,0.35)]"
+              >
+                <span className="flex size-12 items-center justify-center rounded-2xl border border-[#F4DDD0] bg-white text-[#C2415A]">
+                  <Flame className="size-5" />
+                </span>
+                <h3 className="mt-5 font-display text-2xl text-[#3A2A25]">
+                  Naughty nights
+                  <span className="ml-2 align-middle text-xs font-medium tracking-[0.16em] text-[#C2415A] uppercase">
+                    18+
+                  </span>
+                </h3>
+                <p className="mt-2 max-w-md text-[#7A6258]">
+                  Red Zone — private, playful, and only for the two of you. Same
+                  Kyndl warmth. A little more heat.
+                </p>
+                <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-[#C2415A]">
+                  Enter Red Zone
+                  <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            </FadeIn>
+          ) : null}
         </div>
       </PageContainer>
 
-      <AgeConsentDialog
-        open={asking}
-        onConfirm={() => {
-          setRedZoneConsent();
-          setAsking(false);
-          router.push(ROUTES.redZone);
-        }}
-        onCancel={() => setAsking(false)}
-      />
+      {showRedZone ? (
+        <AgeConsentDialog
+          open={asking}
+          onConfirm={() => {
+            setRedZoneConsent();
+            setAsking(false);
+            router.push(ROUTES.redZone);
+          }}
+          onCancel={() => setAsking(false)}
+        />
+      ) : null}
     </section>
   );
 }

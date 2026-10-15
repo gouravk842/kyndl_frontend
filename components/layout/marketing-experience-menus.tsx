@@ -7,23 +7,15 @@ import { useEffect, useMemo } from "react";
 import { KyndlButton } from "@/components/landing/kyndl-button";
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import { Logo } from "@/components/shared/logo";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { groupByCategory } from "@/constants/experience-taxonomy";
 import { ROUTES } from "@/constants/routes";
 import { ideaHref } from "@/features/ideas/idea-href";
 import { useExperienceCatalog } from "@/hooks/use-experience-catalog";
 import type { ExperienceView } from "@/lib/experience-catalog";
 import { experienceHref } from "@/lib/experiences";
+import { visiblePrimaryLinks } from "@/lib/marketing-nav";
 import { cn } from "@/lib/utils";
-
-/** Mirrors desktop primary links used in the mobile drawer footer. */
-const PRIMARY_LINKS = [
-  { href: ROUTES.memoryBankStory, label: "Memory Bank" },
-  { href: ROUTES.kyndStory, label: "Kynd" },
-  { href: ROUTES.gifts, label: "Gifts" },
-  { href: ROUTES.recommend, label: "For you" },
-  { href: ROUTES.games, label: "Games" },
-  { href: ROUTES.pricing, label: "Pricing" },
-] as const;
 
 type Groups = ReturnType<typeof groupByCategory<ExperienceView>>;
 
@@ -76,6 +68,7 @@ function MegaMenu({
   groups: Groups;
   onNavigate: () => void;
 }) {
+  const settings = useSiteSettings();
   const shelves = groups.map((group) => ({
     ...group,
     cols: shelfColumns(group.items.length),
@@ -140,24 +133,36 @@ function MegaMenu({
 
         <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#F2DACE] pt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <PanelPill href={ROUTES.memoryBankStory} onClick={onNavigate}>
-              Memory Bank
-            </PanelPill>
-            <PanelPill href={ROUTES.kyndStory} onClick={onNavigate}>
-              Kynd
-            </PanelPill>
-            <PanelPill href={ROUTES.gifts} onClick={onNavigate}>
-              Physical gifts
-            </PanelPill>
-            <PanelPill href={ROUTES.recommend} onClick={onNavigate}>
-              For you
-            </PanelPill>
-            <PanelPill href={ROUTES.games} onClick={onNavigate}>
-              Games
-            </PanelPill>
-            <PanelPill href={ROUTES.pricing} onClick={onNavigate}>
-              Pricing
-            </PanelPill>
+            {settings.show_memory_bank ? (
+              <PanelPill href={ROUTES.memoryBankStory} onClick={onNavigate}>
+                Memory Bank
+              </PanelPill>
+            ) : null}
+            {settings.show_kynd ? (
+              <PanelPill href={ROUTES.kyndStory} onClick={onNavigate}>
+                Kynd
+              </PanelPill>
+            ) : null}
+            {settings.show_gifts ? (
+              <PanelPill href={ROUTES.gifts} onClick={onNavigate}>
+                Physical gifts
+              </PanelPill>
+            ) : null}
+            {settings.show_recommend ? (
+              <PanelPill href={ROUTES.recommend} onClick={onNavigate}>
+                For you
+              </PanelPill>
+            ) : null}
+            {settings.show_games ? (
+              <PanelPill href={ROUTES.games} onClick={onNavigate}>
+                Games
+              </PanelPill>
+            ) : null}
+            {settings.show_pricing ? (
+              <PanelPill href={ROUTES.pricing} onClick={onNavigate}>
+                Pricing
+              </PanelPill>
+            ) : null}
             <PanelPill
               href={ideaHref({ source: "experiences" })}
               onClick={onNavigate}
@@ -215,6 +220,11 @@ function MobileDrawer({
   isLoggedIn: boolean;
   accountReady: boolean;
 }) {
+  const settings = useSiteSettings();
+  const primaryLinks = visiblePrimaryLinks(settings).filter(
+    (link) => link.label !== "Memory Bank" && link.label !== "Kynd",
+  );
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -256,35 +266,41 @@ function MobileDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-5">
-          <Link
-            href={ROUTES.memoryBankStory}
-            onClick={onClose}
-            className="mb-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#C75B39] kyndl-card-soft"
-          >
-            Memory Bank
-            <span>→</span>
-          </Link>
-          <Link
-            href={ROUTES.kyndStory}
-            onClick={onClose}
-            className="mb-4 flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[#3A2A25]"
-          >
-            <span>
-              Kynd
-              <span className="mt-0.5 block text-xs font-normal text-[#92786C]">
-                Little things I know
+          {settings.show_memory_bank ? (
+            <Link
+              href={ROUTES.memoryBankStory}
+              onClick={onClose}
+              className="mb-4 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#C75B39] kyndl-card-soft"
+            >
+              Memory Bank
+              <span>→</span>
+            </Link>
+          ) : null}
+          {settings.show_kynd ? (
+            <Link
+              href={ROUTES.kyndStory}
+              onClick={onClose}
+              className="mb-4 flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[#3A2A25]"
+            >
+              <span>
+                Kynd
+                <span className="mt-0.5 block text-xs font-normal text-[#92786C]">
+                  Little things I know
+                </span>
               </span>
-            </span>
-            <span>→</span>
-          </Link>
-          <Link
-            href={ROUTES.experiences}
-            onClick={onClose}
-            className="mb-2 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#3A2A25] kyndl-card-soft"
-          >
-            All experiences
-            <span className="text-[#C75B39]">→</span>
-          </Link>
+              <span>→</span>
+            </Link>
+          ) : null}
+          {settings.show_experiences ? (
+            <Link
+              href={ROUTES.experiences}
+              onClick={onClose}
+              className="mb-2 flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#3A2A25] kyndl-card-soft"
+            >
+              All experiences
+              <span className="text-[#C75B39]">→</span>
+            </Link>
+          ) : null}
           <Link
             href={ideaHref({ source: "experiences" })}
             onClick={onClose}
@@ -294,37 +310,40 @@ function MobileDrawer({
             <span>→</span>
           </Link>
 
-          {groups.map(({ category, items }) => (
-            <div key={category.id} className="mb-5">
-              <p className="mb-1.5 px-2 text-xs font-semibold tracking-[0.16em] text-[#C75B39] uppercase">
-                {category.label}
-              </p>
-              <ul>
-                {items.map((exp) => (
-                  <li key={exp.slug}>
-                    <Link
-                      href={experienceHref(exp.slug)}
-                      prefetch={false}
-                      onClick={onClose}
-                      className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors active:bg-white"
-                    >
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#F4DDD0] bg-white text-[#FF7A59]">
-                        <ExperienceIcon name={exp.icon} className="size-4.5" />
-                      </span>
-                      <span className="text-sm font-medium text-[#3A2A25]">
-                        {exp.name}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {settings.show_experiences
+            ? groups.map(({ category, items }) => (
+                <div key={category.id} className="mb-5">
+                  <p className="mb-1.5 px-2 text-xs font-semibold tracking-[0.16em] text-[#C75B39] uppercase">
+                    {category.label}
+                  </p>
+                  <ul>
+                    {items.map((exp) => (
+                      <li key={exp.slug}>
+                        <Link
+                          href={experienceHref(exp.slug)}
+                          prefetch={false}
+                          onClick={onClose}
+                          className="flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors active:bg-white"
+                        >
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#F4DDD0] bg-white text-[#FF7A59]">
+                            <ExperienceIcon
+                              name={exp.icon}
+                              className="size-4.5"
+                            />
+                          </span>
+                          <span className="text-sm font-medium text-[#3A2A25]">
+                            {exp.name}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            : null}
 
           <div className="mt-2 space-y-1 border-t border-[#F2DACE] pt-4">
-            {PRIMARY_LINKS.filter(
-              (link) => link.label !== "Memory Bank" && link.label !== "Kynd",
-            ).map((link) => (
+            {primaryLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
@@ -334,17 +353,19 @@ function MobileDrawer({
                 {link.label}
               </Link>
             ))}
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onRedZone();
-              }}
-              className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#C2415A] transition-colors active:bg-white"
-            >
-              <Flame className="size-4" />
-              Red Zone
-            </button>
+            {settings.show_red_zone ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onRedZone();
+                }}
+                className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#C2415A] transition-colors active:bg-white"
+              >
+                <Flame className="size-4" />
+                Red Zone
+              </button>
+            ) : null}
           </div>
         </div>
 

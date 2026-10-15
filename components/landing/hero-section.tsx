@@ -8,6 +8,7 @@ import Link from "next/link";
 import { AmbientBackground } from "@/components/landing/ambient-background";
 import { KyndlButton } from "@/components/landing/kyndl-button";
 import { PageContainer } from "@/components/layout/page-container";
+import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
 import { ROUTES } from "@/constants/routes";
 
 const EmotionalShowcase = dynamic(
@@ -25,6 +26,37 @@ const EmotionalShowcase = dynamic(
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export function HeroSection() {
+  const settings = useSiteSettings();
+  const isV2 = settings.site_mode === "v2";
+
+  const eyebrow = isV2
+    ? "Gifts that feel personal"
+    : "Keep once. Gift a hundred ways.";
+
+  const primaryCta = isV2
+    ? settings.show_gifts
+      ? { href: ROUTES.gifts, label: "Shop gifts" }
+      : settings.show_experiences
+        ? { href: ROUTES.experiences, label: "Browse keepsakes" }
+        : { href: ROUTES.register, label: "Get started" }
+    : settings.show_memory_bank
+      ? { href: ROUTES.memories, label: "Open the Memory Bank" }
+      : settings.show_experiences
+        ? { href: ROUTES.experiences, label: "Browse experiences" }
+        : { href: ROUTES.register, label: "Get started" };
+
+  const secondaryCta = isV2
+    ? settings.show_experiences
+      ? { href: ROUTES.experiences, label: "Digital keepsakes" }
+      : settings.show_recommend
+        ? { href: ROUTES.recommend, label: "Find the right gift" }
+        : null
+    : settings.show_recommend
+      ? { href: ROUTES.recommend, label: "Find the right gift" }
+      : settings.show_gifts
+        ? { href: ROUTES.gifts, label: "Shop gifts" }
+        : null;
+
   return (
     <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
       <AmbientBackground />
@@ -40,60 +72,139 @@ export function HeroSection() {
           >
             <span className="inline-flex items-center gap-2 rounded-full border border-[#F2DACE] bg-white/70 px-4 py-1.5 text-xs font-medium tracking-wide text-[#C75B39] backdrop-blur-sm">
               <Sparkles className="size-3.5" />
-              Keep once. Gift a hundred ways.
+              {eyebrow}
             </span>
 
             <h1 className="mt-6 font-display text-[2.35rem] leading-[1.04] tracking-tight text-[#3A2A25] min-[380px]:text-[2.6rem] sm:text-5xl lg:text-6xl xl:text-[4.4rem]">
-              Some moments
-              <br />
-              deserve more than a{" "}
-              <span className="relative font-cursive text-[#C75B39]">
-                text.
-                <svg
-                  className="absolute -bottom-3 left-0 w-full"
-                  viewBox="0 0 200 12"
-                  fill="none"
-                  preserveAspectRatio="none"
-                  aria-hidden
-                >
-                  <motion.path
-                    d="M2 8C40 3 80 3 120 6c30 2 60 1 78-3"
-                    stroke="#FF7A59"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 1.1, ease, delay: 0.7 }}
-                  />
-                </svg>
-              </span>
+              {isV2 ? (
+                <>
+                  Send something
+                  <br />
+                  they can{" "}
+                  <span className="relative font-cursive text-[#C75B39]">
+                    feel.
+                    <svg
+                      className="absolute -bottom-3 left-0 w-full"
+                      viewBox="0 0 200 12"
+                      fill="none"
+                      preserveAspectRatio="none"
+                      aria-hidden
+                    >
+                      <motion.path
+                        d="M2 8C40 3 80 3 120 6c30 2 60 1 78-3"
+                        stroke="#FF7A59"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.1, ease, delay: 0.7 }}
+                      />
+                    </svg>
+                  </span>
+                </>
+              ) : (
+                <>
+                  Some moments
+                  <br />
+                  deserve more than a{" "}
+                  <span className="relative font-cursive text-[#C75B39]">
+                    text.
+                    <svg
+                      className="absolute -bottom-3 left-0 w-full"
+                      viewBox="0 0 200 12"
+                      fill="none"
+                      preserveAspectRatio="none"
+                      aria-hidden
+                    >
+                      <motion.path
+                        d="M2 8C40 3 80 3 120 6c30 2 60 1 78-3"
+                        stroke="#FF7A59"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 1.1, ease, delay: 0.7 }}
+                      />
+                    </svg>
+                  </span>
+                </>
+              )}
             </h1>
 
             <p className="mt-8 max-w-lg text-lg leading-relaxed text-[#7A6258]">
-              Start with a{" "}
-              <Link
-                href={ROUTES.memoryBankStory}
-                className="text-[#3A2A25] underline-offset-4 hover:underline"
-              >
-                Memory Bank
-              </Link>{" "}
-              — photos, notes, little days in one place. Then grow them into a
-              scrapbook they can hold, a night sky of your moments, a jar of
-              notes. Or craft any keepsake on its own.
+              {isV2 ? (
+                <>
+                  {settings.show_gifts ? (
+                    <>
+                      Browse{" "}
+                      <Link
+                        href={ROUTES.gifts}
+                        className="text-[#3A2A25] underline-offset-4 hover:underline"
+                      >
+                        physical gifts
+                      </Link>
+                      {settings.show_experiences ? (
+                        <>
+                          {" "}
+                          or craft a digital keepsake — scrapbooks, plaques,
+                          proposals — personalized in minutes and sent with a
+                          private link.
+                        </>
+                      ) : (
+                        <>
+                          {" "}
+                          — thoughtful, ready to ship, made for the people you
+                          love.
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Craft digital keepsakes — scrapbooks, plaques, proposals —
+                      personalized in minutes and sent with a private link.
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {settings.show_memory_bank ? (
+                    <>
+                      Start with a{" "}
+                      <Link
+                        href={ROUTES.memoryBankStory}
+                        className="text-[#3A2A25] underline-offset-4 hover:underline"
+                      >
+                        Memory Bank
+                      </Link>{" "}
+                      — photos, notes, little days in one place. Then grow them
+                      into a scrapbook they can hold, a night sky of your
+                      moments, a jar of notes. Or craft any keepsake on its own.
+                    </>
+                  ) : (
+                    <>
+                      Craft a scrapbook they can hold, a night sky of your
+                      moments, a jar of notes — personalized in minutes, sent
+                      with a private link.
+                    </>
+                  )}
+                </>
+              )}
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
-              <KyndlButton size="lg" href={ROUTES.memories} className="group">
-                Open the Memory Bank
+              <KyndlButton size="lg" href={primaryCta.href} className="group">
+                {primaryCta.label}
                 <ArrowRight className="ml-2 size-4 transition-transform duration-300 group-hover:translate-x-1" />
               </KyndlButton>
-              <KyndlButton
-                size="lg"
-                variant="secondary"
-                href={ROUTES.recommend}
-              >
-                Find the right gift
-              </KyndlButton>
+              {secondaryCta ? (
+                <KyndlButton
+                  size="lg"
+                  variant="secondary"
+                  href={secondaryCta.href}
+                >
+                  {secondaryCta.label}
+                </KyndlButton>
+              ) : null}
             </div>
 
             <div className="mt-10 flex items-center gap-4">

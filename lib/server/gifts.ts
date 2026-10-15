@@ -2,7 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 
-import type { GiftProduct, PublicStore } from "@/types/gift";
+import type { GiftProduct, ProductCategory, PublicStore } from "@/types/gift";
 
 /**
  * Server-only fetch of the public physical-gift catalog from Django. Used by the
@@ -32,6 +32,19 @@ export const getGiftCatalog = cache(async (): Promise<GiftProduct[]> => {
     return (await res.json()) as GiftProduct[];
   } catch (err) {
     console.error("[gifts] catalog fetch error:", err);
+    return [];
+  }
+});
+
+export const getGiftCategories = cache(async (): Promise<ProductCategory[]> => {
+  try {
+    const res = await fetch(`${DJANGO_BASE}/gifts/categories/`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as ProductCategory[];
+  } catch {
     return [];
   }
 });
