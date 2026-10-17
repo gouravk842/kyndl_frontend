@@ -16,6 +16,7 @@ import { KeepsakeFace } from "@/features/memory-bank/lib/keepsake-face";
 import { rememberCircle } from "@/features/memory-bank/lib/last-circle";
 import { photoSrc } from "@/features/memory-bank/lib/preview";
 import { LocationSearch } from "@/features/our-places/components/location-search";
+import { QuotaPackDialog } from "@/features/quotas/components/quota-pack-dialog";
 import {
   useCreateCircle,
   useCreateMemory,
@@ -23,14 +24,18 @@ import {
   useRenameCircle,
   useUpdateMemory,
 } from "@/hooks/use-memory-bank";
+import { isQuotaExceeded, quotaStatusFromError } from "@/lib/quota";
 import { cn } from "@/lib/utils";
 import { track } from "@/services/analytics/analytics.service";
 import { fileService } from "@/services/files/file.service";
+import type { ApiError } from "@/types/api";
 import type {
   BankMemory,
   MemoryCircle,
+  MemoryInput,
   MemoryLocation,
 } from "@/types/memory-bank";
+import type { QuotaStatus } from "@/types/quota";
 
 const MAX_PHOTOS = 12;
 
@@ -441,6 +446,12 @@ function KeepForm({
     existingDrafts(memory),
   );
   const [uploading, setUploading] = useState(false);
+  const [quotaOpen, setQuotaOpen] = useState(false);
+  const [quotaStatus, setQuotaStatus] = useState<QuotaStatus | null>(null);
+  const [pendingInput, setPendingInput] = useState<{
+    circleId: string;
+    input: MemoryInput;
+  } | null>(null);
 
   const destinations = circles.data ?? [];
   const selectedId = destinations.some((circle) => circle.id === whoId)
@@ -501,20 +512,27 @@ function KeepForm({
           { onSuccess: () => onClose() },
         );
       } else {
-        create.mutate(
-          { circleId: selectedId, input },
-          {
-            onSuccess: () => {
-              track({
-                name: "memory_bank.memory_kept",
-                properties: { photo_count: fileIds.length },
-              });
-              onClose();
-            },
-          },
-        );
+        try {
+          await create.mutateAsync({ circleId: selectedId, input });
+          track({
+            name: "memory_bank.memory_kept",
+            properties: { photo_count: fileIds.length },
+          });
+          onClose();
+        } catch (error) {
+          if (isQuotaExceeded(error)) {
+            setPendingInput({ circleId: selectedId, input });
+            setQuotaStatus(
+              quotaStatusFromError(error as ApiError, "memory_bank"),
+            );
+            setQuotaOpen(true);
+            return;
+          }
+          throw error;
+        }
       }
     } catch (error) {
+      if (isQuotaExceeded(error)) return;
       const text = error instanceof Error ? error.message : "Upload failed.";
       toast.error(text);
     } finally {
@@ -522,125 +540,148 @@ function KeepForm({
     }
   }
 
+  async function retryAfterPack() {
+    if (!pendingInput) return;
+    await create.mutateAsync(pendingInput);
+    track({
+      name: "memory_bank.memory_kept",
+      properties: { photo_count: pendingInput.input.photos?.length ?? 0 },
+    });
+    setPendingInput(null);
+    onClose();
+  }
+
   return (
-    <form
-      onSubmit={onKeep}
-      className="flex min-h-0 flex-1 flex-col"
-      onWheel={(event) => event.stopPropagation()}
-    >
-      {showHeader ? (
-        <div className="border-b border-[var(--mb-solar-line)] px-5 py-4">
-          <h2
-            id="keep-title"
-            className="font-display text-xl text-[var(--mb-solar-ink)]"
-          >
-            {editing ? "Edit this memory" : "Keep a memory"}
+    <>
+      <form
+        onSubmit={onKeep}
+        className="flex min-h-0 flex-1 flex-col"
+        onWheel={(event) => event.stopPropagation()}
+      >
+        {showHeader ? (
+          <div className="border-b border-[var(--mb-solar-line)] px-5 py-4">
+            <h2
+              id="keep-title"
+              className="font-display text-xl text-[var(--mb-solar-ink)]"
+            >
+              {editing ? "Edit this memory" : "Keep a memory"}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--mb-solar-muted)]">
+              A title is enough. The rest can wait.
+            </p>
+          </div>
+        ) : (
+          <h2 id="keep-title" className="sr-only">
+            Keep a memory
           </h2>
-          <p className="mt-1 text-sm text-[var(--mb-solar-muted)]">
-            A title is enough. The rest can wait.
-          </p>
-        </div>
-      ) : (
-        <h2 id="keep-title" className="sr-only">
-          Keep a memory
-        </h2>
-      )}
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">
-        <div className="space-y-1.5">
-          <Label>Media</Label>
-          <PhotoWell
-            photos={photos}
-            onPick={() => fileRef.current?.click()}
-            onRemove={removePhoto}
+        )}
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">
+          <div className="space-y-1.5">
+            <Label>Media</Label>
+            <PhotoWell
+              photos={photos}
+              onPick={() => fileRef.current?.click()}
+              onRemove={removePhoto}
+            />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={(event) => {
+                addFiles(event.target.files);
+                event.target.value = "";
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="keep-title-field">Title</Label>
+            <Input
+              id="keep-title-field"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="The rain"
+              maxLength={200}
+              autoFocus={autoFocus}
+              required
+              className="h-11 font-display"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="keep-note">Description</Label>
+            <textarea
+              id="keep-note"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder="Optional — what you want to remember"
+              maxLength={8000}
+              rows={4}
+              className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="keep-when">Date</Label>
+            <Input
+              id="keep-when"
+              type="date"
+              value={when}
+              onChange={(event) => setWhen(event.target.value)}
+              className="h-11"
+            />
+          </div>
+          <LocationSearch
+            inputId="keep-location"
+            inlineResults
+            lat={place?.lat ?? null}
+            lng={place?.lng ?? null}
+            label={place?.label || place?.name}
+            onPick={(result) =>
+              setPlace({
+                name: result.name,
+                label: result.label,
+                lat: result.lat,
+                lng: result.lng,
+              })
+            }
+            onClear={() => setPlace(null)}
           />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="sr-only"
-            onChange={(event) => {
-              addFiles(event.target.files);
-              event.target.value = "";
-            }}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="keep-bank">Bank</Label>
+            <BankSelect
+              value={selectedId}
+              circles={destinations}
+              onChange={setWhoId}
+              disabled={editing}
+            />
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="keep-title-field">Title</Label>
-          <Input
-            id="keep-title-field"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="The rain"
-            maxLength={200}
-            autoFocus={autoFocus}
-            required
-            className="h-11 font-display"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="keep-note">Description</Label>
-          <textarea
-            id="keep-note"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="Optional — what you want to remember"
-            maxLength={8000}
-            rows={4}
-            className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="keep-when">Date</Label>
-          <Input
-            id="keep-when"
-            type="date"
-            value={when}
-            onChange={(event) => setWhen(event.target.value)}
+        <div className="flex gap-2 border-t border-[var(--mb-solar-line)] px-5 py-3">
+          <Button
+            type="button"
+            variant="ghost"
             className="h-11"
-          />
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" className="h-11 flex-1" disabled={!canKeep}>
+            {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+            {editing ? "Save" : "Keep"}
+          </Button>
         </div>
-        <LocationSearch
-          inputId="keep-location"
-          inlineResults
-          lat={place?.lat ?? null}
-          lng={place?.lng ?? null}
-          label={place?.label || place?.name}
-          onPick={(result) =>
-            setPlace({
-              name: result.name,
-              label: result.label,
-              lat: result.lat,
-              lng: result.lng,
-            })
-          }
-          onClear={() => setPlace(null)}
-        />
-        <div className="space-y-1.5">
-          <Label htmlFor="keep-bank">Bank</Label>
-          <BankSelect
-            value={selectedId}
-            circles={destinations}
-            onChange={setWhoId}
-            disabled={editing}
-          />
-        </div>
-      </div>
-      <div className="flex gap-2 border-t border-[var(--mb-solar-line)] px-5 py-3">
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-11"
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" className="h-11 flex-1" disabled={!canKeep}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-          {editing ? "Save" : "Keep"}
-        </Button>
-      </div>
-    </form>
+      </form>
+      <QuotaPackDialog
+        open={quotaOpen}
+        feature="memory_bank"
+        status={quotaStatus}
+        onClose={() => {
+          setQuotaOpen(false);
+          setPendingInput(null);
+        }}
+        onPurchased={retryAfterPack}
+      />
+    </>
   );
 }
 

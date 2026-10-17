@@ -77,6 +77,7 @@ import { MemoryMolecule } from "@/features/memory-bank/molecule/memory-molecule"
 import { SolarAtmosphere } from "@/features/memory-bank/solar/solar-atmosphere";
 import { SolarBank } from "@/features/memory-bank/solar/solar-bank";
 import { SolarSky } from "@/features/memory-bank/solar/solar-sky";
+import { QuotaMeter } from "@/features/quotas/components/quota-meter";
 import {
   useCircleMemories,
   useDeleteCircle,
@@ -886,7 +887,12 @@ function Hud({
           />
         </div>
 
-        <div className="pointer-events-auto flex shrink-0 items-center gap-1">
+        <div className="pointer-events-auto flex shrink-0 items-center gap-2">
+          <QuotaMeter
+            feature="memory_bank"
+            unitLabel="memories"
+            className="hidden sm:block"
+          />
           <Button
             type="button"
             variant="ghost"

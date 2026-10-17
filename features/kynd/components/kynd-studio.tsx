@@ -10,6 +10,8 @@ import { KyndGraph } from "@/features/kynd/components/kynd-graph";
 import { NoticeSheet } from "@/features/kynd/components/notice-sheet";
 import { PersonSheet } from "@/features/kynd/components/person-sheet";
 import { monogram, relationshipLabel } from "@/features/kynd/lib/catalog";
+import { QuotaMeter } from "@/features/quotas/components/quota-meter";
+import { QuotaPackDialog } from "@/features/quotas/components/quota-pack-dialog";
 import {
   useCreateKyndItem,
   useCreateKyndPerson,
@@ -21,9 +23,16 @@ import {
   useUpdateKyndItem,
   useUpdateKyndPerson,
 } from "@/hooks/use-kynd";
+import { isQuotaExceeded, quotaStatusFromError } from "@/lib/quota";
 import { cn } from "@/lib/utils";
 import type { ApiError } from "@/types/api";
-import type { KyndCategory, KyndItem, RelationshipType } from "@/types/kynd";
+import type {
+  KyndCategory,
+  KyndItem,
+  KyndItemInput,
+  RelationshipType,
+} from "@/types/kynd";
+import type { QuotaStatus } from "@/types/quota";
 
 export function KyndStudio() {
   const people = useKyndPeople();
@@ -38,6 +47,9 @@ export function KyndStudio() {
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [editing, setEditing] = useState<KyndItem | null>(null);
   const [confirmItem, setConfirmItem] = useState(false);
+  const [quotaOpen, setQuotaOpen] = useState(false);
+  const [quotaStatus, setQuotaStatus] = useState<QuotaStatus | null>(null);
+  const [pendingItem, setPendingItem] = useState<KyndItemInput | null>(null);
 
   const focusId =
     picked === "all"
@@ -146,9 +158,22 @@ export function KyndStudio() {
     try {
       await createItem.mutateAsync(input);
       setNoticeOpen(false);
-    } catch {
+    } catch (error) {
+      if (isQuotaExceeded(error)) {
+        setPendingItem(input);
+        setQuotaStatus(quotaStatusFromError(error as ApiError, "kynd"));
+        setQuotaOpen(true);
+        return;
+      }
       // The hook already explains what happened.
     }
+  }
+
+  async function retryItemAfterPack() {
+    if (!pendingItem) return;
+    await createItem.mutateAsync(pendingItem);
+    setPendingItem(null);
+    setNoticeOpen(false);
   }
 
   const everyone = focusId === null && picked === "all";
@@ -156,58 +181,65 @@ export function KyndStudio() {
   return (
     <div className="-m-6 flex h-[calc(100dvh-4rem)] flex-col overflow-hidden bg-[#f6f0e9] text-[#2c2420] dark:bg-[#161311] dark:text-[#f6efe9]">
       <header className="flex shrink-0 items-center gap-3 border-b border-[#eadfd4] px-3 py-2.5 sm:px-4 dark:border-white/10">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <PersonChip
-            pressed={everyone}
-            label="Everyone"
-            detail="Across your Kynd"
-            icon={<Users className="size-3.5" />}
-            onClick={() => choose("all")}
-          />
-          {rows.map((row, index) => (
+        <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <PersonChip
-              key={row.id}
-              pressed={row.id === focusId}
-              label={row.name}
-              mark={monogram(row.name)}
-              detail={relationshipLabel(row.relationship_type)}
-              wash={PERSON_WASH[index % PERSON_WASH.length] ?? "#FBD3DE"}
-              onClick={() => choose(row.id)}
+              pressed={everyone}
+              label="Everyone"
+              detail="Across your Kynd"
+              icon={<Users className="size-3.5" />}
+              onClick={() => choose("all")}
             />
-          ))}
-          <button
-            type="button"
-            aria-label="Add someone"
-            title="Add someone"
-            onClick={() => {
-              setCreating(true);
-              setPersonOpen(true);
-            }}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-[#c4b2a6] text-[#5c4a43] transition-colors hover:border-[#8e1020]/50 hover:text-[#8e1020] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020] dark:text-[#cbb8ad]"
-          >
-            <Plus className="size-4" />
-          </button>
-        </div>
+            {rows.map((row, index) => (
+              <PersonChip
+                key={row.id}
+                pressed={row.id === focusId}
+                label={row.name}
+                mark={monogram(row.name)}
+                detail={relationshipLabel(row.relationship_type)}
+                wash={PERSON_WASH[index % PERSON_WASH.length] ?? "#FBD3DE"}
+                onClick={() => choose(row.id)}
+              />
+            ))}
+            <button
+              type="button"
+              aria-label="Add someone"
+              title="Add someone"
+              onClick={() => {
+                setCreating(true);
+                setPersonOpen(true);
+              }}
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-[#c4b2a6] text-[#5c4a43] transition-colors hover:border-[#8e1020]/50 hover:text-[#8e1020] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8e1020] dark:text-[#cbb8ad]"
+            >
+              <Plus className="size-4" />
+            </button>
+          </div>
 
-        <div
-          role="tablist"
-          aria-label="Kynd view"
-          className="flex shrink-0 rounded-full bg-white p-0.5 shadow-[0_6px_18px_-14px_rgba(58,42,37,0.5)] dark:bg-white/10"
-        >
-          <TabButton
-            pressed={tab === "talk"}
-            onClick={() => setTab("talk")}
-            tone="bg-gradient-to-r from-[#FF7A59] to-[#F2596F]"
+          <div
+            role="tablist"
+            aria-label="Kynd view"
+            className="flex shrink-0 rounded-full bg-white p-0.5 shadow-[0_6px_18px_-14px_rgba(58,42,37,0.5)] dark:bg-white/10"
           >
-            Chat
-          </TabButton>
-          <TabButton
-            pressed={tab === "graph"}
-            onClick={() => setTab("graph")}
-            tone="bg-gradient-to-r from-[#F0A13D] to-[#F2596F]"
-          >
-            Graph
-          </TabButton>
+            <TabButton
+              pressed={tab === "talk"}
+              onClick={() => setTab("talk")}
+              tone="bg-gradient-to-r from-[#FF7A59] to-[#F2596F]"
+            >
+              Chat
+            </TabButton>
+            <TabButton
+              pressed={tab === "graph"}
+              onClick={() => setTab("graph")}
+              tone="bg-gradient-to-r from-[#F0A13D] to-[#F2596F]"
+            >
+              Graph
+            </TabButton>
+          </div>
+          <QuotaMeter
+            feature="kynd"
+            unitLabel="notes"
+            className="shrink-0 px-1 sm:ml-auto"
+          />
         </div>
       </header>
 
@@ -334,6 +366,16 @@ export function KyndStudio() {
             setConfirmItem(false);
           }
         }}
+      />
+      <QuotaPackDialog
+        open={quotaOpen}
+        feature="kynd"
+        status={quotaStatus}
+        onClose={() => {
+          setQuotaOpen(false);
+          setPendingItem(null);
+        }}
+        onPurchased={retryItemAfterPack}
       />
     </div>
   );

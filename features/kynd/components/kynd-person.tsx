@@ -21,6 +21,8 @@ import {
   littleThingsLabel,
   relationshipLabel,
 } from "@/features/kynd/lib/catalog";
+import { QuotaMeter } from "@/features/quotas/components/quota-meter";
+import { QuotaPackDialog } from "@/features/quotas/components/quota-pack-dialog";
 import {
   useCreateKyndItem,
   useDeleteKyndItem,
@@ -30,9 +32,16 @@ import {
   useUpdateKyndItem,
   useUpdateKyndPerson,
 } from "@/hooks/use-kynd";
+import { isQuotaExceeded, quotaStatusFromError } from "@/lib/quota";
 import { cn } from "@/lib/utils";
 import type { ApiError } from "@/types/api";
-import type { KyndCategory, KyndItem, RelationshipType } from "@/types/kynd";
+import type {
+  KyndCategory,
+  KyndItem,
+  KyndItemInput,
+  RelationshipType,
+} from "@/types/kynd";
+import type { QuotaStatus } from "@/types/quota";
 
 function useDebounced(value: string, delay = 250) {
   const [debounced, setDebounced] = useState(value);
@@ -65,6 +74,9 @@ export function KyndPerson({ personId }: { personId: string }) {
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [editing, setEditing] = useState<KyndItem | null>(null);
   const [confirmItem, setConfirmItem] = useState(false);
+  const [quotaOpen, setQuotaOpen] = useState(false);
+  const [quotaStatus, setQuotaStatus] = useState<QuotaStatus | null>(null);
+  const [pendingItem, setPendingItem] = useState<KyndItemInput | null>(null);
 
   const profile = person.data;
   const items = useMemo(
@@ -152,20 +164,36 @@ export function KyndPerson({ personId }: { personId: string }) {
       }
       return;
     }
+    const payload = {
+      body: input.body,
+      title: input.title,
+      category: input.category,
+    };
     try {
-      const created = await createItem.mutateAsync({
-        body: input.body,
-        title: input.title,
-        category: input.category,
-      });
+      const created = await createItem.mutateAsync(payload);
       setNoticeOpen(false);
       setDraft("");
       if (!created.category) setCategory("");
       else if (category && category !== created.category)
         setCategory(created.category);
-    } catch {
+    } catch (error) {
+      if (isQuotaExceeded(error)) {
+        setPendingItem(payload);
+        setQuotaStatus(quotaStatusFromError(error as ApiError, "kynd"));
+        setQuotaOpen(true);
+        return;
+      }
       // The hook already explains what happened.
     }
+  }
+
+  async function retryItemAfterPack() {
+    if (!pendingItem) return;
+    const created = await createItem.mutateAsync(pendingItem);
+    setPendingItem(null);
+    setNoticeOpen(false);
+    setDraft("");
+    if (!created.category) setCategory("");
   }
 
   async function savePerson(input: {
@@ -202,6 +230,7 @@ export function KyndPerson({ personId }: { personId: string }) {
             <span aria-hidden> · </span>
             {littleThingsLabel(profile.item_count)}
           </p>
+          <QuotaMeter feature="kynd" unitLabel="notes" className="mt-1" />
           <p className="mt-2 text-sm text-[#6b564c] dark:text-[#cbb8ad]">
             Things I know about them.
           </p>
@@ -402,6 +431,16 @@ export function KyndPerson({ personId }: { personId: string }) {
             setConfirmItem(false);
           }
         }}
+      />
+      <QuotaPackDialog
+        open={quotaOpen}
+        feature="kynd"
+        status={quotaStatus}
+        onClose={() => {
+          setQuotaOpen(false);
+          setPendingItem(null);
+        }}
+        onPurchased={retryItemAfterPack}
       />
     </KyndShell>
   );

@@ -95,6 +95,11 @@ export const queryKeys = {
     chat: () => [...queryKeys.kynd.all, "chat"] as const,
     chatPerson: (id: string) => [...queryKeys.kynd.all, "chat", id] as const,
   },
+  quotas: {
+    all: ["quotas"] as const,
+    status: (feature: string) =>
+      [...queryKeys.quotas.all, "status", feature] as const,
+  },
   memoryBank: {
     all: ["memory-bank"] as const,
     circles: () => [...queryKeys.memoryBank.all, "circles"] as const,

@@ -5,7 +5,8 @@ import type { GiftProduct } from "@/types/gift";
 
 /** A cart line keeps enough product detail to render the cart without a refetch.
  * Price is only ever a *display* value here — the server recomputes the
- * authoritative total from its own catalog at checkout. */
+ * authoritative total from its own catalog at checkout.
+ * `image_url` is a short-lived signed URL; `useCartDisplaySync` refreshes it. */
 export interface CartItem {
   slug: string;
   name: string;
@@ -24,6 +25,8 @@ interface CartState {
   add: (product: GiftProduct, quantity?: number) => void;
   remove: (slug: string) => void;
   setQuantity: (slug: string, quantity: number) => void;
+  /** Patch display fields from fresh catalog rows (presigned image URLs expire). */
+  syncFromProducts: (products: GiftProduct[]) => void;
   clear: () => void;
   open: () => void;
   close: () => void;
@@ -46,7 +49,11 @@ export const useCartStore = create<CartState>()(
             return {
               items: state.items.map((i) =>
                 i.slug === product.slug
-                  ? { ...i, quantity: Math.min(i.quantity + quantity, cap), maxStock: product.stock }
+                  ? {
+                      ...i,
+                      quantity: Math.min(i.quantity + quantity, cap),
+                      maxStock: product.stock,
+                    }
                   : i,
               ),
               isOpen: true,
@@ -77,11 +84,48 @@ export const useCartStore = create<CartState>()(
           items: state.items
             .map((i) =>
               i.slug === slug
-                ? { ...i, quantity: Math.max(1, Math.min(quantity, Math.max(i.maxStock, 1))) }
+                ? {
+                    ...i,
+                    quantity: Math.max(
+                      1,
+                      Math.min(quantity, Math.max(i.maxStock, 1)),
+                    ),
+                  }
                 : i,
             )
             .filter((i) => i.quantity > 0),
         })),
+
+      syncFromProducts: (products) =>
+        set((state) => {
+          if (products.length === 0 || state.items.length === 0) return state;
+          const bySlug = new Map(products.map((p) => [p.slug, p]));
+          let changed = false;
+          const items = state.items.map((item) => {
+            const product = bySlug.get(item.slug);
+            if (!product) return item;
+            const next: CartItem = {
+              ...item,
+              name: product.name,
+              price: product.price,
+              currency: product.currency,
+              image_url: product.image_url,
+              maxStock: product.stock,
+            };
+            if (
+              next.name !== item.name ||
+              next.price !== item.price ||
+              next.currency !== item.currency ||
+              next.image_url !== item.image_url ||
+              next.maxStock !== item.maxStock
+            ) {
+              changed = true;
+              return next;
+            }
+            return item;
+          });
+          return changed ? { items } : state;
+        }),
 
       clear: () => set({ items: [] }),
       open: () => set({ isOpen: true }),

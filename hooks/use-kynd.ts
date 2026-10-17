@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 
 import { queryKeys } from "@/constants/query-keys";
+import { isQuotaExceeded } from "@/lib/quota";
 import { kyndService } from "@/services/kynd/kynd.service";
 import { useAuthStore } from "@/store/auth.store";
 import type { ApiError } from "@/types/api";
@@ -165,9 +166,12 @@ export function useCreateKyndItem(personId: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.kynd.person(personId),
       });
+      queryClient.invalidateQueries({ queryKey: queryKeys.quotas.all });
     },
-    onError: (error: unknown) =>
-      toast.error(message(error, "Couldn't keep that.")),
+    onError: (error: unknown) => {
+      if (isQuotaExceeded(error)) return;
+      toast.error(message(error, "Couldn't keep that."));
+    },
   });
 }
 

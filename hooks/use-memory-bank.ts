@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { queryKeys } from "@/constants/query-keys";
+import { isQuotaExceeded } from "@/lib/quota";
 import { memoryBankService } from "@/services/memory-bank/memory-bank.service";
 import { useAuthStore } from "@/store/auth.store";
 import type { ApiError } from "@/types/api";
@@ -188,10 +189,14 @@ export function useCreateMemory() {
       queryClient.invalidateQueries({
         queryKey: [...queryKeys.memoryBank.all, "leaderboard"],
       });
+      queryClient.invalidateQueries({ queryKey: queryKeys.quotas.all });
       toast.success("Kept.");
     },
-    onError: (error: unknown) =>
-      toast.error(message(error, "Could not save that memory.")),
+    onError: (error: unknown) => {
+      // Pack dialog handles quota_exceeded — don't double-toast.
+      if (isQuotaExceeded(error)) return;
+      toast.error(message(error, "Could not save that memory."));
+    },
   });
 }
 

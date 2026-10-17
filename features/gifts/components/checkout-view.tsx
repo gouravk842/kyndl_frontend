@@ -16,6 +16,7 @@ import {
   type ShippingFormValues,
   shippingSchema,
 } from "@/features/gifts/schemas/checkout.schema";
+import { useCartDisplaySync } from "@/hooks/use-cart-display-sync";
 import {
   useAddresses,
   useCartQuote,
@@ -34,6 +35,9 @@ export function CheckoutView() {
   const isHydrated = useCartStore((s) => s.isHydrated);
   const clear = useCartStore((s) => s.clear);
   const user = useAuthStore((s) => s.user);
+
+  // Same signed-URL refresh as the cart drawer (header may omit CartButton).
+  useCartDisplaySync();
 
   const checkout = useGiftCheckout();
   const saveAddress = useSaveAddress();

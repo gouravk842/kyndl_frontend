@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ROUTES } from "@/constants/routes";
+import { useCartDisplaySync } from "@/hooks/use-cart-display-sync";
 import { formatPrice } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
 import { cartCount, cartSubtotal, useCartStore } from "@/store/cart.store";
@@ -24,6 +25,9 @@ export function CartButton() {
   const setOpen = useCartStore((s) => s.setOpen);
   const setQuantity = useCartStore((s) => s.setQuantity);
   const remove = useCartStore((s) => s.remove);
+
+  // Cart persists signed image URLs; refresh them from the live catalog.
+  useCartDisplaySync();
 
   const count = isHydrated ? cartCount(items) : 0;
   const subtotal = cartSubtotal(items);
@@ -47,7 +51,10 @@ export function CartButton() {
         )}
       </SheetTrigger>
 
-      <SheetContent side="right" className="w-full gap-0 bg-[#FFF7F1] sm:max-w-md">
+      <SheetContent
+        side="right"
+        className="w-full gap-0 bg-[#FFF7F1] sm:max-w-md"
+      >
         <SheetHeader className="border-b border-[#F4DDD0] px-5 py-4">
           <SheetTitle className="font-display text-xl text-[#3A2A25]">
             Your gift bag
@@ -57,7 +64,9 @@ export function CartButton() {
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
             <ShoppingBag className="size-10 text-[#E3A78C]" />
-            <p className="font-display text-lg text-[#3A2A25]">Nothing in here yet</p>
+            <p className="font-display text-lg text-[#3A2A25]">
+              Nothing in here yet
+            </p>
             <p className="text-sm text-[#7A6258]">
               Find a little something worth unwrapping.
             </p>
@@ -87,7 +96,9 @@ export function CartButton() {
                     </span>
                     <div className="flex flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-medium text-[#3A2A25]">{item.name}</p>
+                        <p className="text-sm font-medium text-[#3A2A25]">
+                          {item.name}
+                        </p>
                         <button
                           type="button"
                           onClick={() => remove(item.slug)}
@@ -104,7 +115,9 @@ export function CartButton() {
                         <div className="inline-flex items-center rounded-full border border-[#F2DACE] bg-white">
                           <button
                             type="button"
-                            onClick={() => setQuantity(item.slug, item.quantity - 1)}
+                            onClick={() =>
+                              setQuantity(item.slug, item.quantity - 1)
+                            }
                             aria-label="Decrease quantity"
                             className="flex size-8 items-center justify-center rounded-full text-[#7A6258] hover:text-[#3A2A25]"
                           >
@@ -115,8 +128,12 @@ export function CartButton() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => setQuantity(item.slug, item.quantity + 1)}
-                            disabled={item.quantity >= Math.max(item.maxStock, 1)}
+                            onClick={() =>
+                              setQuantity(item.slug, item.quantity + 1)
+                            }
+                            disabled={
+                              item.quantity >= Math.max(item.maxStock, 1)
+                            }
                             aria-label="Increase quantity"
                             className="flex size-8 items-center justify-center rounded-full text-[#7A6258] hover:text-[#3A2A25] disabled:opacity-30"
                           >
@@ -124,7 +141,10 @@ export function CartButton() {
                           </button>
                         </div>
                         <span className="text-sm font-medium text-[#3A2A25]">
-                          {formatPrice(item.price * item.quantity, item.currency)}
+                          {formatPrice(
+                            item.price * item.quantity,
+                            item.currency,
+                          )}
                         </span>
                       </div>
                     </div>
