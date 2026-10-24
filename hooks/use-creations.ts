@@ -91,7 +91,7 @@ export function usePublishCreation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.creations.all });
-      toast.success("Published — your share link is ready.");
+      toast.success("Published. Send the link — anyone with it can open it.");
     },
     onError: (error: unknown) => {
       if (error instanceof Error && error.message === PAYMENT_CANCELLED) return;
@@ -121,14 +121,20 @@ export function useSetCreationAccess() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, access }: { id: string; access: AccessPayload }) =>
-      creationService.setAccess(id, access),
-    onSuccess: (updated) => {
+    mutationFn: ({
+      id,
+      access,
+    }: {
+      id: string;
+      access: AccessPayload;
+      silent?: boolean;
+    }) => creationService.setAccess(id, access),
+    onSuccess: (updated, { silent }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.creations.all });
       queryClient.invalidateQueries({
         queryKey: queryKeys.creations.detail(updated.id),
       });
-      toast.success("Access updated.");
+      if (!silent) toast.success("Access updated.");
     },
     onError: (error: unknown) => {
       toast.error((error as ApiError)?.message ?? "Could not update access.");

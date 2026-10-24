@@ -57,8 +57,8 @@ export function usePublishToShareGate(creation: GateCreation) {
       description={
         <>
           This keepsake is still a draft — only you can open the link. Publish
-          it so the people you share with can see it. You can still set who has
-          access after it goes live.
+          it so anyone with the link can see it. You can switch to invite-only
+          after it goes live.
         </>
       }
       confirmLabel={publish.isPending ? "Publishing…" : "Publish"}
@@ -92,8 +92,8 @@ export function PublishToShareDialog({
       title="Publish to share"
       description={
         <>
-          Only you can see this right now. Publish so anyone you share the link
-          with can open it.
+          Only you can see this right now. Publish so anyone with the link can
+          open it — they don&apos;t need a Kyndl account.
         </>
       }
       confirmLabel={publish.isPending ? "Publishing…" : "Publish"}

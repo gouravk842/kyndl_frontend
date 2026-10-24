@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Eye, Globe, Lock, Plus, X } from "lucide-react";
+import { Eye, Globe, Lock, Plus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -15,10 +15,12 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useSetCreationAccess } from "@/hooks/use-creations";
+import { canonicalShareUrl, guestCanOpen } from "@/lib/share-link";
 import { cn } from "@/lib/utils";
 import type { Creation, CreationVisibility } from "@/types/creation";
 
 import { usePublishToShareGate } from "./publish-to-share-dialog";
+import { ShareSendActions } from "./share-send-actions";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -38,8 +40,8 @@ export function AccessSheet({
           <SheetTitle>Share &amp; access</SheetTitle>
           <SheetDescription>
             {creation.status === "published"
-              ? "Anyone allowed below can open this from its link."
-              : "Publish first so the link works for others — then choose who can view."}
+              ? "Anyone with the link can open this, unless you switch to invite-only."
+              : "Publish so anyone with the link can open it. Invite-only is optional."}
           </SheetDescription>
         </SheetHeader>
         {/* `open` re-mounts the form so it re-seeds from the latest saved access. */}
@@ -79,11 +81,8 @@ export function AccessForm({
   );
   const [invites, setInvites] = useState<string[]>(creation.invites ?? []);
   const [email, setEmail] = useState("");
-  const [copied, setCopied] = useState(false);
 
-  // The canonical audience link built server-side (falls back to a relative path
-  // for older payloads that predate `share_url`).
-  const shareUrl = creation.share_url || `/v/${creation.public_token}`;
+  const shareUrl = canonicalShareUrl(creation);
 
   function addEmail() {
     const next = email.trim().toLowerCase();
@@ -99,34 +98,39 @@ export function AccessForm({
     setInvites((prev) => prev.filter((e) => e !== target));
   }
 
-  async function doCopyLink() {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-      toast.success("Link copied — ready to share.");
-    } catch {
-      toast.error("Could not copy the link.");
-    }
-  }
-
-  function copyLink() {
-    requirePublished(() => {
-      void doCopyLink();
-    });
-  }
-
   function openShareLink() {
-    requirePublished(() => {
-      window.open(shareUrl, "_blank", "noopener,noreferrer");
-    });
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
   }
 
   function handleSave() {
+    if (!guestCanOpen(visibility, invites)) {
+      toast.error("Add their email, or switch to anyone with the link.");
+      return;
+    }
     requirePublished(() => {
       setAccess.mutate(
         { id: creation.id, access: { visibility, invites } },
         { onSuccess: () => onSaved?.() },
+      );
+    });
+  }
+
+  async function ensureShareable(): Promise<boolean> {
+    if (!guestCanOpen(visibility, invites)) {
+      toast.error("Add their email, or switch to anyone with the link.");
+      return false;
+    }
+    const saved = creation.invites ?? [];
+    const dirty =
+      visibility !== creation.visibility || !sameEmails(invites, saved);
+    if (!dirty) return true;
+    return new Promise((resolve) => {
+      setAccess.mutate(
+        { id: creation.id, access: { visibility, invites }, silent: true },
+        {
+          onSuccess: () => resolve(true),
+          onError: () => resolve(false),
+        },
       );
     });
   }
@@ -218,29 +222,31 @@ export function AccessForm({
           <Label>Share link</Label>
           <div className="flex gap-2">
             <Input readOnly value={shareUrl} className="text-xs" />
-            <Button type="button" variant="secondary" onClick={copyLink}>
-              {copied ? (
-                <Check className="size-4" />
-              ) : (
-                <Copy className="size-4" />
-              )}
-            </Button>
             <Button
               type="button"
               variant="secondary"
               onClick={openShareLink}
-              aria-label={
-                isDraft ? "Publish to open share link" : "Open share link"
-              }
+              aria-label="Open share link"
             >
               <Eye className="size-4" />
             </Button>
           </div>
-          {isDraft && (
+          {isDraft ? (
             <p className="text-xs text-muted-foreground">
-              Copying or opening this link asks you to publish first — otherwise
-              recipients see an empty page.
+              Recipients see an empty page until you publish. Preview opens it
+              for you only.
             </p>
+          ) : (
+            <ShareSendActions
+              url={shareUrl}
+              title={creation.title}
+              copiedMessage={
+                visibility === "public"
+                  ? "Link copied — anyone with it can open it."
+                  : "Link copied — they need to sign in with the invited email."
+              }
+              onBeforeSend={ensureShareable}
+            />
           )}
         </div>
       </div>
@@ -260,6 +266,12 @@ export function AccessForm({
       </div>
     </div>
   );
+}
+
+function sameEmails(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const set = new Set(a.map((email) => email.toLowerCase()));
+  return b.every((email) => set.has(email.toLowerCase()));
 }
 
 function VisibilityOption({

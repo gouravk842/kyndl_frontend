@@ -22,6 +22,7 @@ import {
 import { withCallbackUrl } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { creationService } from "@/services/creations/creation.service";
+import { useAuthStore } from "@/store/auth.store";
 import type { ApiError } from "@/types/api";
 import type { Creation } from "@/types/creation";
 
@@ -62,21 +63,9 @@ export function PublicCreationViewer({ token }: { token: string }) {
   if (query.isError) {
     const status = (query.error as unknown as ApiError)?.status;
     if (status === 403) {
-      // Send them to sign in, then straight back to this exact link so an
-      // invited viewer lands on the keepsake once authenticated with the
-      // invited email — no re-navigation, no lost destination.
-      const loginHref = withCallbackUrl(ROUTES.login, `/v/${token}`);
       return (
         <PublicViewFrame>
-          <Centered>
-            <Lock className="size-8 text-muted-foreground" />
-            <h1 className="font-display text-2xl">This one&apos;s private</h1>
-            <p className="max-w-sm text-muted-foreground">
-              You need to be invited to view this. Sign in with the email it was
-              shared to.
-            </p>
-            <Button render={<Link href={loginHref} />}>Sign in</Button>
-          </Centered>
+          <PrivateShareGate token={token} />
         </PublicViewFrame>
       );
     }
@@ -343,5 +332,37 @@ function Centered({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center gap-3 px-6 text-center">
       {children}
     </div>
+  );
+}
+
+/**
+ * Invite-only share links 403 for anyone who isn't signed in with an invited
+ * email. The default first-share path is public, so this screen should explain
+ * a private send — not tell a WhatsApp guest to create an account as the
+ * primary action.
+ */
+function PrivateShareGate({ token }: { token: string }) {
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const loginHref = withCallbackUrl(ROUTES.login, `/v/${token}`);
+  const signedIn = isHydrated && isAuthenticated;
+
+  return (
+    <Centered>
+      <Lock className="size-8 text-muted-foreground" />
+      <h1 className="font-display text-2xl">
+        {signedIn
+          ? "This email isn't on the invite list"
+          : "This one's private"}
+      </h1>
+      <p className="max-w-sm text-muted-foreground">
+        {signedIn
+          ? "This was shared privately. Ask them to add this email, or to send you a public link."
+          : "This was shared privately. Ask them to send you an invite, or sign in if they already added your email."}
+      </p>
+      {signedIn ? null : (
+        <Button render={<Link href={loginHref} />}>Sign in</Button>
+      )}
+    </Centered>
   );
 }

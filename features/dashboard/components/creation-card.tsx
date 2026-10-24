@@ -148,10 +148,13 @@ export function CreationCard({ creation }: { creation: Creation }) {
             <Button
               size="sm"
               onClick={() =>
-                publish.mutate({
-                  id: creation.id,
-                  title: creation.title || "Untitled",
-                })
+                publish.mutate(
+                  {
+                    id: creation.id,
+                    title: creation.title || "Untitled",
+                  },
+                  { onSuccess: () => setAccessOpen(true) },
+                )
               }
               disabled={busy}
             >

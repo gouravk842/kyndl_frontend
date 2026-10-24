@@ -28,15 +28,16 @@ import {
   useRenameCreation,
   useUnpublishCreation,
 } from "@/hooks/use-creations";
+import { canonicalShareUrl, guestCanOpen } from "@/lib/share-link";
 import { cn } from "@/lib/utils";
 import type { Creation } from "@/types/creation";
 
 import { hasEmbeddedBuilder, renderBuilder } from "../lib/builder-registry";
 import { useLibrary } from "../lib/use-library";
-import { resolveWorkspaceTab } from "../lib/workspace-tabs";
+import { resolveWorkspaceTab, workspaceTabHref } from "../lib/workspace-tabs";
 import { AccessForm } from "./access-sheet";
 import { GatedBuilder } from "./builder-desktop-gate";
-import { usePublishToShareGate } from "./publish-to-share-dialog";
+import { ShareSendActions } from "./share-send-actions";
 
 /**
  * The unified workspace for a single creation. One tabbed surface replacing the
@@ -116,13 +117,10 @@ function SharePanel({ creation }: { creation: Creation }) {
   return (
     <PanelShell
       title="Share & access"
-      subtitle="Choose who can view this keepsake and copy its share link."
+      subtitle="Anyone with the link can open this after you publish. Invite-only is optional."
     >
       <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10">
-        <AccessForm
-          creation={creation}
-          onSaved={() => toast.success("Access updated.")}
-        />
+        <AccessForm creation={creation} />
       </div>
     </PanelShell>
   );
@@ -132,41 +130,20 @@ function SharePanel({ creation }: { creation: Creation }) {
 function PublishPanel({ creation }: { creation: Creation }) {
   const publish = usePublishCreation();
   const unpublish = useUnpublishCreation();
-  const { requirePublished, dialog, isDraft } = usePublishToShareGate(creation);
   const published = creation.status === "published";
-  // In-app navigation uses a relative href; the copyable link is the canonical
-  // one the backend builds (falls back to a relative path for older payloads).
   const shareHref = `/v/${creation.public_token}`;
-  const shareUrl = creation.share_url || shareHref;
-  const [copied, setCopied] = useState(false);
-
-  async function doCopyLink() {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-      toast.success("Link copied — ready to share.");
-    } catch {
-      toast.error("Could not copy the link.");
-    }
-  }
-
-  function copyLink() {
-    requirePublished(() => {
-      void doCopyLink();
-    });
-  }
+  const shareUrl = canonicalShareUrl(creation);
+  const shareable = guestCanOpen(creation.visibility, creation.invites);
 
   return (
     <PanelShell
       title="Publish"
       subtitle={
         published
-          ? "This keepsake is live. Anyone with access can open its link."
-          : "Take it live and get a shareable link."
+          ? "It's live. Send the link — anyone with it can open it unless you switch to invite-only."
+          : "Take it live and send a link they can open without an account."
       }
     >
-      {dialog}
       <div className="space-y-4 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
         <div className="flex items-center gap-2">
           <span
@@ -226,25 +203,47 @@ function PublishPanel({ creation }: { creation: Creation }) {
           </div>
         )}
 
-        <div className="space-y-1.5 border-t pt-4">
+        <div className="space-y-3 border-t pt-4">
           <span className="text-xs font-medium tracking-wide text-muted-foreground">
             Share link
           </span>
-          <div className="flex gap-2">
-            <Input readOnly value={shareUrl} className="text-xs" />
-            <Button type="button" variant="secondary" onClick={copyLink}>
-              {copied ? (
-                <Check className="size-4" />
-              ) : (
-                <Copy className="size-4" />
-              )}
-            </Button>
-          </div>
-          {isDraft && (
+          <Input readOnly value={shareUrl} className="text-xs" />
+          {published ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {creation.visibility === "public"
+                  ? "Anyone with this link can open it — no Kyndl account needed."
+                  : shareable
+                    ? "Only invited emails can open this. They must sign in with that address."
+                    : "Invite-only with nobody invited — add an email, or switch to anyone with the link."}{" "}
+                <Link
+                  href={workspaceTabHref(creation.id, "share")}
+                  className="font-medium text-foreground underline-offset-2 hover:underline"
+                >
+                  Change who can view
+                </Link>
+              </p>
+              <ShareSendActions
+                url={shareUrl}
+                title={creation.title}
+                copiedMessage={
+                  creation.visibility === "public"
+                    ? "Link copied — anyone with it can open it."
+                    : "Link copied — they need to sign in with the invited email."
+                }
+                onBeforeSend={() => {
+                  if (shareable) return true;
+                  toast.error(
+                    "Add their email, or switch to anyone with the link.",
+                  );
+                  return false;
+                }}
+              />
+            </>
+          ) : (
             <p className="text-xs text-muted-foreground">
-              Copying the link asks you to publish first. Use{" "}
-              <span className="font-medium">Preview</span> to see it yourself —
-              recipients get an empty page until it&apos;s live.
+              Use <span className="font-medium">Preview</span> to see it
+              yourself — recipients get an empty page until it&apos;s live.
             </p>
           )}
         </div>
