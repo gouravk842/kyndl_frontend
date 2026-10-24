@@ -126,9 +126,7 @@ function OrderRow({ order, carriers }: { order: VOrder; carriers: Carrier[] }) {
     <Card className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">
-            Order #{order.order_id.slice(0, 8)}
-          </p>
+          <p className="text-sm font-medium">Order {order.order_number}</p>
           <p className="text-xs text-muted-foreground">
             {formatDateTimeLocal(order.placed_at)}
           </p>

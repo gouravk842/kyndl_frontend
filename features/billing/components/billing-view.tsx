@@ -70,9 +70,7 @@ export function BillingView() {
                     </p>
                     <p className="mt-0.5 text-xs text-[#B08C7D]">
                       {invoice.product_code}
-                      {invoice.order_id
-                        ? ` · order #${invoice.order_id.slice(0, 8)}`
-                        : ""}
+                      {invoice.order_number ? ` · ${invoice.order_number}` : ""}
                       {" · "}
                       {formatDateLocal(invoice.issued_at)}
                     </p>

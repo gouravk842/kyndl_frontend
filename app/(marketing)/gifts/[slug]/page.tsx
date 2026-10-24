@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { markdownToPlain } from "@/components/shared/markdown-body";
 import { ROUTES } from "@/constants/routes";
 import { ProductDetail } from "@/features/gifts/components/product-detail";
 import { createMetadata } from "@/lib/seo";
@@ -14,10 +15,14 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const product = await getGiftProduct(slug);
-  if (!product) return createMetadata({ title: "Gift", path: `${ROUTES.gifts}/${slug}` });
+  if (!product)
+    return createMetadata({ title: "Gift", path: `${ROUTES.gifts}/${slug}` });
   return createMetadata({
     title: product.name,
-    description: product.tagline || product.description || `Send ${product.name} with Kyndl.`,
+    description:
+      product.tagline ||
+      markdownToPlain(product.description) ||
+      `Send ${product.name} with Kyndl.`,
     path: `${ROUTES.gifts}/${slug}`,
   });
 }

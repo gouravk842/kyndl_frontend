@@ -46,8 +46,9 @@ export function useStore(slug: string) {
   });
 }
 
-/** Product taxonomy (master categories + subcategories) for filters & the
- * product-form combobox. Rarely changes, so cache it generously. */
+/** Product taxonomy (master categories + subcategories) for storefront filters.
+ * Rarely changes, so cache it generously. The vendor product form uses the
+ * suggest endpoints instead so it never dumps the whole list. */
 export function useCategories() {
   return useQuery({
     queryKey: queryKeys.gifts.categories(),
@@ -112,7 +113,7 @@ export function useGiftCheckout() {
       const success = await openRazorpayCheckout({
         checkout,
         name: "Kyndl Gifts",
-        description: `Order ${order.id.slice(0, 8)} · ${order.total_display}`,
+        description: `Order ${order.number} · ${order.total_display}`,
         prefill,
       });
       if (!success) throw new Error(PAYMENT_CANCELLED);

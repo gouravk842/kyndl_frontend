@@ -103,7 +103,7 @@ export function OrdersView() {
                       </span>
                       <div>
                         <p className="text-sm font-medium text-[#3A2A25]">
-                          Order #{order.id.slice(0, 8)}
+                          Order {order.number}
                         </p>
                         <p className="text-xs text-[#B08C7D]">
                           {formatDateLocal(order.created_at)}

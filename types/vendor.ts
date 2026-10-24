@@ -16,6 +16,9 @@ export interface Vendor {
   commission_percent: string;
   flat_shipping_fee: number;
   free_shipping_threshold: number;
+  product_promise: string;
+  show_product_promise: boolean;
+  show_stock: boolean;
   is_active: boolean;
   created_at: string;
 }
@@ -29,6 +32,9 @@ export interface VendorProfileUpdate {
   support_phone?: string;
   flat_shipping_fee?: number;
   free_shipping_threshold?: number;
+  product_promise?: string;
+  show_product_promise?: boolean;
+  show_stock?: boolean;
 }
 
 export interface VendorProductImage {
@@ -96,6 +102,8 @@ export interface VendorOrderItem {
 export interface VendorOrder {
   id: string;
   order_id: string;
+  /** Parent order's public number (e.g. KND-1001). */
+  order_number: string;
   status: OrderStatus;
   subtotal: number;
   shipping_fee: number;

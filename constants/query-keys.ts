@@ -30,6 +30,10 @@ export const queryKeys = {
     addresses: () => [...queryKeys.gifts.all, "addresses"] as const,
     carriers: () => [...queryKeys.gifts.all, "carriers"] as const,
     categories: () => [...queryKeys.gifts.all, "categories"] as const,
+    categorySuggest: (q: string) =>
+      [...queryKeys.gifts.all, "category-suggest", q] as const,
+    subcategorySuggest: (category: string, q: string) =>
+      [...queryKeys.gifts.all, "subcategory-suggest", category, q] as const,
   },
   vendor: {
     all: ["vendor"] as const,

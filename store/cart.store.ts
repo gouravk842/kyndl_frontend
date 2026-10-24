@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { giftQtyCap } from "@/lib/gifts";
 import type { GiftProduct } from "@/types/gift";
 
 /** A cart line keeps enough product detail to render the cart without a refetch.
@@ -44,7 +45,7 @@ export const useCartStore = create<CartState>()(
       add: (product, quantity = 1) =>
         set((state) => {
           const existing = state.items.find((i) => i.slug === product.slug);
-          const cap = Math.max(product.stock, 1);
+          const cap = giftQtyCap(product);
           if (existing) {
             return {
               items: state.items.map((i) =>
@@ -52,7 +53,7 @@ export const useCartStore = create<CartState>()(
                   ? {
                       ...i,
                       quantity: Math.min(i.quantity + quantity, cap),
-                      maxStock: product.stock,
+                      maxStock: cap,
                     }
                   : i,
               ),
@@ -69,7 +70,7 @@ export const useCartStore = create<CartState>()(
                 currency: product.currency,
                 image_url: product.image_url,
                 quantity: Math.min(quantity, cap),
-                maxStock: product.stock,
+                maxStock: cap,
               },
             ],
             isOpen: true,
@@ -110,7 +111,7 @@ export const useCartStore = create<CartState>()(
               price: product.price,
               currency: product.currency,
               image_url: product.image_url,
-              maxStock: product.stock,
+              maxStock: giftQtyCap(product),
             };
             if (
               next.name !== item.name ||

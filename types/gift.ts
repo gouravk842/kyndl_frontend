@@ -22,11 +22,14 @@ export interface GiftProduct {
   /** Subcategory name (empty when none). */
   subcategory?: string;
   subcategory_slug?: string;
-  stock: number;
+  /** Remaining units. ``null`` when the shop hid inventory from shoppers. */
+  stock: number | null;
   in_stock: boolean;
   is_featured: boolean;
   vendor_name?: string;
   vendor_slug?: string;
+  /** Shop-configured note under the buy buttons. Empty when the shop hid it. */
+  product_promise?: string;
   /** Denormalised rating rollup from the reviews app. */
   rating_average?: number;
   rating_count?: number;
@@ -90,6 +93,8 @@ export interface OrderVendorGroup {
 
 export interface Order {
   id: string;
+  /** Public order number (e.g. KND-1001). UUID `id` is internal. */
+  number: string;
   status: OrderStatus;
   subtotal: number;
   shipping_fee: number;
@@ -204,6 +209,9 @@ export interface Subcategory {
   name: string;
   slug: string;
 }
+
+/** A name/slug hit from the category or subcategory typeahead. */
+export type TaxonomyOption = Pick<Subcategory, "name" | "slug">;
 
 /** The shared product taxonomy (from `GET /gifts/categories/`). */
 export interface ProductCategory {

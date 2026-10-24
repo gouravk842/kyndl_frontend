@@ -35,6 +35,8 @@ export interface Invoice {
   payment_id: string;
   product_code: string;
   order_id: string | null;
+  /** Gift order public number (e.g. KND-1001), null for non-gift invoices. */
+  order_number: string | null;
   subtotal: number;
   fees_total: number;
   tax_total: number;

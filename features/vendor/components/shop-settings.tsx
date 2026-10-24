@@ -34,10 +34,15 @@ function SettingsForm({ vendor }: { vendor: Vendor }) {
     // Shipping is edited in rupees; converted to paise on save.
     flat_shipping_rupees: String((vendor.flat_shipping_fee ?? 0) / 100),
     free_shipping_rupees: String((vendor.free_shipping_threshold ?? 0) / 100),
+    product_promise: vendor.product_promise ?? "",
+    show_product_promise: vendor.show_product_promise ?? true,
+    show_stock: vendor.show_stock ?? true,
   });
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: Exclude<keyof typeof form, "show_product_promise" | "show_stock">) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,18 +50,30 @@ function SettingsForm({ vendor }: { vendor: Vendor }) {
       description: form.description,
       support_email: form.support_email,
       support_phone: form.support_phone,
-      flat_shipping_fee: Math.round(Number(form.flat_shipping_rupees || 0) * 100),
-      free_shipping_threshold: Math.round(Number(form.free_shipping_rupees || 0) * 100),
+      flat_shipping_fee: Math.round(
+        Number(form.flat_shipping_rupees || 0) * 100,
+      ),
+      free_shipping_threshold: Math.round(
+        Number(form.free_shipping_rupees || 0) * 100,
+      ),
+      product_promise: form.product_promise,
+      show_product_promise: form.show_product_promise,
+      show_stock: form.show_stock,
     });
   };
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">Shop settings</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight">
+          Shop settings
+        </h1>
         <p className="mt-1 text-muted-foreground">
           Your storefront details and shipping rules
-          {vendor ? ` · ${vendor.commission_percent}% platform fee (set by Kyndl)` : ""}.
+          {vendor
+            ? ` · ${vendor.commission_percent}% platform fee (set by Kyndl)`
+            : ""}
+          .
         </p>
       </div>
 
@@ -75,19 +92,26 @@ function SettingsForm({ vendor }: { vendor: Vendor }) {
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Support email</Label>
-              <Input type="email" value={form.support_email} onChange={set("support_email")} />
+              <Input
+                type="email"
+                value={form.support_email}
+                onChange={set("support_email")}
+              />
             </div>
             <div className="space-y-2">
               <Label>Support phone</Label>
-              <Input value={form.support_phone} onChange={set("support_phone")} />
+              <Input
+                value={form.support_phone}
+                onChange={set("support_phone")}
+              />
             </div>
           </div>
 
           <div className="border-t pt-5">
             <h2 className="font-heading text-base font-medium">Shipping</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Charged per order from your shop. You keep this — the platform fee applies only to
-              the items.
+              Charged per order from your shop. You keep this — the platform fee
+              applies only to the items.
             </p>
             <div className="mt-4 grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
@@ -109,9 +133,68 @@ function SettingsForm({ vendor }: { vendor: Vendor }) {
                   value={form.free_shipping_rupees}
                   onChange={set("free_shipping_rupees")}
                 />
-                <p className="text-xs text-muted-foreground">Set to 0 to never offer free shipping.</p>
+                <p className="text-xs text-muted-foreground">
+                  Set to 0 to never offer free shipping.
+                </p>
               </div>
             </div>
+          </div>
+
+          <div className="border-t pt-5">
+            <h2 className="font-heading text-base font-medium">
+              Product page note
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The line under the buy buttons on each of your gifts. Hide it if
+              you’d rather not show one.
+            </p>
+            <label className="mt-4 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.show_product_promise}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    show_product_promise: e.target.checked,
+                  }))
+                }
+                className="size-4"
+              />
+              Show on product pages
+            </label>
+            <div className="mt-3 space-y-2">
+              <Label htmlFor="product-promise">Note</Label>
+              <Input
+                id="product-promise"
+                value={form.product_promise}
+                onChange={set("product_promise")}
+                maxLength={160}
+                disabled={!form.show_product_promise}
+                placeholder="Free shipping over ₹999 · Arrives ready to unwrap"
+              />
+              <p className="text-xs text-muted-foreground">
+                {form.product_promise.length}/160
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t pt-5">
+            <h2 className="font-heading text-base font-medium">Stock</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Control whether shoppers see remaining units on your products.
+              Sold out still shows when an item can’t be bought.
+            </p>
+            <label className="mt-4 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.show_stock}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, show_stock: e.target.checked }))
+                }
+                className="size-4"
+              />
+              Show stock to shoppers
+            </label>
           </div>
         </Card>
 

@@ -11,6 +11,7 @@ import type {
   Order,
   ProductCategory,
   PublicStore,
+  TaxonomyOption,
   WishlistItem,
 } from "@/types/gift";
 import type { Carrier } from "@/types/vendor";
@@ -47,6 +48,24 @@ export const giftService = {
     return apiRequest<ProductCategory[]>({
       method: "GET",
       url: `${BASE}/categories`,
+    });
+  },
+
+  // Typeahead for master categories. Empty `q` returns the first page.
+  suggestCategories(q = "", limit = 8) {
+    return apiRequest<TaxonomyOption[]>({
+      method: "GET",
+      url: `${BASE}/categories/suggest`,
+      params: { q, limit },
+    });
+  },
+
+  // Typeahead for subcategories under a master (name or slug).
+  suggestSubcategories(category: string, q = "", limit = 8) {
+    return apiRequest<TaxonomyOption[]>({
+      method: "GET",
+      url: `${BASE}/subcategories`,
+      params: { category, q, limit },
     });
   },
 

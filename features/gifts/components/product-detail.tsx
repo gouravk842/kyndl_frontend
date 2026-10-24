@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { PageContainer } from "@/components/layout/page-container";
+import { MarkdownBody } from "@/components/shared/markdown-body";
 import { ROUTES } from "@/constants/routes";
 import { ProductImageZoom } from "@/features/gifts/components/product-image-zoom";
 import { WishlistButton } from "@/features/gifts/components/wishlist-button";
@@ -14,7 +15,7 @@ import { RelatedPairings } from "@/features/recommendations/components/companion
 import { ReferProductButton } from "@/features/referrals/components/refer-product-button";
 import { RatingBadge } from "@/features/reviews/components/rating-summary";
 import { ReviewsSection } from "@/features/reviews/components/reviews-section";
-import { formatPrice } from "@/lib/gifts";
+import { formatPrice, giftQtyCap } from "@/lib/gifts";
 import { cn } from "@/lib/utils";
 import { track } from "@/services/analytics/analytics.service";
 import { useCartStore } from "@/store/cart.store";
@@ -38,7 +39,8 @@ export function ProductDetail({ product }: { product: GiftProduct }) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const activeImg = images[activeIdx] ?? "";
-  const cap = Math.max(product.stock, 1);
+  const cap = giftQtyCap(product);
+  const showStock = product.stock != null;
 
   const buyNow = () => {
     add(product, qty);
@@ -184,15 +186,17 @@ export function ProductDetail({ product }: { product: GiftProduct }) {
                 {formatPrice(product.price, product.currency)}
               </span>
               {product.in_stock ? (
-                <span className="inline-flex items-center gap-1 text-sm text-[#2a9a5c]">
-                  <Check className="size-3.5" />
-                  In stock
-                  {product.stock <= 5 && (
-                    <span className="text-[#8A7168]">
-                      · {product.stock} left
-                    </span>
-                  )}
-                </span>
+                showStock ? (
+                  <span className="inline-flex items-center gap-1 text-sm text-[#2a9a5c]">
+                    <Check className="size-3.5" />
+                    In stock
+                    {product.stock != null && product.stock <= 5 && (
+                      <span className="text-[#8A7168]">
+                        · {product.stock} left
+                      </span>
+                    )}
+                  </span>
+                ) : null
               ) : (
                 <span className="text-sm text-[#C81D4E]">Sold out</span>
               )}
@@ -249,16 +253,18 @@ export function ProductDetail({ product }: { product: GiftProduct }) {
               </div>
             )}
 
-            <p className="mt-6 text-xs leading-relaxed text-[#8A7168]">
-              Free shipping over ₹999 · Arrives ready to unwrap
-            </p>
+            {product.product_promise ? (
+              <p className="mt-6 text-xs leading-relaxed text-[#8A7168]">
+                {product.product_promise}
+              </p>
+            ) : null}
           </motion.div>
         </div>
 
         {/* ── Story ─────────────────────────────────────────────── */}
         {product.description && (
           <motion.section
-            className="mx-auto mt-14 max-w-xl border-t border-[#F2DACE]/80 pt-10 md:mt-20"
+            className="mx-auto mt-14 max-w-2xl border-t border-[#F2DACE]/80 pt-10 md:mt-20"
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
@@ -267,9 +273,10 @@ export function ProductDetail({ product }: { product: GiftProduct }) {
             <h2 className="text-center font-display text-xl text-[#3A2A25]">
               About this piece
             </h2>
-            <p className="mt-4 whitespace-pre-line text-center text-[15px] leading-[1.75] text-[#6B554C]">
-              {product.description}
-            </p>
+            <MarkdownBody
+              source={product.description}
+              className="mt-4 text-[15px] leading-[1.75] text-[#6B554C]"
+            />
           </motion.section>
         )}
 

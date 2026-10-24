@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ImagePlus, Loader2, Star, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -12,14 +12,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { queryKeys } from "@/constants/query-keys";
 import { ROUTES } from "@/constants/routes";
-import { useCategories } from "@/hooks/use-gifts";
+import { TaxonomyCombobox } from "@/features/vendor/components/taxonomy-combobox";
 import {
   useCreateVendorProduct,
   useUpdateVendorProduct,
 } from "@/hooks/use-vendor";
 import { cn } from "@/lib/utils";
 import { fileService } from "@/services/files/file.service";
+import { giftService } from "@/services/gifts/gift.service";
 import type { VendorProduct, VendorProductInput } from "@/types/vendor";
 
 const MAX_PRODUCT_IMAGES = 5;
@@ -72,12 +74,11 @@ export function ProductForm({ existing }: { existing?: VendorProduct }) {
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
 
-  const { data: categories } = useCategories();
-
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -93,15 +94,7 @@ export function ProductForm({ existing }: { existing?: VendorProduct }) {
     },
   });
 
-  // Suggest subcategories for the master the vendor has picked/typed. A brand-new
-  // category simply has no suggestions yet — they can still type one freely.
-  const categoryValue = (useWatch({ control, name: "category" }) ?? "")
-    .trim()
-    .toLowerCase();
-  const activeMaster = categories?.find(
-    (c) => c.name.toLowerCase() === categoryValue,
-  );
-  const subOptions = activeMaster?.subcategories ?? [];
+  const categoryValue = (useWatch({ control, name: "category" }) ?? "").trim();
 
   const onPickImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -329,34 +322,53 @@ export function ProductForm({ existing }: { existing?: VendorProduct }) {
 
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Category" error={errors.category?.message}>
-              <Input
-                {...register("category")}
-                list="category-options"
-                placeholder="Home"
-                autoComplete="off"
+              <Controller
+                name="category"
+                control={control}
+                render={({ field }) => (
+                  <TaxonomyCombobox
+                    value={field.value ?? ""}
+                    onChange={(next) => {
+                      const prev = (field.value ?? "").trim().toLowerCase();
+                      field.onChange(next);
+                      if (next.trim().toLowerCase() !== prev) {
+                        setValue("subcategory", "");
+                      }
+                    }}
+                    placeholder="Search or type a category"
+                    queryKey={queryKeys.gifts.categorySuggest}
+                    loadItems={(q) => giftService.suggestCategories(q)}
+                  />
+                )}
               />
-              <datalist id="category-options">
-                {categories?.map((c) => (
-                  <option key={c.slug} value={c.name} />
-                ))}
-              </datalist>
               <p className="text-xs text-muted-foreground">
                 Pick an existing one or type a new — it’s added to the shop’s
                 list.
               </p>
             </Field>
             <Field label="Subcategory" error={errors.subcategory?.message}>
-              <Input
-                {...register("subcategory")}
-                list="subcategory-options"
-                placeholder="Candles"
-                autoComplete="off"
+              <Controller
+                name="subcategory"
+                control={control}
+                render={({ field }) => (
+                  <TaxonomyCombobox
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    disabled={!categoryValue}
+                    placeholder={
+                      categoryValue
+                        ? "Search or type a subcategory"
+                        : "Pick a category first"
+                    }
+                    queryKey={(q) =>
+                      queryKeys.gifts.subcategorySuggest(categoryValue, q)
+                    }
+                    loadItems={(q) =>
+                      giftService.suggestSubcategories(categoryValue, q)
+                    }
+                  />
+                )}
               />
-              <datalist id="subcategory-options">
-                {subOptions.map((s) => (
-                  <option key={s.slug} value={s.name} />
-                ))}
-              </datalist>
               <p className="text-xs text-muted-foreground">
                 Optional — groups this within the category.
               </p>

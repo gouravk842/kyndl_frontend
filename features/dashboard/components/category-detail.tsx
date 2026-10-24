@@ -116,9 +116,7 @@ export function CategoryDetail({
                     <Package className="size-5" />
                   </span>
                   <div>
-                    <p className="text-sm font-medium">
-                      Order #{order.id.slice(0, 8)}
-                    </p>
+                    <p className="text-sm font-medium">Order {order.number}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatDateLocal(order.created_at)}
                     </p>
