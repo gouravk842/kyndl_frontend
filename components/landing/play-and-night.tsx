@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { FadeIn } from "@/components/animations/fade-in";
+import { startNavigation } from "@/components/layout/navigation-progress";
 import { PageContainer } from "@/components/layout/page-container";
 import { AgeConsentDialog } from "@/components/red-zone/age-consent-dialog";
 import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
@@ -24,6 +25,7 @@ export function PlayAndNight() {
 
   const goRedZone = () => {
     if (hasRedZoneConsent()) {
+      startNavigation();
       router.push(ROUTES.redZone);
     } else {
       setAsking(true);
@@ -111,6 +113,7 @@ export function PlayAndNight() {
           onConfirm={() => {
             setRedZoneConsent();
             setAsking(false);
+            startNavigation();
             router.push(ROUTES.redZone);
           }}
           onCancel={() => setAsking(false)}

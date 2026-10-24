@@ -4,6 +4,7 @@ import { Flame } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { startNavigation } from "@/components/layout/navigation-progress";
 import { ROUTES } from "@/constants/routes";
 import { hasRedZoneConsent, setRedZoneConsent } from "@/lib/red-zone-consent";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ export function RedZoneNavLink({ className }: { className?: string }) {
 
   const onClick = () => {
     if (hasRedZoneConsent()) {
+      startNavigation();
       router.push(ROUTES.redZone);
     } else {
       setAsking(true);
@@ -29,6 +31,7 @@ export function RedZoneNavLink({ className }: { className?: string }) {
   const onConfirm = () => {
     setRedZoneConsent();
     setAsking(false);
+    startNavigation();
     router.push(ROUTES.redZone);
   };
 

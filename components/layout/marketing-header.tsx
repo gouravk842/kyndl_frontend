@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 
 import { KyndlButton } from "@/components/landing/kyndl-button";
 import { HeaderUserMenu } from "@/components/layout/header-user-menu";
+import { LinkPendingHint } from "@/components/layout/link-pending-hint";
+import { startNavigation } from "@/components/layout/navigation-progress";
 import { PageContainer } from "@/components/layout/page-container";
 import { AgeConsentDialog } from "@/components/red-zone/age-consent-dialog";
 import { Logo } from "@/components/shared/logo";
@@ -39,10 +41,17 @@ export function MarketingHeader() {
   const [redZoneAsking, setRedZoneAsking] = useState(false);
   // Keep menu chunk mounted after first open so close animations still run.
   const [menusReady, setMenusReady] = useState(false);
+  const [pathSnapshot, setPathSnapshot] = useState(pathname);
 
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoggedIn = isHydrated && isAuthenticated;
+
+  if (pathname !== pathSnapshot) {
+    setPathSnapshot(pathname);
+    setMobileOpen(false);
+    setMegaOpen(false);
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -63,6 +72,7 @@ export function MarketingHeader() {
 
   const goRedZone = () => {
     if (hasRedZoneConsent()) {
+      startNavigation();
       router.push(ROUTES.redZone);
     } else {
       setRedZoneAsking(true);
@@ -91,8 +101,12 @@ export function MarketingHeader() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={openMobile}
+            onClick={(event) => {
+              event.stopPropagation();
+              openMobile();
+            }}
             aria-label="Open menu"
+            aria-expanded={mobileOpen}
             className="-ml-1 inline-flex size-10 items-center justify-center rounded-full text-[#7A6258] transition-colors hover:bg-white/70 hover:text-[#3A2A25] lg:hidden"
           >
             <Menu className="size-5" />
@@ -115,6 +129,7 @@ export function MarketingHeader() {
                 onFocus={openMega}
               >
                 Experiences
+                <LinkPendingHint />
                 <ChevronDown
                   className={cn(
                     "size-3.5 transition-transform duration-300",
@@ -134,7 +149,7 @@ export function MarketingHeader() {
                 key={link.label}
                 href={link.href}
                 className={cn(
-                  "rounded-full px-3.5 py-2 text-sm transition-colors",
+                  "inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-sm transition-colors",
                   accent
                     ? isActive(link.href)
                       ? "text-[#C75B39]"
@@ -145,6 +160,7 @@ export function MarketingHeader() {
                 )}
               >
                 {link.label}
+                <LinkPendingHint />
               </Link>
             );
           })}
@@ -175,9 +191,10 @@ export function MarketingHeader() {
             <>
               <Link
                 href={ROUTES.login}
-                className="hidden px-2 text-sm text-[#7A6258] transition-colors hover:text-[#3A2A25] lg:inline"
+                className="hidden items-center gap-1 px-2 text-sm text-[#7A6258] transition-colors hover:text-[#3A2A25] lg:inline-flex"
               >
                 Log in
+                <LinkPendingHint />
               </Link>
               <KyndlButton href={ROUTES.register} size="default">
                 Get Started
@@ -205,6 +222,7 @@ export function MarketingHeader() {
           onConfirm={() => {
             setRedZoneConsent();
             setRedZoneAsking(false);
+            startNavigation();
             router.push(ROUTES.redZone);
           }}
           onCancel={() => setRedZoneAsking(false)}

@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { LinkPendingHint } from "@/components/layout/link-pending-hint";
 import { ExperienceIcon } from "@/components/shared/experience-icon";
 import { Logo } from "@/components/shared/logo";
 import { useSiteSettings } from "@/components/site-settings/site-settings-provider";
@@ -123,8 +124,9 @@ export function DashboardSidebar() {
         className={rowClass(isActive)}
         title={sidebarOpen ? undefined : label}
       >
-        <span className={iconTileClass()}>
+        <span className={cn(iconTileClass(), "relative")}>
           <Icon className="size-4 shrink-0" />
+          <LinkPendingHint className="absolute right-0.5 top-0.5" />
         </span>
         {sidebarOpen && <span className="truncate">{label}</span>}
       </Link>
@@ -146,23 +148,26 @@ export function DashboardSidebar() {
           <span
             className={cn(
               iconTileClass(),
-              "border border-dashed border-border",
+              "relative border border-dashed border-border",
             )}
           >
             <Plus className="size-4 shrink-0" />
+            <LinkPendingHint className="absolute right-0.5 top-0.5" />
           </span>
         ) : key === HOME_KEY ? (
-          <span className={iconTileClass()}>
+          <span className={cn(iconTileClass(), "relative")}>
             <Home className="size-4 shrink-0" />
+            <LinkPendingHint className="absolute right-0.5 top-0.5" />
           </span>
         ) : (
-          <span className={iconTileClass()}>
+          <span className={cn(iconTileClass(), "relative")}>
             <ExperienceIcon
               name={
                 categories.find((c) => c.key === key)?.iconName ?? "Sparkles"
               }
               className="size-4 shrink-0"
             />
+            <LinkPendingHint className="absolute right-0.5 top-0.5" />
           </span>
         )}
         {sidebarOpen && (

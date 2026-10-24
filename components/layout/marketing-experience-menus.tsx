@@ -2,7 +2,8 @@
 
 import { Flame, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { KyndlButton } from "@/components/landing/kyndl-button";
 import { ExperienceIcon } from "@/components/shared/experience-icon";
@@ -12,6 +13,7 @@ import { groupByCategory } from "@/constants/experience-taxonomy";
 import { ROUTES } from "@/constants/routes";
 import { ideaHref } from "@/features/ideas/idea-href";
 import { useExperienceCatalog } from "@/hooks/use-experience-catalog";
+import { useMounted } from "@/hooks/use-mounted";
 import type { ExperienceView } from "@/lib/experience-catalog";
 import { experienceHref } from "@/lib/experiences";
 import { visiblePrimaryLinks } from "@/lib/marketing-nav";
@@ -221,37 +223,86 @@ function MobileDrawer({
   accountReady: boolean;
 }) {
   const settings = useSiteSettings();
+  const mounted = useMounted();
+  const [backdropLive, setBackdropLive] = useState(false);
+  const [openSnapshot, setOpenSnapshot] = useState(open);
   const primaryLinks = visiblePrimaryLinks(settings).filter(
     (link) => link.label !== "Memory Bank" && link.label !== "Kynd",
   );
 
+  if (open !== openSnapshot) {
+    setOpenSnapshot(open);
+    if (!open) setBackdropLive(false);
+  }
+
+  // Ignore the opening tap's delayed click so the overlay doesn't dismiss
+  // the drawer the moment it appears.
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const id = window.setTimeout(() => setBackdropLive(true), 350);
+    return () => window.clearTimeout(id);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior,
+      bodyOverscroll: body.style.overscrollBehavior,
+    };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    body.style.overscrollBehavior = "none";
     return () => {
-      document.body.style.overflow = prev;
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      html.style.overscrollBehavior = prev.htmlOverscroll;
+      body.style.overscrollBehavior = prev.bodyOverscroll;
     };
   }, [open]);
 
-  return (
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-[#3A2A25]/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
+          "fixed inset-0 z-[60] bg-[#3A2A25]/40 backdrop-blur-sm transition-opacity duration-300 touch-none lg:hidden",
+          open && backdropLive
+            ? "opacity-100"
+            : open
+              ? "pointer-events-none opacity-100"
+              : "pointer-events-none opacity-0",
         )}
-        onClick={onClose}
+        onClick={(event) => {
+          if (!backdropLive) return;
+          if (event.target !== event.currentTarget) return;
+          onClose();
+        }}
         aria-hidden
       />
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[86%] max-w-sm flex-col bg-[#FFF7F1] shadow-2xl transition-transform duration-300 ease-out lg:hidden",
-          open ? "translate-x-0" : "-translate-x-full",
+          "fixed top-0 left-0 z-[70] flex h-dvh w-[86%] max-w-sm flex-col overflow-hidden bg-[#FFF7F1] shadow-2xl transition-transform duration-300 ease-out lg:hidden",
+          open ? "translate-x-0" : "pointer-events-none -translate-x-full",
         )}
         role="dialog"
         aria-modal="true"
         aria-label="Menu"
+        aria-hidden={!open}
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-[#F2DACE] px-5">
           <Logo className="[&_text]:fill-[#3A2A25]" />
@@ -405,6 +456,7 @@ function MobileDrawer({
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   );
 }

@@ -853,3 +853,77 @@
     animation: none;
   }
 }
+
+/* ── Navigation pending chrome (top bar + link hint) ── */
+@keyframes kyndl-nav-progress {
+  0% {
+    transform: scaleX(0);
+  }
+  12% {
+    transform: scaleX(0.2);
+  }
+  40% {
+    transform: scaleX(0.55);
+  }
+  100% {
+    transform: scaleX(0.82);
+  }
+}
+.kyndl-nav-bar {
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+.kyndl-nav-bar.is-running {
+  animation: kyndl-nav-progress 10s cubic-bezier(0.2, 0.6, 0.2, 1) forwards;
+}
+.kyndl-nav-bar.is-finishing {
+  animation: none;
+  transform: scaleX(1);
+  opacity: 0;
+  transition:
+    transform 120ms ease-out,
+    opacity 220ms ease 80ms;
+}
+.link-pending-hint {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0;
+  visibility: hidden;
+}
+.link-pending-hint.is-pending {
+  visibility: visible;
+  animation-name: kyndl-link-hint-fade, kyndl-link-hint-pulse;
+  animation-duration: 200ms, 1s;
+  animation-delay: 100ms, 100ms;
+  animation-timing-function: ease, ease-in-out;
+  animation-iteration-count: 1, infinite;
+  animation-fill-mode: forwards, none;
+}
+@keyframes kyndl-link-hint-fade {
+  to {
+    opacity: 0.45;
+  }
+}
+@keyframes kyndl-link-hint-pulse {
+  50% {
+    opacity: 0.18;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kyndl-nav-bar.is-running {
+    animation: none;
+    transform: scaleX(0.6);
+  }
+  .kyndl-nav-bar.is-finishing {
+    transition: opacity 160ms ease;
+  }
+  .link-pending-hint.is-pending {
+    animation: none;
+    visibility: visible;
+    opacity: 0.45;
+  }
+}

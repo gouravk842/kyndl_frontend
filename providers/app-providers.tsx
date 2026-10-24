@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+import { NavigationProgress } from "@/components/layout/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthSessionSync } from "@/providers/auth-session-sync";
 import { QueryProvider } from "@/providers/query-provider";
@@ -19,6 +20,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         <AuthSessionSync />
         {children}
         <PageViewTracker />
+        <NavigationProgress />
         <Toaster richColors closeButton position="top-right" />
       </QueryProvider>
     </ThemeProvider>
