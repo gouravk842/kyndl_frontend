@@ -385,10 +385,12 @@ const PUBLIC_VIEWERS: Record<string, PublicRenderer> = {
   ),
   // Adults-only (Red Zone); the experience renders its own 18+ gate on view.
   "snakes-and-lovers": (content, assets) => (
-    <SnakesAndLoversExperience
-      config={content as SnakesConfig}
-      assets={assets}
-    />
+    <div className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center bg-[#0d040a] p-4">
+      <SnakesAndLoversExperience
+        config={content as SnakesConfig}
+        assets={assets}
+      />
+    </div>
   ),
   proposal: (content, assets, token) => (
     <MomentViewer

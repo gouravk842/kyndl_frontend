@@ -541,7 +541,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #fffaf4 0%, #fbeede 55%, #f4e0cb 100%)",
-    previewImage: "/ludo.webp",
+    previewImage: "/images/games/ludo_for_two.webp",
     span: "small",
     highlights: [
       {
@@ -591,6 +591,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #fff1e8 0%, #f8e4d4 55%, #efd2bc 100%)",
+    previewImage: "/images/games/whack_my_face.webp",
     span: "small",
     highlights: [
       {
@@ -640,6 +641,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #ffe8dc 0%, #f8d4c4 55%, #efc0b0 100%)",
+    previewImage: "/images/games/flames.webp",
     span: "small",
     highlights: [
       {
@@ -688,6 +690,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #fff1e8 0%, #f9d4e0 55%, #f0c0d0 100%)",
+    previewImage: "/images/games/love_calculator.webp",
     span: "small",
     highlights: [
       {
@@ -736,6 +739,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #f7efe4 0%, #ebe0d0 55%, #e0d0bc 100%)",
+    previewImage: "/images/games/folded_note.webp",
     span: "small",
     highlights: [
       {
@@ -781,6 +785,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #fffaf4 0%, #fbe0d4 55%, #f4d0c0 100%)",
+    previewImage: "/images/games/this_that.webp",
     span: "small",
     highlights: [
       {
@@ -820,6 +825,7 @@ export const experiences: Experience[] = [
     accent: "from-[#F2596F]/22 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 70% 70% at 50% 38%, #2a1520 0%, #1a0f14 55%, #120a10 100%)",
+    previewImage: "/images/games/delulu_meter.webp",
     span: "small",
     highlights: [
       {
@@ -1216,6 +1222,7 @@ export const experiences: Experience[] = [
     accent: "from-[#f4768e]/22 via-[#ffb3c1]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 80% 65% at 50% 20%, #fff6f0 0%, #ffe1e6 50%, #f7c5cf 100%)",
+    previewImage: "/images/will_you_go_out.png",
     span: "small",
     highlights: [
       {
@@ -1265,6 +1272,7 @@ export const experiences: Experience[] = [
     accent: "from-[#D4A373]/25 via-[#B11226]/10 to-transparent",
     previewGradient:
       "radial-gradient(ellipse 80% 65% at 50% 20%, #fff6f0 0%, #ffe8dc 50%, #f5e9e2 100%)",
+    previewImage: "/images/mirror_match.png",
     span: "small",
     highlights: [
       {

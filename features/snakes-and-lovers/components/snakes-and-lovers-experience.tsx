@@ -80,6 +80,10 @@ const HOP_MS = 200;
 const CLIMB_MS = 480;
 const SLIDE_MS = 540;
 
+// Fill the public / preview stage so the 18+ card and setup sit in the middle.
+const GATE_STAGE =
+  "flex h-full min-h-full w-full items-center justify-center p-4";
+
 type Travel = "hop" | "climb" | "slide" | "idle";
 
 const PLAYER_TONES = [
@@ -475,7 +479,7 @@ function SnakesAndLoversPlay({
   if (!hydrated) return null;
   if (!playing) {
     return (
-      <div className="flex w-full justify-center">
+      <div className={GATE_STAGE}>
         <SetupScreen value={setup} onStart={startPlay} />
       </div>
     );
@@ -1406,30 +1410,34 @@ function PauseScreen({
 // ── The 18+ consent gate ─────────────────────────────────────────────
 function AgeGate({ onEnter }: { onEnter: () => void }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="flex w-full max-w-sm flex-col items-center gap-5 rounded-3xl border border-white/10 bg-white/[0.04] px-7 py-10 text-center backdrop-blur"
-    >
-      <span className="grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#ff4d6d] to-[#c81d4e] text-white shadow-lg">
-        <Lock className="size-6" />
-      </span>
-      <div className="space-y-2">
-        <h2 className="font-display text-2xl text-white">For grown-ups only</h2>
-        <p className="text-sm leading-relaxed text-white/55">
-          This game is for consenting adults sharing a private moment. By
-          entering you confirm you{"'"}re 18 or older and you both want to be
-          here.
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onEnter}
-        className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#7e1426] transition-transform hover:scale-[1.03] active:scale-95"
+    <div className={GATE_STAGE}>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex w-full max-w-sm flex-col items-center gap-5 rounded-3xl border border-white/10 bg-white/[0.04] px-7 py-10 text-center backdrop-blur"
       >
-        <Flame className="size-4" /> We{"'"}re in
-      </button>
-    </motion.div>
+        <span className="grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#ff4d6d] to-[#c81d4e] text-white shadow-lg">
+          <Lock className="size-6" />
+        </span>
+        <div className="space-y-2">
+          <h2 className="font-display text-2xl text-white">
+            For grown-ups only
+          </h2>
+          <p className="text-sm leading-relaxed text-white/55">
+            This game is for consenting adults sharing a private moment. By
+            entering you confirm you{"'"}re 18 or older and you both want to be
+            here.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onEnter}
+          className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#7e1426] transition-transform hover:scale-[1.03] active:scale-95"
+        >
+          <Flame className="size-4" /> We{"'"}re in
+        </button>
+      </motion.div>
+    </div>
   );
 }

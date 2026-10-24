@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 
 import { PageContainer } from "@/components/layout/page-container";
+import { ExperienceCardMedia } from "@/components/shared/experience-card-media";
 import { PageHeader } from "@/components/shared/page-header";
 import { ROUTES } from "@/constants/routes";
 import { ideaHref } from "@/features/ideas/idea-href";
@@ -117,7 +118,7 @@ export default async function GamesPage() {
             {games.map((game) => (
               <article
                 key={game.title}
-                className="kyndl-card-soft group relative flex flex-col rounded-3xl border border-[#F4DDD0] bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-[#FF7A59]/45 hover:shadow-[0_28px_64px_-26px_rgba(242,89,111,0.45)]"
+                className="kyndl-card-soft group relative flex flex-col overflow-hidden rounded-3xl border border-[#F4DDD0] bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:border-[#FF7A59]/45 hover:shadow-[0_28px_64px_-26px_rgba(242,89,111,0.45)]"
               >
                 <div className="flex items-start justify-between">
                   <span className="flex size-12 items-center justify-center rounded-2xl border border-[#F4DDD0] bg-[#FFF7F1] text-[#FF7A59]">
@@ -128,6 +129,11 @@ export default async function GamesPage() {
                     Live
                   </span>
                 </div>
+
+                <ExperienceCardMedia
+                  slug={game.slug}
+                  className="mt-5 rounded-2xl"
+                />
 
                 <h2 className="mt-6 font-display text-xl text-[#3A2A25]">
                   {game.title}
