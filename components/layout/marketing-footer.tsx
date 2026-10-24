@@ -8,6 +8,7 @@ import { useSiteSettings } from "@/components/site-settings/site-settings-provid
 import { siteConfig } from "@/config/site";
 import { EXPERIENCE_CATEGORIES } from "@/constants/experience-taxonomy";
 import { ROUTES } from "@/constants/routes";
+import { useUiStore } from "@/store/ui.store";
 
 type FooterLink = { href: string; label: string };
 type FooterColumn = { title: string; links: FooterLink[] };
@@ -33,6 +34,7 @@ export function MarketingFooter() {
   const year = new Date().getFullYear();
   const settings = useSiteSettings();
   const isV2 = settings.site_mode === "v2";
+  const openReportProblem = useUiStore((s) => s.openReportProblem);
 
   const experienceLinks: FooterLink[] = [
     ...(settings.show_memory_bank
@@ -67,6 +69,10 @@ export function MarketingFooter() {
       : []),
     { href: ROUTES.feedback, label: "Share feedback" },
     { href: ROUTES.ideas, label: "Submit an idea" },
+  ];
+
+  const companyActions: { label: string; onClick: () => void }[] = [
+    { label: "Report a problem", onClick: openReportProblem },
   ];
 
   const linkColumns: FooterColumn[] = [
@@ -152,6 +158,19 @@ export function MarketingFooter() {
                       </Link>
                     </li>
                   ))}
+                  {column.title === "Company"
+                    ? companyActions.map((action) => (
+                        <li key={action.label}>
+                          <button
+                            type="button"
+                            onClick={action.onClick}
+                            className="text-left text-sm text-[#7A6258] transition-colors duration-300 hover:text-[#3A2A25]"
+                          >
+                            {action.label}
+                          </button>
+                        </li>
+                      ))
+                    : null}
                 </ul>
               </nav>
             ))}

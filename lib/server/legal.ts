@@ -31,9 +31,9 @@ export function isLegalPageSlug(value: string): value is LegalPageSlug {
 }
 
 /**
- * Fetch a published legal page for SSR. Backend resolves v1 vs v2 copy from
- * Site settings — use no-store so flipping site_mode updates legal pages
- * immediately. Returns null if missing or unreachable.
+ * Fetch a published legal page for SSR. Backend serves the single edition
+ * marked “show on site” in admin — use no-store so flipping that flag
+ * updates legal pages immediately. Returns null if missing or unreachable.
  */
 export async function getLegalPage(
   slug: LegalPageSlug,

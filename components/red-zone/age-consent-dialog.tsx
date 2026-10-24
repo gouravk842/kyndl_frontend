@@ -3,11 +3,19 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Flame, Lock } from "lucide-react";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
+
+import { useMounted } from "@/hooks/use-mounted";
 
 /**
  * The shared 18+ consent prompt for the Red Zone section. Used both when
  * entering from the header and on the section page itself. Confirming is the
  * caller's job (it records consent and proceeds); cancelling just closes.
+ *
+ * Portaled to document.body so `position: fixed` stays viewport-relative.
+ * The marketing header is sticky and applies `backdrop-filter` when scrolled,
+ * which would otherwise become the containing block and pin this overlay to
+ * the top of the page.
  */
 export function AgeConsentDialog({
   open,
@@ -18,17 +26,25 @@ export function AgeConsentDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  // Close on Escape.
+  const mounted = useMounted();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCancel();
     };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open, onCancel]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -84,6 +100,7 @@ export function AgeConsentDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

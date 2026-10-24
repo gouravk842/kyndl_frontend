@@ -7,6 +7,7 @@ import {
   PROTECTED_ROUTE_PREFIXES,
   ROUTES,
 } from "@/constants/routes";
+import { postAuthDestination } from "@/lib/navigation";
 
 function isProtectedPath(pathname: string): boolean {
   return (
@@ -64,7 +65,13 @@ export function proxy(request: NextRequest) {
   }
 
   if (isAuthPath(pathname) && isAuthenticated) {
-    return NextResponse.redirect(new URL(ROUTES.dashboard, request.url));
+    // Honor `callbackUrl` so checkout (and other gated pages) resume after
+    // login. Dropping it always sent people to the dashboard — and a cached
+    // `/checkout` → `/login` redirect then looked like "stuck on login".
+    const dest = postAuthDestination(
+      request.nextUrl.searchParams.get("callbackUrl"),
+    );
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   const response = NextResponse.next();

@@ -4,7 +4,11 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
-import { reportError } from "@/lib/report-error";
+import {
+  getLastRequestId,
+  rememberRequestId,
+  reportError,
+} from "@/lib/report-error";
 import { normalizeApiError } from "@/services/api/errors";
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -28,8 +32,24 @@ export const apiClient: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
+apiClient.interceptors.request.use((config) => {
+  const requestId = crypto.randomUUID();
+  config.headers["X-Request-ID"] = requestId;
+  rememberRequestId(requestId);
+  return config;
+});
+
+function echoRequestId(headers: unknown): void {
+  if (!headers || typeof headers !== "object") return;
+  const raw = (headers as { "x-request-id"?: string })["x-request-id"];
+  if (raw) rememberRequestId(raw);
+}
+
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    echoRequestId(response.headers);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config as RetryableConfig | undefined;
 
@@ -56,15 +76,19 @@ apiClient.interceptors.response.use(
       }
     }
 
+    echoRequestId(error.response?.headers);
     const normalized = normalizeApiError(error);
     // Server faults only — avoid noise from expected 4xx (validation, 402, etc.).
     if (normalized.status >= 500) {
+      const path =
+        typeof originalRequest?.url === "string"
+          ? originalRequest.url.split("?")[0]
+          : undefined;
       reportError(new Error(normalized.message), {
         boundary: "api",
         status: normalized.status,
-        code: normalized.code,
-        url: originalRequest?.url,
-        method: originalRequest?.method,
+        path,
+        request_id: getLastRequestId(),
       });
     }
 

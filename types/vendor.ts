@@ -47,6 +47,8 @@ export interface VendorProductImage {
 
 export interface VendorProduct {
   slug: string;
+  /** Shop-private product code. Empty when the vendor has not set one. */
+  sku: string;
   name: string;
   tagline: string;
   description: string;
@@ -74,6 +76,8 @@ export interface VendorProduct {
 /** Create/update payload for a vendor product. */
 export interface VendorProductInput {
   name: string;
+  /** Shop-private product code. Empty string clears it. */
+  sku?: string;
   tagline?: string;
   description?: string;
   price: number;

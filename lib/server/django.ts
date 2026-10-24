@@ -41,6 +41,7 @@ const signedInCookieOptions = {
 };
 
 const REQUEST_ID_HEADER = "X-Request-ID";
+const REQUEST_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
 export interface DjangoResult {
   status: number;
@@ -52,6 +53,28 @@ export interface DjangoResult {
 
 function newRequestId(): string {
   return crypto.randomUUID();
+}
+
+function isRequestId(value: string | null | undefined): value is string {
+  const trimmed = value?.trim() ?? "";
+  return Boolean(trimmed) && REQUEST_ID_RE.test(trimmed);
+}
+
+/**
+ * Prefer the browser's ``X-Request-ID`` (via the incoming Next request) so a
+ * 5xx recorded in Django shares an id with the crash UI. Fall back to a fresh
+ * UUID when the caller didn't send one.
+ */
+async function resolveRequestId(explicit?: string): Promise<string> {
+  if (isRequestId(explicit)) return explicit.trim();
+  try {
+    const { headers } = await import("next/headers");
+    const incoming = (await headers()).get(REQUEST_ID_HEADER);
+    if (isRequestId(incoming)) return incoming.trim();
+  } catch {
+    // Not in a request scope (scripts, tests).
+  }
+  return newRequestId();
 }
 
 function logDjangoFailure(args: {
@@ -107,6 +130,7 @@ export async function djangoFetchBinary(
   init: {
     method?: string;
     accessToken?: string;
+    requestId?: string;
   } = {},
 ): Promise<{
   status: number;
@@ -116,7 +140,7 @@ export async function djangoFetchBinary(
   requestId: string;
 }> {
   const method = init.method ?? "GET";
-  const requestId = newRequestId();
+  const requestId = await resolveRequestId(init.requestId);
   const headers = buildHeaders({
     accessToken: init.accessToken,
     accept: "application/pdf, application/json",
@@ -158,10 +182,13 @@ export async function djangoFetch(
     body?: unknown;
     accessToken?: string;
     headers?: Record<string, string>;
+    requestId?: string;
   } = {},
 ): Promise<DjangoResult> {
   const method = init.method ?? "POST";
-  const requestId = newRequestId();
+  const requestId = await resolveRequestId(
+    init.requestId ?? init.headers?.[REQUEST_ID_HEADER],
+  );
   const headers = buildHeaders({
     accessToken: init.accessToken,
     json: true,

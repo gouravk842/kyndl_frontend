@@ -28,6 +28,7 @@ const MAX_PRODUCT_IMAGES = 5;
 
 const schema = z.object({
   name: z.string().min(2, "Give your product a name."),
+  sku: z.string().max(64).optional(),
   tagline: z.string().max(200).optional(),
   description: z.string().max(4000).optional(),
   price_rupees: z.coerce.number().positive("Enter a price above zero."),
@@ -84,6 +85,7 @@ export function ProductForm({ existing }: { existing?: VendorProduct }) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: existing?.name ?? "",
+      sku: existing?.sku ?? "",
       tagline: existing?.tagline ?? "",
       description: existing?.description ?? "",
       price_rupees: existing ? existing.price / 100 : ("" as unknown as number),
@@ -158,6 +160,7 @@ export function ProductForm({ existing }: { existing?: VendorProduct }) {
     const parsed = schema.parse(values);
     const payload: VendorProductInput = {
       name: parsed.name,
+      sku: (parsed.sku ?? "").trim(),
       tagline: parsed.tagline,
       description: parsed.description,
       price: Math.round(parsed.price_rupees * 100),
@@ -288,9 +291,21 @@ export function ProductForm({ existing }: { existing?: VendorProduct }) {
             )}
           </div>
 
-          <Field label="Name" error={errors.name?.message}>
-            <Input {...register("name")} placeholder="Cozy soy candle" />
-          </Field>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Name" error={errors.name?.message}>
+              <Input {...register("name")} placeholder="Cozy soy candle" />
+            </Field>
+            <Field label="SKU" error={errors.sku?.message}>
+              <Input
+                {...register("sku")}
+                placeholder="CANDLE-VAN-S"
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your own code for packing and search.
+              </p>
+            </Field>
+          </div>
           <Field label="Tagline" error={errors.tagline?.message}>
             <Input
               {...register("tagline")}

@@ -1,4 +1,4 @@
-import { ROUTES } from "@/constants/routes";
+import { AUTH_ROUTES, ROUTES } from "@/constants/routes";
 
 /**
  * Validate a `callbackUrl` query param before redirecting to it.
@@ -37,5 +37,13 @@ export function withCallbackUrl(
 export function postAuthDestination(
   callbackUrl: string | null | undefined,
 ): string {
-  return safeInternalPath(callbackUrl) ?? ROUTES.dashboard;
+  const safe = safeInternalPath(callbackUrl);
+  if (!safe) return ROUTES.dashboard;
+  // Never bounce a signed-in user back onto an auth page — that loops in
+  // proxy.ts (auth path + cookies → redirect here again).
+  const pathOnly = safe.split("?")[0] ?? safe;
+  if (AUTH_ROUTES.some((route) => pathOnly === route)) {
+    return ROUTES.dashboard;
+  }
+  return safe;
 }

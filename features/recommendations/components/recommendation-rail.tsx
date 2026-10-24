@@ -42,10 +42,6 @@ export function RecommendationCard({
           },
         ]);
         track({
-          name: "recommendation.clicked",
-          properties: { context, kind: item.kind, id: item.id, rank },
-        });
-        track({
           name: "product.viewed",
           properties: {
             kind: item.kind,
@@ -123,16 +119,6 @@ export function RecommendationRail({
         rank,
       })),
     );
-    track({
-      name:
-        context === "post_purchase"
-          ? "recommendation.post_purchase_shown"
-          : "recommendation.shown",
-      properties: {
-        context,
-        ids: items.map((i) => `${i.kind}:${i.id}`),
-      },
-    });
   }, [items, context]);
 
   const scrollToIndex = (index: number) => {

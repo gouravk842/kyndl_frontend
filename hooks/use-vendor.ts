@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth.store";
 import type { ApiError } from "@/types/api";
 import type {
   VendorOrderUpdate,
+  VendorProduct,
   VendorProductInput,
   VendorProfileUpdate,
 } from "@/types/vendor";
@@ -77,7 +78,8 @@ export function useVendorAnalytics(months = 6) {
 export function useUpdateVendorProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: VendorProfileUpdate) => vendorService.updateProfile(payload),
+    mutationFn: (payload: VendorProfileUpdate) =>
+      vendorService.updateProfile(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.vendor.me() });
       toast.success("Shop settings saved.");
@@ -90,13 +92,16 @@ export function useUpdateVendorProfile() {
 export function useCreateVendorProduct() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: VendorProductInput) => vendorService.createProduct(payload),
+    mutationFn: (payload: VendorProductInput) =>
+      vendorService.createProduct(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.vendor.products() });
       toast.success("Product listed 🎉");
     },
     onError: (error: unknown) =>
-      toast.error((error as ApiError)?.message ?? "Could not save that product."),
+      toast.error(
+        (error as ApiError)?.message ?? "Could not save that product.",
+      ),
   });
 }
 
@@ -107,11 +112,64 @@ export function useUpdateVendorProduct(slug: string) {
       vendorService.updateProduct(slug, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.vendor.products() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.vendor.product(slug) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.vendor.product(slug),
+      });
       toast.success("Product updated.");
     },
     onError: (error: unknown) =>
-      toast.error((error as ApiError)?.message ?? "Could not update that product."),
+      toast.error(
+        (error as ApiError)?.message ?? "Could not update that product.",
+      ),
+  });
+}
+
+/** Inline list edits: optimistic, no success toast, concurrent-row safe. */
+export type VendorProductPatch = { slug: string } & Partial<VendorProductInput>;
+
+export function usePatchVendorProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, ...payload }: VendorProductPatch) =>
+      vendorService.updateProduct(slug, payload),
+    onMutate: async ({ slug, ...payload }) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.vendor.products(),
+      });
+      const current = queryClient.getQueryData<VendorProduct[]>(
+        queryKeys.vendor.products(),
+      );
+      const snapshot = current?.find((p) => p.slug === slug);
+      queryClient.setQueryData<VendorProduct[]>(
+        queryKeys.vendor.products(),
+        (old) =>
+          old?.map((p) => {
+            if (p.slug !== slug) return p;
+            const next = { ...p, ...payload };
+            next.in_stock = next.is_active && next.stock > 0;
+            return next;
+          }),
+      );
+      return { snapshot };
+    },
+    onError: (error: unknown, { slug }, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData<VendorProduct[]>(
+          queryKeys.vendor.products(),
+          (old) => old?.map((p) => (p.slug === slug ? ctx.snapshot! : p)),
+        );
+      }
+      toast.error(
+        (error as ApiError)?.message ?? "Could not update that product.",
+      );
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<VendorProduct[]>(
+        queryKeys.vendor.products(),
+        (old) => old?.map((p) => (p.slug === updated.slug ? updated : p)),
+      );
+      queryClient.setQueryData(queryKeys.vendor.product(updated.slug), updated);
+    },
   });
 }
 
@@ -124,7 +182,9 @@ export function useDeleteVendorProduct() {
       toast.success("Product removed.");
     },
     onError: (error: unknown) =>
-      toast.error((error as ApiError)?.message ?? "Could not remove that product."),
+      toast.error(
+        (error as ApiError)?.message ?? "Could not remove that product.",
+      ),
   });
 }
 
@@ -138,6 +198,8 @@ export function useUpdateVendorOrder() {
       toast.success("Order updated.");
     },
     onError: (error: unknown) =>
-      toast.error((error as ApiError)?.message ?? "Could not update the order."),
+      toast.error(
+        (error as ApiError)?.message ?? "Could not update the order.",
+      ),
   });
 }

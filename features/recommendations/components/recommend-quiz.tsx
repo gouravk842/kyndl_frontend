@@ -11,7 +11,6 @@ import { ideaHref } from "@/features/ideas/idea-href";
 import { RecommendationRail } from "@/features/recommendations/components/recommendation-rail";
 import { hasRedZoneConsent, setRedZoneConsent } from "@/lib/red-zone-consent";
 import { cn } from "@/lib/utils";
-import { track } from "@/services/analytics/analytics.service";
 import { recommendationService } from "@/services/recommendations/recommendation.service";
 import type {
   BudgetTier,
@@ -129,15 +128,6 @@ export function RecommendQuiz() {
         };
         const res = await recommendationService.quiz(payload);
         setResults(res.results);
-        track({
-          name: "recommendation.quiz_completed",
-          properties: {
-            occasion: answers.occasion,
-            channel_pref: answers.channel_pref,
-            result_count: res.results.length,
-            steps: STEPS.length,
-          },
-        });
       } catch {
         setError("Something went wrong — try again in a moment.");
       }

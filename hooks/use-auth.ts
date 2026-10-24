@@ -23,6 +23,15 @@ function errorMessage(error: unknown, fallback: string): string {
   return (error as ApiError)?.message ?? fallback;
 }
 
+/**
+ * Leave the auth page after cookies were just set. A full navigation lets
+ * `proxy.ts` see the new session and avoids the App Router reusing a cached
+ * logged-out `/checkout` → `/login` redirect, which left people stuck on login.
+ */
+function goAfterAuth(dest: string) {
+  window.location.replace(dest);
+}
+
 export function useAuth() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,7 +66,7 @@ export function useAuth() {
       setUser(res.user);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success("Welcome back!");
-      router.push(postAuthDestination(callbackUrl));
+      goAfterAuth(postAuthDestination(callbackUrl));
     },
     onError: (error) => {
       toast.error(errorMessage(error, "Login failed"));
@@ -89,7 +98,7 @@ export function useAuth() {
       setUser(res.user);
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
       toast.success("Email verified — welcome to Kyndl!");
-      router.push(postAuthDestination(callbackUrl));
+      goAfterAuth(postAuthDestination(callbackUrl));
     },
     onError: (error) => {
       toast.error(errorMessage(error, "Verification failed"));

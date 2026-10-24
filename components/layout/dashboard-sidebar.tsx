@@ -8,6 +8,7 @@ import {
   Home,
   LayoutDashboard,
   Library,
+  LifeBuoy,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
@@ -58,7 +59,7 @@ const shopNavItems: NavItem[] = [
 export function DashboardSidebar() {
   const pathname = usePathname();
   const settings = useSiteSettings();
-  const { sidebarOpen, toggleSidebar } = useUiStore();
+  const { sidebarOpen, toggleSidebar, openReportProblem } = useUiStore();
   const isVendor = useAuthStore((s) => Boolean(s.user?.is_vendor));
 
   const { categories } = useLibrary();
@@ -248,6 +249,19 @@ export function DashboardSidebar() {
           </>
         ) : null}
       </nav>
+      <div className="border-t p-2">
+        <button
+          type="button"
+          onClick={openReportProblem}
+          className={cn(rowClass(false), "w-full cursor-pointer")}
+          title={sidebarOpen ? undefined : "Report a problem"}
+        >
+          <span className={iconTileClass()}>
+            <LifeBuoy className="size-4 shrink-0" />
+          </span>
+          {sidebarOpen && <span className="truncate">Report a problem</span>}
+        </button>
+      </div>
     </aside>
   );
 }
