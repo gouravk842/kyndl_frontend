@@ -14,8 +14,8 @@ import { indexPricing } from "@/lib/experience-catalog";
  * Split source of truth: the frontend owns presentation (copy, icons, gradients,
  * the experience itself); the backend owns only what an admin flips without a
  * deploy — visibility, status, sort order, price, and the offer/anchor fields.
- * Fetched fresh per request (`cache: "no-store"`) so price/offer edits show
- * promptly; `React.cache` dedupes within a single RSC render tree.
+ * ISR for 60s so the homepage can be CDN-cached; admin price/visibility edits
+ * may take up to a minute. `React.cache` still dedupes within one RSC render.
  *
  * The feed includes hidden products (`is_visible: false`) so callers can
  * withhold them. On failure, `ok` is false and callers may fall back to the
@@ -39,7 +39,7 @@ export const getPricing = cache(async (): Promise<PricingFeed> => {
   try {
     const res = await fetch(`${DJANGO_BASE}/payments/pricing/`, {
       headers: { Accept: "application/json" },
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return { ok: false, entries: {} };
     const rows = (await res.json()) as PricingEntry[];

@@ -6,11 +6,11 @@ import type { GiftProduct, ProductCategory, PublicStore } from "@/types/gift";
 
 /**
  * Server-only fetch of the public physical-gift catalog from Django. Used by the
- * `/gifts` server pages (fetched fresh per render). Any failure resolves to an
- * empty list / null so a backend hiccup renders an empty shop rather than a 500.
+ * `/gifts` server pages and the v2 homepage. ISR for 60s so those routes can be
+ * CDN-cached; a backend hiccup still renders an empty shop rather than a 500.
  *
  * Wrapped in `React.cache` so `generateMetadata` + the page share one fetch per
- * request even with `cache: "no-store"`.
+ * request.
  */
 
 const DJANGO_BASE = (
@@ -21,7 +21,7 @@ export const getGiftCatalog = cache(async (): Promise<GiftProduct[]> => {
   try {
     const res = await fetch(`${DJANGO_BASE}/gifts/catalog/`, {
       headers: { Accept: "application/json" },
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) {
       console.error(
@@ -40,7 +40,7 @@ export const getGiftCategories = cache(async (): Promise<ProductCategory[]> => {
   try {
     const res = await fetch(`${DJANGO_BASE}/gifts/categories/`, {
       headers: { Accept: "application/json" },
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return [];
     return (await res.json()) as ProductCategory[];
@@ -54,7 +54,7 @@ export const getGiftProduct = cache(
     try {
       const res = await fetch(`${DJANGO_BASE}/gifts/catalog/${slug}/`, {
         headers: { Accept: "application/json" },
-        cache: "no-store",
+        next: { revalidate: 60 },
       });
       if (!res.ok) return null;
       return (await res.json()) as GiftProduct;
@@ -69,7 +69,7 @@ export const getGiftStore = cache(
     try {
       const res = await fetch(`${DJANGO_BASE}/gifts/shops/${slug}/`, {
         headers: { Accept: "application/json" },
-        cache: "no-store",
+        next: { revalidate: 60 },
       });
       if (!res.ok) return null;
       return (await res.json()) as PublicStore;

@@ -58,15 +58,17 @@ function normalize(raw: Record<string, unknown>): SiteSettings {
 }
 
 /**
- * Server-only fetch of website mode + feature flags. Cached per request.
- * Falls back to V1 defaults if the API is missing or unreachable.
+ * Server-only fetch of website mode + feature flags.
+ * ISR for 60s so the marketing layout can be CDN-cached on Netlify instead of
+ * blocking every HTML request on Django. Admin flag flips may take up to a
+ * minute to show. Falls back to V1 defaults if the API is unreachable.
  */
 export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
   try {
     const res = await fetch(`${DJANGO_BASE}/content/site-settings/`, {
       method: "GET",
       headers: { Accept: "application/json" },
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return DEFAULT_SITE_SETTINGS;
     const data = (await res.json()) as Record<string, unknown>;

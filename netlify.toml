@@ -15,6 +15,45 @@
   # mode itself during `next build`.
   NPM_FLAGS = "--include=dev"
 
+# Next already hashes / minifies assets. Netlify post-processing can rewrite
+# HTML and fight the adapter — leave the plugin in charge.
+[build.processing]
+  skip_processing = true
+
+# Set Functions region in the Netlify UI (Site configuration → Functions)
+# to the same region as Django. A US function talking to an India API adds
+# hundreds of ms to every SSR that still has to hit the origin.
+
+# Hashed webpack/turbopack chunks are immutable; cache at the CDN for a year.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_next/image*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/kits/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+# Do not set Cache-Control on HTML here. Public pages pick up ISR from
+# `next: { revalidate: 60 }` on site-settings / pricing fetches; dashboard,
+# auth, and `/v/[token]` must stay private.
+
 # Optional: uncomment once the custom domain is on Netlify.
 # [[redirects]]
 #   from = "https://www.kyndl.in/*"

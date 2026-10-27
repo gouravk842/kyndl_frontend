@@ -20,6 +20,9 @@ const Testimonials = dynamic(() =>
   import("@/components/landing/testimonials").then((m) => m.Testimonials),
 );
 
+// Public catalog fetches ISR for 60s (site-settings, pricing, gifts, testimonials).
+export const revalidate = 60;
+
 export async function generateMetadata() {
   const settings = await getSiteSettings();
   if (settings.site_mode === "v2") {
